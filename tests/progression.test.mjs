@@ -10,6 +10,7 @@ import * as enemyRules from '../dist/enemy.js';
 import * as storyRules from '../dist/story.js';
 import * as dialogueRules from '../dist/dialogue.js';
 import * as gimmickRules from '../dist/gimmicks.js';
+import * as guidanceRules from '../dist/guidance.js';
 
 // Execute the shipped controller and its real rule/story modules. Only browser,
 // audio and rendering boundaries are replaced; progress is earned by interact().
@@ -133,7 +134,7 @@ async function harness({ boot = true, storage = new Map(), failWorld = false } =
     resize() {}
   }
   const context = vm.createContext({
-    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, MountainWorld, Soundscape, TapeEffects,
+    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, ...guidanceRules, MountainWorld, Soundscape, TapeEffects,
     document: doc, localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     matchMedia: () => ({ matches: false }), performance: { now: () => now }, devicePixelRatio: 1,
     requestAnimationFrame: callback => { const id = ++nextFrame; raf.set(id, callback); return id; },
@@ -229,6 +230,32 @@ test('boot waits for the world, binds real HTML controls, and handles failed ini
   assert.match(failure.nodes.get('loading-label').textContent, /失敗/);
   failure.run("dispatch('continue')");
   assert.equal(failure.run('mode'), 'title');
+});
+
+test('search help pauses the real game and shows a matching prop, place, purpose and action',async()=>{
+  const h=await harness();h.fresh();
+  assert.equal(h.nodes.get('objective').textContent,'三脚の望遠鏡');
+  assert.equal(h.nodes.get('search-thumb').src,'assets/items/telescope.png');
+  h.press('KeyH');assert.equal(h.run('panelKind'),'search-help');
+  const time=h.run('time');h.advance(25);assert.equal(h.run('time'),time);
+  const body=h.nodes.get('panel-body').innerHTML;
+  for(const text of ['三脚の望遠鏡','二階のベランダ','場所','見た目','目的','操作','ゲーム内の物と同じ形'])assert.ok(body.includes(text),text);
+  h.click('close-panel');assert.equal(h.run('mode'),'play');
+  h.run('Object.assign(flags,{seen:true,downstairs:true,radioTuned:true,glasses:true,note:true});story.stage=4;updateObjective();');
+  assert.equal(h.nodes.get('objective').textContent,'蓋つきのボトル2本');
+  assert.equal(h.nodes.get('search-thumb').src,'assets/items/bottle.png');
+  h.click('journal');assert.match(h.nodes.get('panel-body').innerHTML,/蓋つきのボトル2本/);
+  assert.match(h.nodes.get('panel-body').innerHTML,/西の物置・中の床/);
+});
+
+test('radio-wait never points to the locked gate, and resumed saves derive the correct next object',async()=>{
+  const h=await harness();h.fresh();
+  h.run('Object.assign(flags,{seen:true,downstairs:true,radioTuned:true,glasses:true,note:true,bottle:true,crank:true});story.stage=4;updateObjective();');
+  assert.equal(h.run('getObjective().id'),'listen');assert.equal(h.run('navigationTarget()'),null);assert.equal(h.run('currentGuide()'),null);
+  h.run('story.stage=5;updateObjective();');assert.equal(h.run('getObjective().id'),'gate');
+  h.run('flags.gate=true;world.setGateOpen(true);updateObjective();');
+  const save=h.state('serialize()');h.run(`restore(${JSON.stringify(save)})`);
+  assert.equal(h.run('getObjective().id'),'car');assert.equal(h.nodes.get('objective').textContent,'駐車場の車');
 });
 
 test('the upstairs telescope reveals three timed beats and pauses without skipping or exposing items through the floor', async () => {
@@ -348,12 +375,17 @@ test('gate and car enforce prerequisites, timed actions, distance cancellation a
   h.encounter(); h.descend(); h.pickup('note'); h.pickup('bottle'); h.pickup('crank'); h.safeEnemy(); h.settleStory();
   h.use('gate'); h.advance(.5);
   assert.ok(h.run('action.elapsed>0&&action.elapsed<RULES.gateSeconds&&!flags.gate'));
+  assert.match(h.nodes.get('search-phase').textContent,/巻き上げ中/);
+  assert.doesNotMatch(h.nodes.get('search-phase').textContent,/Eで/);
   h.moveTo(layout.LANDMARKS.gate.x + 5, layout.LANDMARKS.gate.z); h.advance(.05);
   assert.equal(h.run('action'), null); assert.equal(h.run('flags.gate'), false);
+  assert.doesNotMatch(h.nodes.get('search-phase').textContent,/巻き上げ中/);
   h.use('gate'); h.advance(survivalRules.RULES.gateSeconds + .1);
   assert.equal(h.run('world.gateOpen'), true); assert.equal(h.run('getObjective().id'), 'car');
   assert.ok(h.run('conversation.some(line=>line.speaker==="修司（無線）"&&line.text.includes("道は通れる"))'), 'The road-clearance report is shown before engine dialogue can interrupt it');
-  h.use('car'); h.advance(.5); h.click('pause');
+  h.use('car'); h.advance(.5);
+  assert.match(h.nodes.get('search-phase').textContent,/始動中/);
+  h.click('pause');
   const frozen = h.state('({time,monster,action,survival})'); h.advance(3);
   assert.deepEqual(h.state('({time,monster,action,survival})'), frozen);
   h.click('close-panel'); h.advance(.5);
@@ -558,4 +590,25 @@ test('v3 checkpoints migrate without resetting a later story or requiring an alr
   assert.equal(h.run('flags.radioTuned'),true);assert.equal(h.run('story.stage'),saved.story.stage);
   assert.equal(h.run('companionState'),'away');assert.equal(h.run('serialize().v'),4);
   assert.equal(h.run('story.events.includes("radioTuned")'),saved.story.events.includes('radioTuned'));
+});
+
+test('a superseded guide voice request cannot overwrite the current playback status',async()=>{
+  const h=await harness();h.fresh();h.click('search-help');
+  h.run('globalThis.voiceRequests=[];sound.playGuideVoice=()=>new Promise(resolve=>voiceRequests.push(resolve));');
+  const first=h.run('playSearchVoice()'),second=h.run('playSearchVoice()');
+  h.run('voiceRequests[1]("playing")');await second;
+  assert.match(h.nodes.get('guide-voice-status').textContent,/再生中/);
+  h.run('voiceRequests[0]("cancelled")');await first;
+  assert.match(h.nodes.get('guide-voice-status').textContent,/再生中/);
+  const third=h.run('playSearchVoice()');h.click('close-panel');
+  h.run('voiceRequests[2]("playing")');await third;
+  assert.equal(h.run('mode'),'play');
+});
+
+test('restoring an older checkpoint resets idle and discovery hints for the same objective',async()=>{
+  const h=await harness();h.fresh();
+  h.run('globalThis.guideSave=serialize();guideSave.time=10;searchGuidance.update(getObjective(),{level:1,distance:1,blocked:false,targetId:"telescope"},100);restore(guideSave);');
+  assert.equal(h.run('searchGuidance.update(getObjective(),{level:1,distance:12,blocked:false},10).hint'),'');
+  assert.ok(h.run('searchGuidance.update(getObjective(),{level:1,distance:12,blocked:false},30).hint'));
+  assert.equal(h.run('searchGuidance.update(getObjective(),{level:1,distance:1,blocked:false,targetId:"telescope"},31).cue'),true);
 });

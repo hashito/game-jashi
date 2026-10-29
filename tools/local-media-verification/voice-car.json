@@ -1,0 +1,9 @@
+{
+  "file": "dist/assets/audio/guide-car.wav",
+  "sha256": "2d18b9eeb1c5e9047163403624b02037c6308272d5ed1bc9b5d4e684f3d4d18c",
+  "status": "verified-existing",
+  "durationSeconds": 4.758,
+  "peakDbfs": -6.0,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-29T22:51:31.921445+00:00"
+}

@@ -14,8 +14,10 @@ export async function launch(o = {}) {
   const W = o.width || 1280, H = o.height || 720;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cdp-"));
   const flags = [`--user-data-dir=${dir}`, "--remote-debugging-port=0", "--no-first-run", "--no-default-browser-check", "--disable-extensions", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows", "--autoplay-policy=no-user-gesture-required", "--ignore-gpu-blocklist", `--window-size=${W},${H}`, "--headless=new"];
-  if (process.platform === "win32") flags.push("--use-angle=d3d11");
-  const proc = spawn(exe, [...flags, "about:blank"], { stdio: "ignore" });
+  // Explicit opt-in for the trusted local pages on GPU-less CI runners.
+  if (process.env.GF_SOFTWARE_GL === '1') flags.push('--use-gl=angle', '--use-angle=swiftshader');
+  else if (process.platform === "win32") flags.push("--use-angle=d3d11");
+  const proc = spawn(exe, [...flags, "about:blank"], { stdio: "ignore", windowsHide: true });
   let port = null;
   for (let i = 0; i < 150 && !port; i++) {
     const f = path.join(dir, "DevToolsActivePort");
@@ -39,7 +41,8 @@ export async function launch(o = {}) {
   ws.onmessage = (m) => {
     const msg = JSON.parse(m.data);
     if (msg.id && waits.has(msg.id)) {
-      const [res, rej] = waits.get(msg.id);
+      const [res, rej, timer] = waits.get(msg.id);
+      clearTimeout(timer);
       waits.delete(msg.id);
       msg.error ? rej(new Error(msg.error.message)) : res(msg.result);
     } else if (msg.method === "Runtime.exceptionThrown") errors.push(msg.params.exceptionDetails?.exception?.description?.split("\n").slice(0, 3).join(" ") || "exception");
@@ -49,11 +52,17 @@ export async function launch(o = {}) {
       else logs.push(`${msg.params.type}: ${t}`);
     } else if (msg.method === "Log.entryAdded" && msg.params.entry.level === "error") errors.push(`${msg.params.entry.text} ${msg.params.entry.url || ""}`.slice(0, 300));
   };
+  ws.onclose = () => {
+    for (const [, reject, timer] of waits.values()) { clearTimeout(timer); reject(new Error('browser disconnected')); }
+    waits.clear();
+  };
   const send = (method, params = {}) =>
     new Promise((res, rej) => {
       const id = ++seq;
-      waits.set(id, [res, rej]);
-      ws.send(JSON.stringify({ id, method, params }));
+      const timer = setTimeout(() => { waits.delete(id); rej(new Error(`CDP timeout: ${method}`)); }, 60000);
+      waits.set(id, [res, rej, timer]);
+      try { ws.send(JSON.stringify({ id, method, params })); }
+      catch (e) { clearTimeout(timer); waits.delete(id); rej(e); }
     });
   await send("Page.enable");
   await send("Runtime.enable");
@@ -96,6 +105,9 @@ export async function launch(o = {}) {
       await send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
     },
     async close() {
+      // Ask Chromium to close its whole process tree, including the DevTools socket.
+      // Killing only the launcher can leave a socket alive and hang node --test.
+      await Promise.race([send('Browser.close').catch(() => {}), sleep(1000)]);
       try {
         ws.close();
       } catch {}

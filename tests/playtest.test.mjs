@@ -10,6 +10,7 @@ import * as enemyRules from '../dist/enemy.js';
 import * as storyRules from '../dist/story.js';
 import * as dialogueRules from '../dist/dialogue.js';
 import * as gimmickRules from '../dist/gimmicks.js';
+import * as guidanceRules from '../dist/guidance.js';
 import { MountainWorld } from '../dist/world.js';
 
 // v4.0.1 playtest regressions. The shipped controller (main.js) runs against the
@@ -72,7 +73,7 @@ async function harness() {
   }
   const storage = new Map();
   const context = vm.createContext({
-    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, MountainWorld: World, Soundscape, TapeEffects,
+    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, ...guidanceRules, MountainWorld: World, Soundscape, TapeEffects,
     document: doc, localStorage: { getItem: k => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) },
     matchMedia: () => ({ matches: false }), performance: { now: () => now }, devicePixelRatio: 1,
     requestAnimationFrame: cb => { const id = ++nextFrame; raf.set(id, cb); return id; }, cancelAnimationFrame: id => raf.delete(id), addEventListener: noop, console,

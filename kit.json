@@ -1,0 +1,26 @@
+{
+  "kit": "2a9373b",
+  "dest": "dist/kit",
+  "modules": [
+    "step-guide",
+    "gf-test"
+  ],
+  "tools": [
+    "media-queue.mjs",
+    "check-production-assets.mjs",
+    "check-no-emoji.mjs",
+    "check-css-pairs.mjs",
+    "authoring/media-queue.mjs",
+    "cdp.mjs"
+  ],
+  "hashes": {
+    "dist\\kit\\step-guide.js": "43e1ad957537",
+    "dist\\kit\\gf-test.js": "97870aa1c04c",
+    "tools/media-queue.mjs": "160da4900ca8",
+    "tools/check-production-assets.mjs": "66b43deb0965",
+    "tools/check-no-emoji.mjs": "e33672578f3a",
+    "tools/check-css-pairs.mjs": "ff648d17e6bf",
+    "tools/authoring/media-queue.mjs": "ef9923723fb0",
+    "tools/cdp.mjs": "af1bdae10667"
+  }
+}

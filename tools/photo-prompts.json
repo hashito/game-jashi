@@ -1,0 +1,74 @@
+{
+  "method": "Selected builtin image_gen originals, packaged locally; arrival/return generated, evidence edited from existing game photograph. No local image inference claimed.",
+  "version": "4.1",
+  "jobs": [
+    {
+      "id": "arrival",
+      "output": "dist/assets/photos/arrival-v4-1.webp",
+      "purpose": "導入。片付けのために来た、昼の別荘の記録。",
+      "prompt": "Photorealistic 16:9 amateur DV still, upstairs room of a modest old Japanese mountain holiday cabin on an overcast late autumn afternoon. Faded warm wood floor and plain aged plaster walls with dark wood framing, a few taped cardboard moving boxes and a folded dust sheet near the right wall, an open sliding doorway in the center leading to a narrow wooden balcony, a small dark brass telescope on a simple three-legged tripod on the balcony. Outside are natural dense cedar trees and a distant low mountain in cool mist. No people, no monster, no writing, no UI, no watermarks. Human eye height from inside the room; broad doorway and telescope clearly readable, restrained desaturated warm-gray palette, believable ordinary modest home rather than luxury architecture, gentle daylight and authentic subtle DV grain. The telescope is small and low, an actual practical instrument, not oversized.",
+      "importSource": {
+        "kind": "generated-builtin",
+        "engine": "image_gen",
+        "operation": "image generation",
+        "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-0428df43-1f23-4f0e-a961-ba2d87d4eab2.png",
+        "sourceSha256": "a30ffbf4329c7161df511d791a50c3573d10342251a0cf674cdb6c9dcf968433",
+        "model": "not reported by tool",
+        "seed": "not reported by tool"
+      },
+      "promptStatus": "Production brief only; exact image_gen invocation prompt was not archived. Local ComfyUI recipe is stored separately and was not used for these outputs.",
+      "qa": {
+        "visualReview": "accepted",
+        "content": "二階の部屋から開いた戸口、三脚の望遠鏡、右手の片付け箱を識別できる。外景と屋内の暗部が残り、導入文と一致。小物識別用の3D見本には使わない。",
+        "processing": "format conversion and proportional downscale only",
+        "reviewedAt": "2026-10-30"
+      }
+    },
+    {
+      "id": "return",
+      "output": "dist/assets/photos/return-v4-1.webp",
+      "purpose": "生還後。山を下りたことを写真で伝える。",
+      "prompt": "Photorealistic 16:9 quiet Japanese folk-horror aftermath photograph, view from the passenger seat of an old compact car stopped at the side of an empty narrow paved mountain road just before dawn. Dashboard and a worn small silver DV camcorder occupy only the lower foreground. The windshield frames a road descending out of dense cedar woods toward the faint first gray-blue light in the valley. No people, no visible monster, no accident, no lettering or screen text, no logos or watermarks. A subdued ordinary location, sense of exhausted relief with lingering unease, plausible documentary photo, fine film grain, dark forest behind fading into mist, details readable without artificial neon or heavy blur. Landscape 16:9.",
+      "importSource": {
+        "kind": "generated-builtin",
+        "engine": "image_gen",
+        "operation": "image generation",
+        "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-df09d62a-16ae-423a-ab94-4314e6fae777.png",
+        "sourceSha256": "4a397f520c6550ac91d40b74add2ce74092b20e759914529b5a7b5da20ddc05b",
+        "model": "not reported by tool",
+        "seed": "not reported by tool"
+      },
+      "promptStatus": "Production brief only; exact image_gen invocation prompt was not archived. Local ComfyUI recipe is stored separately and was not used for these outputs.",
+      "qa": {
+        "visualReview": "accepted",
+        "content": "夜明けの谷へ下る舗装路とダッシュボードのDVカメラを識別できる。森林は暗いが路面・ガードレール・カメラに輪郭があり、生還後の文章と一致。",
+        "processing": "format conversion and proportional downscale only",
+        "reviewedAt": "2026-10-30"
+      }
+    },
+    {
+      "id": "evidence",
+      "output": "dist/assets/photos/mountain-v4-1.webp",
+      "purpose": "古写真。手前の森と奥の白い頭を読み分けられる資料。",
+      "prompt": "Create an old documentary photograph for a Japanese mountain horror game's collectible evidence. A quiet cedar woodland setting, aged desaturated green-gray amateur film appearance, concealed tiny pale bald head and one shoulder behind a broad trunk in the right third, and a barely visible rusty curved agricultural sickle on the other side of that trunk. The head must remain tiny, under three percent of image height, with its face hidden. Improve readable natural separation between foreground bark, midground branches and distant mist, maintain ominous ambiguity, slightly faded old color print with very fine grain, no excessive blur or digital artifacts. No full body, no extra figure, no visible face or eye, no gore, no writing or border or watermark. Landscape 4:3.",
+      "importSource": {
+        "kind": "edited-builtin",
+        "engine": "image_gen",
+        "operation": "image edit",
+        "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-d1f08650-4358-4e83-a15d-dbf626692210.png",
+        "sourceSha256": "be70ae0265f9fbcbb9380e7dc3e4db31e98ee8f145170e540819b70fc1660179",
+        "model": "not reported by tool",
+        "seed": "not reported by tool",
+        "referenceFile": "dist/assets/mountain-photo.webp",
+        "referenceSha256": "58f7ab12fdb506703334ef98a7d24f8b5f83670c2e21d954bfe6a5ee4dc0d080"
+      },
+      "promptStatus": "Production brief only; exact image_gen invocation prompt was not archived. Local ComfyUI recipe is stored separately and was not used for these outputs.",
+      "qa": {
+        "visualReview": "accepted",
+        "content": "右側の太い幹の背後に小さな白い頭、幹の反対側に鎌状の細い曲線がある。顔や目は見えず、古写真の本文に一致。前景の幹・中景の枝・奥の霧の分離を確認。",
+        "processing": "format conversion and proportional downscale only",
+        "reviewedAt": "2026-10-30"
+      }
+    }
+  ]
+}

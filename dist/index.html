@@ -66,6 +66,12 @@
         <div class="hud-top-left">
           <p id="chapter-label" class="hud-chapter">一 / 二階の備品</p>
           <p id="objective" class="hud-objective">二階のベランダにある望遠鏡を調べる</p>
+          <button id="search-card" class="search-card" type="button" data-action="search-help" aria-label="今探す物の見本と場所を確認">
+            <img id="search-thumb" width="64" height="48" alt="" hidden>
+            <span class="search-card-copy"><span id="search-location"></span><span id="search-phase"></span></span>
+            <span id="search-open-label" class="search-open">詳しく</span>
+          </button>
+          <p id="search-idle-hint" class="search-idle-hint" hidden></p>
         </div>
         <div class="hud-top-right">
           <div class="dv-recorder" aria-label="DV録画時間"><span class="dv-format">DV</span><span class="rec-mark">REC</span><time id="tape-clock">00:00:00</time></div>
@@ -144,7 +150,7 @@
         </button>
       </div>
 
-      <div class="desktop-controls-hint"><kbd>W A S D</kbd> 移動 <span>／</span> <kbd>Shift</kbd> 走る <span>／</span> <kbd>Space</kbd> 目を閉じる <span>／</span> <kbd>Esc</kbd> 休む</div>
+      <div class="desktop-controls-hint"><kbd>W A S D</kbd> 移動 <span>／</span> <kbd>Shift</kbd> 走る <span>／</span> <kbd>Space</kbd> 目を閉じる <span>／</span> <kbd>H</kbd> 探す物 <span>／</span> <kbd>Esc</kbd> 休む</div>
     </section>
 
     <div id="mobile-controls" aria-label="タッチ操作">

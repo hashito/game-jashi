@@ -49,8 +49,11 @@ export class Soundscape {
     this._nextCreatureBreath = 2;
     this._nextTimber = 9;
     this._radio = { active: false, signal: 0, staticLevel: 1 };
+    this._guideBuffers = new Map();
+    this._guideToken = 0;
+    this._guideVoice = null;
     this._lastRadioUpdate = -1;
-    this._onVisibility = () => this._syncMaster();
+    this._onVisibility = () => { if(this._hidden())this.stopGuideVoice();this._syncMaster(); };
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', this._onVisibility);
     }
@@ -63,6 +66,36 @@ export class Soundscape {
     this._starting = this._start();
     try { return await this._starting; }
     finally { this._starting = null; }
+  }
+
+  get guidePlaying(){ return !!this._guideVoice; }
+  stopGuideVoice(){
+    this._guideToken++;
+    const voice=this._guideVoice;this._guideVoice=null;
+    if(voice){voice.source.onended=null;try{voice.source.stop();}catch{}for(const node of voice.nodes)node.disconnect();}
+  }
+  async playGuideVoice(url,onEnded){
+    this.stopGuideVoice();const token=this._guideToken;
+    if(this.muted||this.volume===0||this._hidden())return 'muted';
+    if(!await this.start())return 'error';
+    try{
+      let buffer=this._guideBuffers.get(url);
+      if(!buffer){
+        const response=await fetch(url,{signal:AbortSignal.timeout(10000)});
+        if(!response.ok)throw new Error('voice unavailable');
+        buffer=await this.context.decodeAudioData(await response.arrayBuffer());
+        this._guideBuffers.set(url,buffer);
+      }
+      if(token!==this._guideToken||this._disposed||this.muted||this._hidden())return 'cancelled';
+      const source=this.context.createBufferSource();source.buffer=buffer;
+      const high=this.context.createBiquadFilter();high.type='highpass';high.frequency.value=230;
+      const low=this.context.createBiquadFilter();low.type='lowpass';low.frequency.value=3700;
+      const gain=this.context.createGain();gain.gain.value=.85;
+      source.connect(high);high.connect(low);low.connect(gain);gain.connect(this._compressor);
+      const voice={source,nodes:[source,high,low,gain]};this._guideVoice=voice;
+      source.onended=()=>{for(const node of voice.nodes)node.disconnect();if(this._guideVoice===voice){this._guideVoice=null;onEnded?.();}};
+      source.start();return 'playing';
+    }catch{return token===this._guideToken?'error':'cancelled';}
   }
 
   async _start() {
@@ -162,6 +195,7 @@ export class Soundscape {
 
   setMuted(value) {
     this.muted = Boolean(value);
+    if(this.muted)this.stopGuideVoice();
     this._syncMaster();
   }
 
@@ -371,13 +405,34 @@ export class Soundscape {
       const cooldowns = { phone: 2.6, whisper: 1.8, radio: 0.65, tape: 1.3,
         knock: 1.7, bell: 1.8, windup: 0.5, attack: 0.55, hit: 0.45,
         stun: 1.2, hunt: 3, gate: 2, engine: 3, breath: 0.9,
-        bellNeeded: 1.8, shutterOpen: .75, shutterClose: .75, radioTune: .08, radioLock: .6 };
+        bellNeeded: 1.8, shutterOpen: .75, shutterClose: .75, radioTune: .08, radioLock: .6,
+        objective:1.5,found:8,keyPickup:.6,bottlePickup:.6,crankPickup:.6 };
       this._cooldowns.set(name, now + (cooldowns[name] || 0.12));
       const creatureCue = ['windup', 'attack', 'stun', 'whisper'].includes(name);
       const source = position || (creatureCue ? this._monster : name === 'bell' || name === 'bellNeeded' ? { x: -12.7, z: -6, level: 0 } : null);
       this._cueSpatial = source ? audioSpatial(this._listener, source,
         { occluded: creatureCue && this._occluded, range: name === 'bell' || name === 'bellNeeded' ? 80 : 34 }) : null;
       switch (name) {
+        case 'objective':
+          this._noise({duration:.045,gain:.018,frequency:1400,type:'bandpass'});
+          this._tone({frequency:620,endFrequency:740,duration:.12,gain:.01,delay:.06});
+          break;
+        case 'found':
+          // One gentle camera-focus click per objective; never a repeating radar.
+          this._tone({frequency:880,duration:.055,gain:.008});
+          this._tone({frequency:1174,duration:.06,gain:.006,delay:.08});
+          break;
+        case 'keyPickup':
+          [0,.045,.11].forEach((delay,i)=>this._tone({frequency:[1720,2360,1940][i],endFrequency:1100,duration:.12,gain:.018,delay}));
+          this._noise({duration:.12,gain:.026,frequency:2400,type:'highpass'});
+          break;
+        case 'bottlePickup':
+          [0,.14].forEach(delay=>{this._tone({frequency:285,endFrequency:140,duration:.16,gain:.025,delay});this._noise({duration:.12,gain:.025,frequency:620,endFrequency:280,delay});});
+          break;
+        case 'crankPickup':
+          this._tone({frequency:390,endFrequency:140,duration:.32,gain:.026,type:'triangle'});
+          this._noise({duration:.17,gain:.031,frequency:1250,endFrequency:450,type:'bandpass',delay:.02});
+          break;
         case 'interact':
           this._noise({ duration: 0.075, gain: 0.055, frequency: 650 });
           break;
@@ -633,6 +688,7 @@ export class Soundscape {
   }
 
   dispose() {
+    this.stopGuideVoice();
     this._disposed = true;
     this._ready = false;
     if (typeof document !== 'undefined') {

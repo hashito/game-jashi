@@ -1,0 +1,39 @@
+name: Game verification
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BROWSER: /usr/bin/google-chrome
+      GF_SOFTWARE_GL: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: npm run check
+      - run: npm run media:plan
+      - run: npm run assets:release
+      - run: npm run build
+      - name: Japanese fonts for readable screenshots
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+      - name: Desktop and mobile controls, photos, voice and escape
+        run: npm run smoke
+      - name: Render and measure audio cues
+        run: node tools/check-audio-render.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game-verification
+          path: shots/
+          if-no-files-found: ignore

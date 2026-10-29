@@ -1,0 +1,36 @@
+{
+  "kind": "image",
+  "engine": "image_gen",
+  "source": {
+    "kind": "generated-builtin",
+    "engine": "image_gen",
+    "operation": "image generation",
+    "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-df09d62a-16ae-423a-ab94-4314e6fae777.png",
+    "sourceSha256": "4a397f520c6550ac91d40b74add2ce74092b20e759914529b5a7b5da20ddc05b",
+    "model": "not reported by tool",
+    "seed": "not reported by tool"
+  },
+  "brief": "Photorealistic 16:9 quiet Japanese folk-horror aftermath photograph, view from the passenger seat of an old compact car stopped at the side of an empty narrow paved mountain road just before dawn. Dashboard and a worn small silver DV camcorder occupy only the lower foreground. The windshield frames a road descending out of dense cedar woods toward the faint first gray-blue light in the valley. No people, no visible monster, no accident, no lettering or screen text, no logos or watermarks. A subdued ordinary location, sense of exhausted relief with lingering unease, plausible documentary photo, fine film grain, dark forest behind fading into mist, details readable without artificial neon or heavy blur. Landscape 16:9.",
+  "promptStatus": "Production brief only; exact image_gen invocation prompt was not archived. Local ComfyUI recipe is stored separately and was not used for these outputs.",
+  "width": 1400,
+  "height": 788,
+  "sourceWidth": 1672,
+  "sourceHeight": 941,
+  "meanLuminance": 49.59,
+  "luminanceStdDev": 50.69,
+  "darkFractionBelow16": 0.2379,
+  "qa": {
+    "visualReview": "accepted",
+    "content": "夜明けの谷へ下る舗装路とダッシュボードのDVカメラを識別できる。森林は暗いが路面・ガードレール・カメラに輪郭があり、生還後の文章と一致。",
+    "processing": "format conversion and proportional downscale only",
+    "reviewedAt": "2026-10-30"
+  },
+  "sourceSha256": "4a397f520c6550ac91d40b74add2ce74092b20e759914529b5a7b5da20ddc05b",
+  "purpose": "生還後。山を下りたことを写真で伝える。",
+  "processing": "RGB WebP quality88 and fit within 1400x1050 only; no crop, content edits, or compositing.",
+  "credit": "AI-generated scene photograph; source method explicitly recorded; not a real-event photograph.",
+  "file": "dist/assets/photos/return-v4-1.webp",
+  "generatedAt": "2026-10-29T22:51:33.064410+00:00",
+  "sha256": "5685cde2a116e53b3edae8bdf6bad6091fa22f9a599249ba71fc6256827839c5",
+  "bytes": 151034
+}

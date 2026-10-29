@@ -9,6 +9,7 @@ import { createEnemyState, stepEnemy, relocateEnemy } from './enemy.js';
 import { createStoryState, advanceStory, getStoryDocument, canCompleteStoryChain, markStoryRead } from './story.js';
 import { speakerProfile, dialogueDuration, createDialogueView, speechKind, tagSpeech, pruneSpeechQueue, enqueueSpeechLines, speechDuration } from './dialogue.js';
 import { RADIO, createMechanisms, adjustDial, radioSignal, advanceTuning, ringBell, createShelterState, updateShelter, shelterLeash } from './gimmicks.js';
+import { objectiveFor, SearchGuidance } from './guidance.js';
 
 const $=id=>document.getElementById(id), SAVE_KEY='jashi-mountain-checkpoint-v4', LEGACY_SAVE_KEY='jashi-mountain-checkpoint-v3', OPTIONS_KEY='jashi-mountain-options-v1', END_KEY='jashi-mountain-endings-v2';
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
@@ -37,6 +38,7 @@ let story=createStoryState(),scope=null,noiseEvent=null,noiseSerial=0,mapFloor='
 // v4.0.2: single-door shelter timer, one-time hints (drag to look, T to hold).
 const HOLD_HINT_KEY='jashi-mountain-hold-hint-v1';
 let shelter=createShelterState(),dragHints=0,lastDragHint=-999,holdHintShown=!!read(HOLD_HINT_KEY,false);
+let searchGuidance=new SearchGuidance(),lastObjectiveId=null;
 const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false,leashUntil:0});
 const textHTML=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
 const paragraphs=arr=>(arr||[]).map(t=>`<p>${textHTML(t)}</p>`).join('');
@@ -158,6 +160,7 @@ function toggleDialogueHold(){
 }
 function freezeInput(){keys={};autoWalk=false;joystick={x:0,y:0};touchEyes=false;touchRun=false;drag=null;$('joystick-knob').style.transform='translate(0,0)';}
 function panel(kind,eyebrow,title,body,actions,closable=true){
+  sound.stopGuideVoice?.();
   if(kind!=='radio')radioActive=false;hideAttackWarning();
   if(mode!=='panel')previousMode=mode;mode='panel';panelKind=kind;freezeInput();document.exitPointerLock?.();
   $('panel-eyebrow').textContent=eyebrow;$('panel-title').textContent=title;$('panel-body').innerHTML=body;$('panel-actions').innerHTML=actions;
@@ -168,6 +171,7 @@ function panel(kind,eyebrow,title,body,actions,closable=true){
 function dragHint(){if(dragHints>=2||time-lastDragHint<60)return;dragHints++;lastDragHint=time;toast('画面をドラッグして見回せます',2200);}
 function lockPointer(){if(touch||mode!=='play'||dialoguePaused)return;if(!world.canvas.requestPointerLock){dragHint();return;}try{world.canvas.requestPointerLock()?.catch?.(dragHint);}catch{dragHint();}}
 function resume(){
+  sound.stopGuideVoice?.();
   radioActive=false;quietSound();
   if(panelKind==='intro'){beginPlay();return;}
   if(['ending','death'].includes(panelKind)||previousMode==='title'){title();return;}
@@ -177,6 +181,7 @@ function resume(){
   if(mode==='play')lockPointer();
 }
 function title(){
+  sound.stopGuideVoice?.();
   dialoguePaused=false;radioActive=false;dialogueView.hide();
   $('panel').hidden=true;$('subtitle').hidden=true;$('action-status').hidden=true;$('scope-sequence').hidden=true;
   scope=null;mode='title';started=false;document.body.dataset.screen='title';document.body.dataset.scene='explore';freezeInput();document.exitPointerLock?.();tape.clear();tape.canvas.hidden=true;
@@ -184,13 +189,14 @@ function title(){
   quietSound();$('continue-button').hidden=!validSave(loadSavedGame());
 }
 function newGame(){
+  searchGuidance=new SearchGuidance();lastObjectiveId=null;
   sound.start();flags=freshFlags();collected=new Set();completed=new Set();scares=new Set();stats={repels:0,escapes:0};survival=createSurvival();story=createStoryState();
   player={x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};yaw=SPAWN.yaw;pitch=-.02;enemy=createEnemyState(REVEAL_POINT);monster=enemy.position;time=0;charges=0;lamp=true;glassesOn=false;
   lastSave=0;lastPhone=0;ambientTime=12;action=null;checkpoint=null;speechQueue=[];activeSpeech=null;speechTime=0;conversation=[];throwTime=0;scope=null;noiseEvent=null;noiseSerial=0;mapFloor='auto';lastStoryAdvance=0;tape.clear();
   speechTotal=0;dialoguePaused=false;radioActive=false;mechanisms=createMechanisms();shelter=createShelterState();companionState='present';dialogueView.hide();
   $('scope-sequence').hidden=true;document.body.dataset.scene='explore';remove(SAVE_KEY);remove(LEGACY_SAVE_KEY);syncWorld();
   const instruction=touch?'左のスティックで移動。右側をなぞって見回します。':'W A S D で移動、マウスで見回し、E で調べます。';
-  panel('intro',INTRO.eyebrow,INTRO.title,'<div class="ending-copy">'+paragraphs(INTRO.paragraphs)+'</div><div class="intro-hint">'+instruction+'<br>二階の部屋から、ベランダへ。まず望遠鏡を確かめてください。</div>',button('begin','録画を始める'),false);previousMode='play';
+  panel('intro',INTRO.eyebrow,INTRO.title,'<figure class="scene-photo"><img src="assets/photos/arrival-v4-1.webp" alt="片付け前の別荘。開いた戸の先のベランダに望遠鏡がある" width="1400" height="788"><figcaption>到着した日の、二階の記録</figcaption></figure><div class="ending-copy">'+paragraphs(INTRO.paragraphs)+'</div><div class="intro-hint">'+instruction+'<br>まずは二階のベランダの望遠鏡へ。「詳しく」で探す物の見本を確認できます。</div>',button('begin','録画を始める'),false);previousMode='play';
 }
 function beginPlay(){
   started=true;mode='play';$('panel').hidden=true;document.body.dataset.screen='play';document.body.dataset.scene='explore';lockPointer();storyBeat('opening');saveCheckpoint();
@@ -202,18 +208,46 @@ function syncWorld(){
   updateInventory();updateRecordBadge();updateObjective();
 }
 function getObjective(){
-  if(!flags.seen)return {chapter:'一 / 二階の備品',text:'二階のベランダにある望遠鏡を調べる',id:'telescope'};
-  if(!flags.downstairs)return {chapter:'二 / 窓の向こう',text:'窓から離れ、部屋の南西の階段を下りる',id:'stairs',target:STAIRS.top};
-  if(flags.gate)return {chapter:'七 / 最後の数秒',text:'車のエンジンをかけ、山を下りる',id:'car'};
-  if(!flags.radioTuned)return {chapter:'三 / 途切れる声',text:'一階の机にある無線機を調整し、修司の声を聞く',id:'radio'};
-  if(!flags.glasses)return {chapter:'三 / 一階の机',text:'一階の東側の机でサングラスと鍵束を取る',id:'glasses'};
-  if(flags.crank&&story.stage>=5)return {chapter:'六 / 戻る道',text:'足音を避け、駐車場のゲートへ戻る',id:'gate'};
-  if(!flags.note)return {chapter:'四 / 残されたメモ',text:'一階の机にある書き置きを読む',id:'note'};
-  if(!flags.bottle)return {chapter:'四 / 西の物置',text:'西の物置にある、持ち出し用の箱を探す',id:'bottle'};
-  if(!flags.crank)return {chapter:'五 / 山道の記録',text:'東の避難小屋で、ゲートのハンドルを探す',id:'crank'};
-  return {chapter:'五 / 無線の続き',text:'一度立ち止まり、修司の無線を聞く',id:'gate'};
+  return objectiveFor(flags,story.stage);
 }
-function updateObjective(){const o=getObjective();$('chapter-label').textContent=o.chapter;$('objective').textContent=o.text;}
+function updateObjective(){
+  const o=getObjective();$('chapter-label').textContent=o.chapter;$('objective').textContent=o.title;
+  $('search-open-label').textContent=touch?'詳しく':'Hで詳しく';
+  $('search-location').textContent=o.location;$('search-thumb').hidden=!o.image;
+  if(o.image)$('search-thumb').src=o.image;
+  if(lastObjectiveId!==o.id){
+    if(lastObjectiveId&&mode==='play')cue('objective');
+    sound.stopGuideVoice?.();lastObjectiveId=o.id;guide.at=-99;
+    $('search-phase').textContent=o.action;$('search-idle-hint').hidden=true;
+  }
+}
+function updateSearchGuidance(closed=false){
+  const o=getObjective(),t=o.target,near=t?actorDistance(player,t):Infinity;
+  const danger=survival.phase==='windup'||survival.phase==='strike'||enemy.mode==='hunt'&&distance(player,monster)<13;
+  const v=searchGuidance.update(o,{level:player.level,distance:near,blocked:t?world.isBlocked(player,t):true,targetId:currentTarget?.id,closed,touch},time,{danger});
+  $('search-card').dataset.phase=action?'working':v.phase;
+  $('search-phase').textContent=action?`${action.type==='gate'?'巻き上げ中':'始動中'}。その場を離れず待ってください`:v.label;
+  $('search-idle-hint').textContent=v.hint;$('search-idle-hint').hidden=!!action||!v.hint;
+  if(v.cue&&!action)cue('found');
+  world.searchTarget=v.near?o.id:null;
+}
+function searchDetails(){
+  const o=getObjective();return `<section class="search-detail">${o.image?`<figure><img src="${o.image}" alt="${textHTML(o.title)}のゲーム内の見本" width="320" height="240"><figcaption>ゲーム内の物と同じ形です</figcaption></figure>`:''}<div><p class="search-kicker">いま探すもの</p><h3>${textHTML(o.title)}</h3><dl><dt>場所</dt><dd>${textHTML(o.location)}</dd><dt>見た目</dt><dd>${textHTML(o.appearance)}</dd><dt>目的</dt><dd>${textHTML(o.purpose)}</dd><dt>操作</dt><dd>${textHTML(o.action)}${['stairs','listen'].includes(o.id)?'':touch?'。「調べる」をタップします。':'。近づいてEを押します。'}</dd></dl><p class="search-tip">${textHTML(o.hint)}</p></div></section>`;
+}
+function searchHelp(){
+  const o=getObjective();panel('search-help','探し物の見本と手順','次にすること',searchDetails()+`<p id="guide-voice-status" class="small-note" role="status">説明を読む間は、ゲームが止まります。</p>`,(o.voice?button('guide-voice','修司の案内を聞く',true):'')+button('journal','地図で場所を見る',true)+button('close-panel','探索へ戻る'));
+}
+async function playSearchVoice(){
+  if(mode!=='panel'||panelKind!=='search-help')return;
+  const o=getObjective(),status=$('guide-voice-status');if(!o.voice)return;
+  const request=Symbol('guide-voice');status.voiceRequest=request;
+  const current=()=>mode==='panel'&&panelKind==='search-help'&&getObjective().id===o.id&&$('guide-voice-status')===status&&status.voiceRequest===request;
+  if(sound.guidePlaying){sound.stopGuideVoice();status.textContent='案内の音声を止めました。';return;}
+  status.textContent='案内を準備しています…';
+  const result=await sound.playGuideVoice?.(o.voice,()=>{if(current())status.textContent='案内が終わりました。もう一度聞くこともできます。';});
+  if(!current())return;
+  status.textContent=result==='playing'?'修司の案内を再生中。もう一度押すと止まります。':result==='muted'?'音が切になっています。設定で音を入れると聞けます。':result==='cancelled'?'案内の再生を取り消しました。':'音声を読み込めませんでした。見本と文章で手順を確認できます。';
+}
 function updateInventory(){
   $('inventory-lamp').classList.toggle('equipped',lamp);$('inventory-glasses').classList.toggle('unavailable',!flags.glasses);$('inventory-glasses').classList.toggle('equipped',glassesOn);
   $('inventory-bottle').classList.toggle('unavailable',charges<1);$('inventory-bottle').classList.toggle('active',charges>0);
@@ -229,6 +263,7 @@ function saveCheckpoint(){
 }
 function restore(s){
   if(!validSave(s)){toast('再開できる記録がありません');return;}
+  searchGuidance=new SearchGuidance();lastObjectiveId=null;
   sound.start();flags={...freshFlags(),...s.flags};collected=new Set(s.collected||[]);completed=new Set(s.completed||[]);scares=new Set(s.scares||[]);stats={repels:0,escapes:0,...s.stats};
   if(s.v===3&&s.story.stage>=3)flags.radioTuned=true;
   mechanisms=createMechanisms(s.mechanisms);companionState=flags.seen?'away':'present';radioActive=false;dialoguePaused=false;
@@ -337,7 +372,9 @@ function findTarget(){
     // The shutter handle is reachable from either side of its own closed leaf.
     // Height is checked above, so this exception cannot reach through a floor.
     if(d>.85&&dot<.28||item.id!=='shutter'&&world.isBlocked(player,item))continue;
-    const value=d+(1-dot)*1.4;if(value<score){best=item;score=value;}
+    // Keep the actual usable range/occlusion; gently prefer the sought item
+    // when two neighbouring objects are both under the player's view.
+    const value=d+(1-dot)*1.4-(item.id===getObjective().id ? .3 : 0);if(value<score){best=item;score=value;}
   }return best;
 }
 
@@ -373,10 +410,10 @@ function interact(){
     saveCheckpoint();return;
   }
   if(id==='glasses'){
-    flags.glasses=true;flags.key=true;collected.add(id);glassesOn=true;world.setItemCollected(id,true);cue('collect');updateInventory();storyBeat('glasses');saveCheckpoint();return;
+    flags.glasses=true;flags.key=true;collected.add(id);glassesOn=true;world.setItemCollected(id,true);cue('keyPickup');updateInventory();storyBeat('glasses');saveCheckpoint();toast('サングラスをかけた。車とゲートの鍵も持った。',4200);return;
   }
   if(id==='bottle'||id==='crank'){
-    flags[id]=true;if(id==='bottle')charges=2;world.setItemCollected(id,true);cue('collect');updateInventory();readObject(id);return;
+    flags[id]=true;if(id==='bottle')charges=2;world.setItemCollected(id,true);cue(id==='bottle'?'bottlePickup':'crankPickup');updateInventory();readObject(id);return;
   }
   if(id==='note'||id==='photo'||LORE[id]){readObject(id);return;}
   if(id==='phone'){
@@ -442,7 +479,7 @@ function deathPanel(){
 function endGame(){
   if(survival.dead||survival.health<=0||!flags.gate)return;const id=endingFor(flags,completed.size),e=ENDINGS[id],saved=read(END_KEY,[]),ends=Array.isArray(saved)?saved:[];
   if(!ends.includes(id))ends.push(id);write(END_KEY,ends);remove(SAVE_KEY);remove(LEGACY_SAVE_KEY);checkpoint=null;$('continue-button').hidden=true;cue('ending');tape.clear();
-  panel('ending',e.eyebrow,e.title,`<div class="ending-copy">${paragraphs(endingParagraphs(id,flags))}</div><div class="ending-stats"><span>生還 ${Math.floor(time/60)}分${Math.floor(time%60)}秒</span><span>小物 ${Object.keys(LORE).filter(id=>collected.has(id)).length}/7</span><span>つながった記録 ${completed.size}/3</span><span>結末 ${ends.length}/3</span></div>`,button('restart','別の記録をたどる')+button('credits','原話について',true)+button('title','タイトルへ',true),false);previousMode='title';
+  panel('ending',e.eyebrow,e.title,`<figure class="scene-photo"><img src="assets/photos/return-v4-1.webp" alt="夜明けの谷へ下る林道。車のダッシュボードに残ったDVカメラ" width="1400" height="788"><figcaption>山を下りてから残した、最後の一枚</figcaption></figure><div class="ending-copy">${paragraphs(endingParagraphs(id,flags))}</div><div class="ending-stats"><span>生還 ${Math.floor(time/60)}分${Math.floor(time%60)}秒</span><span>小物 ${Object.keys(LORE).filter(id=>collected.has(id)).length}/7</span><span>つながった記録 ${completed.size}/3</span><span>結末 ${ends.length}/3</span></div>`,button('restart','別の記録をたどる')+button('credits','原話について',true)+button('title','タイトルへ',true),false);previousMode='title';
 }
 function mapHTML(){
   const floor=mapFloor==='auto'?player.level:Number(mapFloor),up=floor===1;
@@ -473,7 +510,11 @@ function mapHTML(){
     if(flags.phoneHint&&!flags.phone){const p=LANDMARKS.phone;plan+=`<circle cx="${x(p.x)}" cy="${z(p.z)}" r="8" fill="none" stroke="#c9a08e" stroke-width="1.2" stroke-dasharray="2 3"/><text x="${x(p.x)+11}" y="${z(p.z)+3}" fill="#c9a08e" font-size="9">着信音？</text>`;}
   }
   plan+=LORE_PLACEMENTS.filter(p=>(p.level||0)===floor&&collected.has(p.id)).map(p=>`<circle cx="${x(p.x)}" cy="${z(p.z)}" r="2.3" fill="#8aab9a"/>`).join('');
-  if(target&&(target.level||0)===floor)plan+=marker(target,9,'#d8be77');
+  if(target&&(target.level||0)===floor){
+    const o=getObjective(),label=(o.target?.level||0)!==floor?'目的地へ向かう階段':o.title;
+    const width=Math.min(350,label.length*11+14),left=clamp(x(target.x)-width/2,8,382-width),top=clamp(z(target.z)-34,25,335);
+    plan+=marker(target,9,'#f4d68f')+`<rect x="${left}" y="${top}" width="${width}" height="21" rx="2" fill="#14211e" stroke="#f4d68f" stroke-width=".6"/><text x="${left+width/2}" y="${top+14}" text-anchor="middle" fill="#f4d68f" font-size="11">${textHTML(label)}</text>`;
+  }
   if(player.level===floor)plan+=`<g transform="translate(${x(player.x)} ${z(player.z)}) rotate(${-yaw*180/Math.PI})"><circle r="8" fill="#131e17"/><path d="M0,-7 5,5 0,2 -5,5Z" fill="#f0cf8a"/></g>`;
   const tabs=`<nav class="map-level-tabs" aria-label="地図の階">${[['auto','現在の階'],['1','二階'],['0','一階・山道']].map(([id,label])=>`<button data-action="map-${id}" type="button" class="${mapFloor===id?'selected':''}">${label}</button>`).join('')}</nav>`;
   return tabs+`<svg class="trail-map exact-map" viewBox="0 0 390 390" role="img" aria-label="${up?'二階とベランダ、階段':'一階と山道'}の地図"><rect width="390" height="390" fill="#1c2721"/>${plan}<text x="20" y="17" fill="#aab4a1" font-size="10">N ↑　${up?'二階 ／ 階段は南西側':'一階・山道 ／ 1目盛＝10m'}</text><text x="20" y="378" fill="#aab4a1" font-size="9">△ 現在位置　○ 次の行き先　● 調べた記録</text></svg>`;
@@ -481,7 +522,10 @@ function mapHTML(){
 
 function journal(tab='map'){
   let body='';const navigation=`<nav class="journal-tabs">${button('journal','地図')}${button('journal-records','小物の記録',true)}${button('journal-dialogue','無線・会話',true)}</nav>`;
-  if(tab==='map')body=`<p>${getObjective().text}</p>${mapHTML()}<p class="small-note">建物・入口・階段は実際の配置と対応しています。階の違う目的地へ向かうときは、階段を表示します。</p>`;
+  if(tab==='map'){
+    const o=getObjective();
+    body=`<button type="button" class="map-search" data-action="search-help">${o.image?`<img src="${o.image}" alt="" width="64" height="48">`:''}<span><strong>${textHTML(o.title)}</strong><small>${textHTML(o.location)}</small></span><span class="search-open">詳しく</span></button>${mapHTML()}<p class="small-note">黄色の丸は今の行き先です。階の違う目的地へ向かうときは、階段を表示します。小物の記録と携帯電話は任意です。</p>`;
+  }
   else if(tab==='dialogue')body=`<div class="radio-log">${conversation.length?conversation.map(l=>`<article><small>${Math.floor(l.time/60)}:${String(l.time%60).padStart(2,'0')} / ${textHTML(speakerProfile(l).name)} · ${textHTML(speakerProfile(l).channel)} · ${textHTML(speakerProfile(l).location)}</small><p>${textHTML(l.text)}</p></article>`).join(''):'<p>まだ会話の記録がありません。</p>'}</div>`;
   else{
     const chains=Object.entries(CHAINS).filter(([,c])=>c.ids.some(k=>collected.has(k)));
@@ -491,10 +535,10 @@ function journal(tab='map'){
   panel('journal','DV記録 ／ 拾得物と会話','帰る道を、確かめる。',navigation+body,button('close-panel',mode==='scope'||mode==='panel'&&previousMode==='scope'?'望遠鏡へ戻る':'探索へ戻る'));
 }
 
-function help(){panel('help','操作と記録','山での、身の置き方。',`<div class="control-grid"><kbd>W A S D</kbd><span>移動。階段も歩いて上り下り</span><kbd>マウス</kbd><span>見回す。固定されない場合は画面をドラッグ</span><kbd>E</kbd><span>調べる／道具や車を操作する</span><kbd>Shift</kbd><span>走る。息が切れる前に休む</span><kbd>Z</kbd><span>自動歩行の開始・停止</span><kbd>C / Space</kbd><span>押している間、目を閉じて静かに歩く</span><kbd>F / Q</kbd><span>懐中電灯／サングラス</span><kbd>R</kbd><span>持っているボトルを使う</span><kbd>J / M</kbd><span>階別の地図・小物・会話の記録</span><kbd>Enter</kbd><span>会話の次の発言へ</span><kbd>T</kbd><span>会話を読む間、ゲームごと停止／再開</span><kbd>Esc / P</kbd><span>一時停止。望遠鏡の場面も停止できます</span></div><details class="document-card" ${flags.seen?'open':''}><summary>生存のヒント（先の内容を含みます）</summary><h3>見つかる理由</h3><p>怪異は、視線と音を頼りに動きます。木や壁で姿を隠し、その先で足音を抑えると、最後に見失った場所を探し始めます。走る音と金属音は遠くまで届きます。</p><h3>足元を照らすと</h3><p>怪異は、顔を下げて視線を追ってきます。目を閉じても身体は守れません。近づかれる前に離れてください。</p><h3>鎌が上がったら</h3><p>肩と鎌が上がる間に、横や後ろへ抜けて距離を取ります。振り始めた向きは変わりません。背後からは振り下ろしません。3回まともに受けると死亡します。ボトルは8.5m以内に届き、約6秒だけひるませます。</p><h3>身を隠す道具</h3><p>二階の雨戸は実際に視線と通行を遮ります。西の呼び鐘を鳴らしたら材木の陰へ抜けてください。怪異に見えている間は追跡されますが、姿を隠すと残っている響きを調べに向かいます。鐘の余韻が消えた後は、最後に見た場所を探します。</p><h3>帰るまで</h3><p>サングラスは視線の影響を軽くするだけです。鍵とハンドルでゲートを開け、車のエンジンがかかるまで生き残ってください。操作中の移動や被弾で中断します。</p></details><p class="small-note">スマホ：左スティックで移動、右画面をドラッグして見回し、ボタンで操作。記録と設定を開くと一時停止します。映像の乱れと画面揺れは設定で調整できます。</p>`,button('close-panel','戻る'));}
+function help(){panel('help','操作と記録','山での、身の置き方。',`<div class="control-grid"><kbd>W A S D</kbd><span>移動。階段も歩いて上り下り</span><kbd>マウス</kbd><span>見回す。固定されない場合は画面をドラッグ</span><kbd>E</kbd><span>調べる／道具や車を操作する</span><kbd>Shift</kbd><span>走る。息が切れる前に休む</span><kbd>Z</kbd><span>自動歩行の開始・停止</span><kbd>C / Space</kbd><span>押している間、目を閉じて静かに歩く</span><kbd>F / Q</kbd><span>懐中電灯／サングラス</span><kbd>R</kbd><span>持っているボトルを使う</span><kbd>H</kbd><span>探す物の見本と音声案内（ゲームは停止）</span><kbd>J / M</kbd><span>階別の地図・小物・会話の記録</span><kbd>Enter</kbd><span>会話の次の発言へ</span><kbd>T</kbd><span>会話を読む間、ゲームごと停止／再開</span><kbd>Esc / P</kbd><span>一時停止。望遠鏡の場面も停止できます</span></div><details class="document-card" ${flags.seen?'open':''}><summary>生存のヒント（先の内容を含みます）</summary><h3>見つかる理由</h3><p>怪異は、視線と音を頼りに動きます。木や壁で姿を隠し、その先で足音を抑えると、最後に見失った場所を探し始めます。走る音と金属音は遠くまで届きます。</p><h3>足元を照らすと</h3><p>怪異は、顔を下げて視線を追ってきます。目を閉じても身体は守れません。近づかれる前に離れてください。</p><h3>鎌が上がったら</h3><p>肩と鎌が上がる間に、横や後ろへ抜けて距離を取ります。振り始めた向きは変わりません。背後からは振り下ろしません。3回まともに受けると死亡します。ボトルは8.5m以内に届き、約6秒だけひるませます。</p><h3>身を隠す道具</h3><p>二階の雨戸は実際に視線と通行を遮ります。西の呼び鐘を鳴らしたら材木の陰へ抜けてください。怪異に見えている間は追跡されますが、姿を隠すと残っている響きを調べに向かいます。鐘の余韻が消えた後は、最後に見た場所を探します。</p><h3>帰るまで</h3><p>サングラスは視線の影響を軽くするだけです。鍵とハンドルでゲートを開け、車のエンジンがかかるまで生き残ってください。操作中の移動や被弾で中断します。</p></details><p class="small-note">スマホ：左スティックで移動、右画面をドラッグして見回し、ボタンで操作。記録と設定を開くと一時停止します。映像の乱れと画面揺れは設定で調整できます。</p>`,button('close-panel','戻る'));}
 
 function settings(){panel('settings','視界・音・操作','記録の調整',`${[['volume','音量',0,1,.05],['sensitivity','視点の速さ',.35,2,.05],['brightness','明るさ',.7,1.8,.05],['tape','ビデオの乱れ',0,1,.05]].map(([id,label,min,max,step])=>`<div class="range-row"><label for="setting-${id}">${label}</label><input id="setting-${id}" type="range" min="${min}" max="${max}" step="${step}" value="${options[id]}" data-setting="${id}"></div>`).join('')}<label class="settings-row"><span>歩行と被弾時の画面揺れ</span><input type="checkbox" data-setting="motion" ${options.motion?'checked':''}></label><label class="settings-row"><span>音を消す</span><input type="checkbox" data-setting="muted" ${options.muted?'checked':''}></label><label class="settings-row"><span>描画品質</span><select data-setting="quality"><option value="high" ${options.quality==='high'?'selected':''}>標準</option><option value="low" ${options.quality==='low'?'selected':''}>軽量</option></select></label><p class="small-note">ビデオの乱れを0にすると走査線とトラッキングの乱れを停止します。攻撃の合図と所持品の表示は残ります。</p>`,button('close-panel','戻る'));}
-function credits(){panel('credits','原話と翻案','投稿怪談「邪視」',`<div class="ending-copy"><p>匿名掲示板に投稿された怪談「邪視」の再録をもとにした翻案です。実在の事件として確認したものではありません。</p></div><div class="document-card"><h3>参照した要素</h3><p>原話では、一階へ水を飲みに行ってから自室へ戻り、望遠鏡をベランダに持ち出します。本作ではその部屋を二階として構成しています。</p><p>望遠鏡越しの遭遇、白い無毛の姿、縦向きの一つ目と鎌、体を揺らす遅い接近と足元へ顔を下げる動き、視線の精神的作用、サングラスの軽減、不浄を嫌う性質、圏外で鳴る電話を参照しました。</p><h3>ゲームのために作った部分</h3><p>成人の主人公による片付けとDV撮影、修司との無線、管理人と作業者の話、小物の記録、地形とゲート、追跡・鎌攻撃・体力・道具の効果・死亡条件・3つの生還結末は本作の創作です。原話にある尿と成人の叔父の露出の場面は、一時的にひるませるボトルへ変更しています。</p><p>文章は新規に作成。画像と質感素材はAI生成です。</p><h3>参照した再録</h3><p>2008年1月17日投稿として伝わる「邪視」。初出スレッドの現物ではなく再録資料を確認しています。</p><p><a href="https://horror2ch.com/archives/2271232.html" target="_blank" rel="noopener noreferrer">洒落怖まとめ厳選「邪視」前半 ↗</a><br><a href="https://horror2ch.com/archives/2271232.html/2" target="_blank" rel="noopener noreferrer">同 後半 ↗</a></p></div><p class="small-note">3D：Three.js r164 / <a href="vendor/THREE-LICENSE.txt" target="_blank" rel="noopener">MIT License</a>。音：Web Audio。設定・進行はこのブラウザ内に保存します。</p>`,button('close-panel','戻る'));}
+function credits(){panel('credits','原話と翻案','投稿怪談「邪視」',`<div class="ending-copy"><p>匿名掲示板に投稿された怪談「邪視」の再録をもとにした翻案です。実在の事件として確認したものではありません。</p></div><div class="document-card"><h3>参照した要素</h3><p>原話では、一階へ水を飲みに行ってから自室へ戻り、望遠鏡をベランダに持ち出します。本作ではその部屋を二階として構成しています。</p><p>望遠鏡越しの遭遇、白い無毛の姿、縦向きの一つ目と鎌、体を揺らす遅い接近と足元へ顔を下げる動き、視線の精神的作用、サングラスの軽減、不浄を嫌う性質、圏外で鳴る電話を参照しました。</p><h3>ゲームのために作った部分</h3><p>成人の主人公による片付けとDV撮影、修司との無線、管理人と作業者の話、小物の記録、地形とゲート、追跡・鎌攻撃・体力・道具の効果・死亡条件・3つの生還結末は本作の創作です。原話にある尿と成人の叔父の露出の場面は、一時的にひるませるボトルへ変更しています。</p><p>文章は新規に作成。画像と質感素材はAI生成です。</p><h3>参照した再録</h3><p>2008年1月17日投稿として伝わる「邪視」。初出スレッドの現物ではなく再録資料を確認しています。</p><p><a href="https://horror2ch.com/archives/2271232.html" target="_blank" rel="noopener noreferrer">洒落怖まとめ厳選「邪視」前半 ↗</a><br><a href="https://horror2ch.com/archives/2271232.html/2" target="_blank" rel="noopener noreferrer">同 後半 ↗</a></p></div><p class="small-note">3D：Three.js r164 / <a href="vendor/THREE-LICENSE.txt" target="_blank" rel="noopener">MIT License</a>。環境音・効果音：Web Audio。案内音声：VOICEVOX:麒ヶ島宗麟（合成音声）。<a href="https://www.virvoxproject.com/voicevoxの利用規約" target="_blank" rel="noopener noreferrer">音声の利用規約</a>。設定・進行はこのブラウザ内に保存します。</p>`,button('close-panel','戻る'));}
 function pause(){if(mode!=='play'&&mode!=='scope')return;const scoped=mode==='scope';panel('pause','一時停止','山の音が、止まった。',`<p>${scoped?'望遠鏡の映像は、ここで止まっています。':'地図と記録を確かめてから、戻ってください。<br>直近の安全な記録から再開できます。'}</p>`,button('close-panel',scoped?'望遠鏡へ戻る':'探索を続ける')+(scoped?'':button('journal','地図・記録',true))+button('settings','設定',true)+button('help','操作方法',true)+button('title','タイトルへ',true));}
 
 function updateEnemyMotion(dt,moving=false,running=false,closed=false){
@@ -598,6 +642,9 @@ function stepGame(dt){
   }
   currentTarget=findTarget();$('interaction').hidden=!currentTarget||!!action||closed;
   if(currentTarget)$('interaction-text').textContent=currentTarget.id==='shutter'?(flags.shutterClosed?'雨戸を開ける':player.level===1&&player.z<BALCONY.maxZ-.1?'部屋に入り、雨戸を閉める':'雨戸を閉める'):currentTarget.id==='radio'&&flags.radioTuned?'同調済みの無線機':currentTarget.label;
+  if(currentTarget&&currentTarget.id===getObjective().id)$('interaction-text').textContent='探しているもの：'+getObjective().action;
+  else if(currentTarget&&(LORE[currentTarget.id]||['photo','phone'].includes(currentTarget.id)))$('interaction-text').textContent+='（任意の記録）';
+  updateSearchGuidance(closed);
   $('action-status').hidden=!action;
   if(action){$('action-label').textContent=action.type==='gate'?'ゲートを巻き上げている…':'エンジンを始動している…';$('action-bar').style.width=(action.elapsed/action.duration*100)+'%';}
   $('focus-value').textContent=Math.ceil(survival.sanity);$('focus-bar').style.width=survival.sanity+'%';
@@ -609,7 +656,8 @@ function stepGame(dt){
   $('hunt-banner').textContent=d<9?'足音が近い — 離れる':'足音が速くなる — 身を隠す';
   const route=currentGuide(),goalAngle=route?yawToward(player,route.point):yaw;
   let delta=goalAngle-yaw;while(delta>Math.PI)delta-=Math.PI*2;while(delta< -Math.PI)delta+=Math.PI*2;
-  $('compass-label').textContent=(Math.abs(delta)<.25?'↑':delta>0?'←':'→')+' '+(route?Math.round(route.length)+'m':'');
+  $('compass-label').textContent=route?(Math.abs(delta)<.25?'↑':delta>0?'←':'→')+' '+Math.round(route.length)+'m':'無線を確認';
+  $('compass-label').title=getObjective().location;
   const climbing=Math.abs(player.x-STAIRS.x)<STAIRS.width/2&&player.z>STAIRS.minZ+.2&&player.z<STAIRS.maxZ-.2;
   $('floor-label').textContent=climbing?'階段':player.level===1?'2F':'1F';
   $('tape-clock').textContent='00:'+String(Math.floor(time/60)).padStart(2,'0')+':'+String(Math.floor(time%60)).padStart(2,'0');
@@ -689,6 +737,8 @@ function dispatch(actionName){
   else if(actionName==='journal')journal('map');
   else if(actionName==='journal-records')journal('records');
   else if(actionName==='journal-dialogue')journal('dialogue');
+  else if(actionName==='search-help')searchHelp();
+  else if(actionName==='guide-voice')playSearchVoice();
   else if(actionName==='speech-next')nextSpeech();
   else if(actionName==='speech-hold')toggleDialogueHold();
   else if(actionName==='radio-minus')setRadioDial(mechanisms.dial-1);
@@ -714,6 +764,7 @@ document.addEventListener('keydown',event=>{
     event.preventDefault();if(event.repeat)return;if(mode==='play'||mode==='scope')pause();else if(mode==='panel'&&!['intro','telescope','death','ending'].includes(panelKind))resume();return;
   }
   if(mode!=='play'||event.target.matches('input,select,textarea'))return;
+  if(event.code==='KeyH'){event.preventDefault();if(!event.repeat)searchHelp();return;}
   if(event.code==='Enter'&&event.target.matches('button,a,[role="button"]'))return;
   if(event.code==='Enter'||event.code==='KeyT'){event.preventDefault();if(!event.repeat)event.code==='Enter'?nextSpeech():toggleDialogueHold();return;}
   if(dialoguePaused){if(event.code==='KeyJ'||event.code==='KeyM')journal();return;}

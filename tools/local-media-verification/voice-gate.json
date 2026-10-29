@@ -1,0 +1,9 @@
+{
+  "file": "dist/assets/audio/guide-gate.wav",
+  "sha256": "33465a2b5e7d290b107b31619cc7e5ef9b1e02fc9932db60ac329e4ca22d8338",
+  "status": "verified-existing",
+  "durationSeconds": 5.42,
+  "peakDbfs": -6.0,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-29T22:51:31.857684+00:00"
+}

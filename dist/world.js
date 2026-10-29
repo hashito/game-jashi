@@ -270,7 +270,7 @@ export class MountainWorld {
     const note=new THREE.Group();this.box(.42,.025,.32,mat('#d1c6a5'),0,0,0,note);for(let i=0;i<5;i++)this.box(.24-i*.012,.002,.005,mat('#6d695b'),-.025,.014,-.1+i*.035,note);this.makeItem('note','叔父の書き置き',LANDMARKS.note.x,LANDMARKS.note.z,note,.94);this.items.note.persistent=true;
     const bottle=new THREE.Group();this.mesh(new THREE.CylinderGeometry(.11,.14,.43,12),mat('#827b46',{transparent:true,opacity:.85}),0,.22,0,bottle);this.mesh(new THREE.CylinderGeometry(.06,.08,.12,10),mat('#6d7358'),0,.49,0,bottle);this.mesh(new THREE.CylinderGeometry(.065,.065,.05,10),mat('#bab392'),0,.565,0,bottle);const spare=bottle.clone();spare.position.set(.34,0,.07);bottle.add(spare);this.makeItem('bottle','蓋つきの容器 二本',LANDMARKS.bottle.x,LANDMARKS.bottle.z,bottle,.08);
     const photo=new THREE.Group();this.box(.42,.02,.34,mat('#ddd6bb'),0,0,0,photo);const photoPlane=this.mesh(new THREE.PlaneGeometry(.35,.23),mat('#6e7767'),0,.018,-.015,photo);photoPlane.rotation.x=-Math.PI/2;
-    (this.options.textureLoader||new THREE.TextureLoader()).load('./assets/mountain-photo.webp',t=>{t.colorSpace=THREE.SRGBColorSpace;photoPlane.material.map=t;photoPlane.material.needsUpdate=true;});
+    (this.options.textureLoader||new THREE.TextureLoader()).load('./assets/photos/mountain-v4-1.webp',t=>{t.colorSpace=THREE.SRGBColorSpace;photoPlane.material.map=t;photoPlane.material.needsUpdate=true;});
     this.box(1.1,.1,.75,wood,LANDMARKS.photo.x,terrainY(17,-15)+.85,LANDMARKS.photo.z);for(const xx of [-.4,.4])this.box(.07,.85,.07,iron,LANDMARKS.photo.x+xx,terrainY(17,-15)+.42,LANDMARKS.photo.z);this.obstacle(LANDMARKS.photo.x,LANDMARKS.photo.z,1.1,.75,.95,'photo-table');
     this.box(.49,.008,.36,mat('#aa9b78'),.015,-.017,.01,photo);this.makeItem('photo','古い写真の入った封筒',LANDMARKS.photo.x,LANDMARKS.photo.z,photo,.92);this.items.photo.persistent=true;
     const crank=new THREE.Group();this.box(.045,.4,.045,iron,0,.2,0,crank);this.box(.37,.045,.045,iron,.16,.4,0,crank);this.mesh(new THREE.CylinderGeometry(.045,.045,.18,8),mat('#8c3829'),.34,.4,.07,crank).rotation.x=Math.PI/2;this.makeItem('crank','赤い握りの巻上げハンドル',LANDMARKS.crank.x,LANDMARKS.crank.z,crank,.08);
@@ -515,7 +515,12 @@ export class MountainWorld {
     const forward=new THREE.Vector3(0,-.025,-1).applyQuaternion(this.camera.quaternion);this.flashlightTarget.position.copy(this.camera.position).addScaledVector(forward,12);
     this.flashlight.intensity=lamp&&!closing&&!scope?32:0;this.handlight.position.copy(this.camera.position);this.handlight.intensity=lamp&&!scope?.4:0;
     this.renderer.toneMappingExposure=brightness;
-    for(const item of Object.values(this.items)){if(item.marker.visible){item.marker.position.y=item.y+Math.sin(time*2)*.035;item.marker.rotation.y=time*.35;item.marker.material.opacity=(item.level===(pos.level??0)&&!scope?.6:0)*Math.max(.12,1-Math.hypot(item.x-pos.x,item.z-pos.z)/11);}}
+    for(const item of Object.values(this.items)){if(item.marker.visible){
+      const sought=item.id===this.searchTarget&&item.level===(pos.level??0)&&!closing&&!scope&&!this.isBlocked(pos,item);
+      item.marker.scale.setScalar(sought?2:1);item.marker.material.color.set(sought?'#ffe1a0':'#cbbd8e');
+      item.marker.position.y=item.y+(motion?Math.sin(time*2)*.035:0);item.marker.rotation.y=motion?time*.35:0;
+      item.marker.material.opacity=(item.level===(pos.level??0)&&!scope?(sought?.95:.5):0)*Math.max(.12,1-Math.hypot(item.x-pos.x,item.z-pos.z)/11);
+    }}
     const windowAge=time-(this._scares.window??-100),shelfAge=time-(this._scares.shelf??-100),bridgeAge=time-(this._scares.bridge??-100),phoneAge=time-(this._scares.phone??-100);
     this.windowFigure.visible=windowAge>=0&&windowAge<1.15;
     if(this.ribbonProp)this.ribbonProp.rotation.z=bridgeAge<3?Math.sin(bridgeAge*19)*Math.max(0,1-bridgeAge/3)*.45:Math.sin(time*.6)*.035;
