@@ -118,3 +118,46 @@ built-in image_genで各素材を別々に生成しました。Pillowによる�
 - ファイル：`dist/assets/items/<id>.png`（320 × 240、16点）と一覧 `dist/assets/items/manifest.json`
 - 対象：glasses, note, bottle, crank, photo, phone, radio, bell, telescope, boots, ledger, cassette, mirror, ribbon, toy, tag
 - 用途：記録画面の「DVで撮った」写真と、記録一覧の小さな見本。モデルを変えたら上のコマンドで撮り直す。
+
+## 4.1 ローカルの探索案内音声（2026-10-30）
+
+**音声: VOICEVOX:麒ヶ島宗麟**（ノーマル、speaker53、エンジン0.25.2）。D:/AIのVOICEVOXを、既存GPUサービスと分けたCPU2スレッド・localhost:50022で実行。新しい案内8本を標準の共有JSONキューから制作した。台詞は tools/local-media-voices.json、各ファイルの生成設定・SHA-256・音量測定は tools/local-media-records/voice-*.json。
+
+|ファイル（dist/assets/audio/）|尺（秒）|RMS（dBFS）|
+|---|---:|---:|
+|guide-bottle.wav|6.228|-23.61|
+|guide-car.wav|4.758|-22.95|
+|guide-crank.wav|5.332|-23.05|
+|guide-gate.wav|5.420|-23.01|
+|guide-glasses.wav|4.869|-23.07|
+|guide-note.wav|4.896|-22.96|
+|guide-radio.wav|5.973|-23.58|
+|guide-telescope.wav|4.638|-23.11|
+
+全8本が24kHz・モノラル・16bit、ピーク-6.00dBFS、クリップしたサンプル0。合計42.114秒。先頭120ms・末尾200msの余白を保って無音を整理し、6msの端フェードをかけ、音量差を揃えた。読み仮名は実際の合成クエリで確認した。数値検査は人による聞き取り品質の確認の代替ではない。
+
+[VirVox Project公式規約](https://www.virvoxproject.com/voicevoxの利用規約)を2026-10-30に確認。商用・非商用利用はクレジット付き。音声素材を再配布する場合は利用者にも同じ表記を義務づける。実在人物の録音や声まねではなく、架空の修司役の合成音声。
+
+写真3点は最初に同じキューへ登録したが、ComfyUIのCUDA障害後の残存プロセスのため、新規ローカル推論は未完了。GPUリセット・OS再起動・他の制作ジョブの停止は行っていない。採用する原本の生成方法は、写真の項目で別に記録する。
+
+## 4.1 場面写真の採用と配信用変換（2026-10-30）
+
+導入と生還後の写真は内蔵 `image_gen` で生成。古写真は同ツールで既存の `dist/assets/mountain-photo.webp` を編集した。既存原本も残している。ローカルComfyUIの生成結果とは扱わない。D:/AIのPython・PillowでRGB化、最大1400×1050への等倍比縮小、WebP品質88への変換のみを行った。色補正・切り抜き・内容の合成はしていない。
+
+|配信ファイル（dist/assets/photos/）|寸法|サイズ|由来|
+|---|---|---:|---|
+|arrival-v4-1.webp|1400×788|139,998 bytes|内蔵画像生成|
+|return-v4-1.webp|1400×788|151,034 bytes|内蔵画像生成|
+|mountain-v4-1.webp|1400×1050|330,382 bytes|既存山写真の内蔵画像編集|
+
+生成原本は `C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/` 内の下記ファイル。採用原本のSHA-256、生成方法、編集の参照元SHA-256、最終出力のSHA-256・寸法・輝度測定は `tools/local-media-records/image-*.json` に保存した。
+
+- 導入：`exec-0428df43-1f23-4f0e-a961-ba2d87d4eab2.png`
+- 生還：`exec-df09d62a-16ae-423a-ab94-4314e6fae777.png`
+- 古写真：`exec-d1f08650-4358-4e83-a15d-dbf626692210.png`
+
+`tools/photo-prompts.json` の文章は制作ブリーフであり、正確なimage_gen実行入力が収録できたものではない。生成モデル名・seedもツールから非開示のため推測して記録しない。未実行のローカル生成設定は `tools/local-media-comfy-prompts.json` と候補専用キューへ分離した。
+
+配信WebPを開いて検収した。導入は二階の戸口、三脚の望遠鏡、片付け箱が読み取れる。帰路は森林・車内を暗めに保ちつつ路面、ガードレール、DVカメラの輪郭が残る。古写真は右側の幹の背後の小さな白い頭と、反対側の鎌状の曲線が文章と一致し、顔や目は見えない。実在事件を撮影した写真ではない。探索の形状見本は場面写真と混同せず、ゲームの3Dモデルから撮った小物画像を使う。
+
+全3写真の配信サイズは621,414 bytes（606.85 KiB）。音声8本は既存の合成結果をSHA-256・台詞・設定・波形の一致で検証し直し、再合成していない。共有JSONキューの12ジョブ（音声8検証・写真3変換・台帳）が完了し、`assets/production.json` に全11素材を ready と記録した。台帳の source.kind は写真の generated-builtin / edited-builtin、音声の generated-local を区別する。

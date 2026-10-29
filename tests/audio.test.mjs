@@ -115,3 +115,38 @@ test('new physical cues use the bounded mixer and disconnect their completed voi
     for (const e of node.gain.events) if (e[0] === 'linear') assert.ok(e[1] <= .12, 'one voice cannot overdrive the envelope');
   s.dispose(); assert.equal(s._voices.size, 0);
 });
+
+test('search cues distinguish materials, stay bounded and honor mute and cooldown',()=>{
+  const s=create(),calls=[];
+  s._noise=p=>calls.push(['noise',p]);s._tone=p=>calls.push(['tone',p]);
+  const signatures=[];
+  for(const name of ['objective','found','keyPickup','bottlePickup','crankPickup']){
+    calls.length=0;s.cue(name);assert.ok(calls.length,name);signatures.push(JSON.stringify(calls));
+    assert.ok(calls.every(([,p])=>p.gain<=.04),'quiet confirmation must not drown footsteps');
+    const count=calls.length;s.cue(name);assert.equal(calls.length,count,'no duplicate within cooldown');
+  }
+  assert.equal(new Set(signatures).size,5);
+  s.setMuted(true);calls.length=0;s.context.currentTime=100;s.cue('found');assert.equal(calls.length,0);s.dispose();
+});
+
+test('recorded guidance uses the master mixer, caches decoding and stops when closed or muted',async t=>{
+  const prior=globalThis.fetch;t.after(()=>globalThis.fetch=prior);
+  let requests=0;globalThis.fetch=async()=>{requests++;return {ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};};
+  const s=create();s.context.decodeAudioData=async()=>({duration:3});let ended=0;
+  assert.equal(await s.playGuideVoice('guide.wav',()=>ended++),'playing');
+  const first=s._guideVoice;assert.equal(first.nodes.at(-1).connections[0],s._compressor);
+  s.stopGuideVoice();assert.equal(s.guidePlaying,false);assert.ok(first.nodes.every(n=>n.disconnected));assert.equal(ended,0);
+  assert.equal(await s.playGuideVoice('guide.wav',()=>ended++),'playing');assert.equal(requests,1);
+  s._guideVoice.source.onended();assert.equal(ended,1);assert.equal(s.guidePlaying,false);
+  await s.playGuideVoice('guide.wav');s.setMuted(true);assert.equal(s.guidePlaying,false);
+  assert.equal(await s.playGuideVoice('missing.wav'),'muted');assert.equal(requests,1);s.dispose();
+});
+
+test('a late voice download cannot restart sound after leaving the help screen',async t=>{
+  const prior=globalThis.fetch;t.after(()=>globalThis.fetch=prior);
+  let release;globalThis.fetch=()=>new Promise(resolve=>release=resolve);
+  const s=create();s.context.decodeAudioData=async()=>({duration:3});
+  const pending=s.playGuideVoice('slow.wav');await new Promise(resolve=>setImmediate(resolve));
+  s.stopGuideVoice();release({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)});
+  assert.equal(await pending,'cancelled');assert.equal(s.guidePlaying,false);s.dispose();
+});

@@ -2,3 +2,8 @@ node_modules/
 public/
 .firebase/
 shots/
+.media-queue/
+tools/_raw/
+tools/__pycache__/
+assets/sources/
+*.log

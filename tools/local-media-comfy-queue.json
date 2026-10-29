@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "concurrency": 3,
+  "pools": {
+    "gpu": 1,
+    "voice-cpu": 1,
+    "cpu": 2
+  },
+  "jobs": [
+    {
+      "id": "candidate-arrival",
+      "kind": "image",
+      "pool": "gpu",
+      "purpose": "導入。片付けのために来た、昼の別荘の記録。",
+      "inputs": [
+        "tools/local-media-comfy-prompts.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "tools/_raw/local-media/candidates/arrival-flux-schnell.webp",
+        "tools/_raw/local-media/candidates/records/image-arrival.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "photo",
+        "arrival"
+      ],
+      "retries": 0,
+      "timeoutMs": 2700000
+    },
+    {
+      "id": "candidate-return",
+      "kind": "image",
+      "pool": "gpu",
+      "purpose": "生還後。山を下りたことを写真で伝える。",
+      "inputs": [
+        "tools/local-media-comfy-prompts.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "tools/_raw/local-media/candidates/return-flux-schnell.webp",
+        "tools/_raw/local-media/candidates/records/image-return.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "photo",
+        "return"
+      ],
+      "retries": 0,
+      "timeoutMs": 2700000
+    },
+    {
+      "id": "candidate-evidence",
+      "kind": "image",
+      "pool": "gpu",
+      "purpose": "古写真。手前の森と奥の白い頭を読み分けられる資料。",
+      "inputs": [
+        "tools/local-media-comfy-prompts.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "tools/_raw/local-media/candidates/evidence-flux-schnell.webp",
+        "tools/_raw/local-media/candidates/records/image-evidence.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "photo",
+        "evidence"
+      ],
+      "retries": 0,
+      "timeoutMs": 2700000
+    }
+  ]
+}

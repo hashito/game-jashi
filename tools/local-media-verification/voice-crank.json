@@ -1,0 +1,9 @@
+{
+  "file": "dist/assets/audio/guide-crank.wav",
+  "sha256": "febc013054e6be63c65ba74e055f8fee6359854291b3e737da0f3728d8dddade",
+  "status": "verified-existing",
+  "durationSeconds": 5.332,
+  "peakDbfs": -6.0,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-29T22:51:31.302922+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "engine": "VOICEVOX",
+  "endpoint": "http://127.0.0.1:50022",
+  "speaker": 53,
+  "speakerName": "麒ヶ島宗麟",
+  "style": "ノーマル",
+  "speakerUuid": "7d1e7ba7-f957-40e5-a3fc-da49f769ab65",
+  "credit": "VOICEVOX:麒ヶ島宗麟",
+  "licenseUrl": "https://www.virvoxproject.com/voicevoxの利用規約",
+  "query": {"speedScale": 1.03, "pitchScale": -0.01, "intonationScale": 0.85, "volumeScale": 1, "outputSamplingRate": 24000, "outputStereo": false, "prePhonemeLength": 0.12, "postPhonemeLength": 0.2},
+  "clips": {
+    "telescope": "まず、二階のベランダへ。三脚のついた望遠鏡を確かめてくれ。",
+    "radio": "一階の机にある黒い無線機だ。つまみを動かして、俺の声が聞こえる所で止めてくれ。",
+    "glasses": "無線機の右に、黒いサングラスと鍵束がある。両方持っていってくれ。",
+    "note": "一階の反対側の机に、書き置きを残した。白い紙を読んでくれ。",
+    "bottle": "先に西の物置へ。床にある、蓋つきのボトルを二本持っていけ。近づかれたときに使える。",
+    "crank": "次は東の避難小屋だ。床に置いた、赤い握りの鉄のハンドルを探してくれ。",
+    "gate": "ハンドルと鍵が揃ったな。別荘の西の駐車場へ戻って、ゲートを開けてくれ。",
+    "car": "ゲートの奥の車に乗るんだ。エンジンがかかるまで、その場を離れるな。"
+  }
+}

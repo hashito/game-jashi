@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "concurrency": 3,
+  "pools": {
+    "gpu": 1,
+    "voice-cpu": 1,
+    "cpu": 2
+  },
+  "jobs": [
+    {
+      "id": "voice-telescope",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: telescope",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-telescope.wav",
+        "tools/local-media-records/voice-telescope.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "telescope"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-radio",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: radio",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-radio.wav",
+        "tools/local-media-records/voice-radio.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "radio"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-glasses",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: glasses",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-glasses.wav",
+        "tools/local-media-records/voice-glasses.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "glasses"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-note",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: note",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-note.wav",
+        "tools/local-media-records/voice-note.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "note"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-bottle",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: bottle",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-bottle.wav",
+        "tools/local-media-records/voice-bottle.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "bottle"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-crank",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: crank",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-crank.wav",
+        "tools/local-media-records/voice-crank.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "crank"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-gate",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: gate",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-gate.wav",
+        "tools/local-media-records/voice-gate.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "gate"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    },
+    {
+      "id": "voice-car",
+      "kind": "voice",
+      "pool": "voice-cpu",
+      "purpose": "修司の探索案内: car",
+      "inputs": [
+        "tools/local-media-voices.json",
+        "tools/local-media-worker.py"
+      ],
+      "outputs": [
+        "dist/assets/audio/guide-car.wav",
+        "tools/local-media-records/voice-car.json"
+      ],
+      "command": [
+        "D:/AI/ComfyUI/venv/Scripts/python.exe",
+        "tools/local-media-worker.py",
+        "voice",
+        "car"
+      ],
+      "retries": 0,
+      "timeoutMs": 240000
+    }
+  ]
+}

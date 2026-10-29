@@ -690,3 +690,51 @@ body[data-danger="high"] .hud-message-stack .dialogue-card #subtitle-text{font-s
 #panel-body .journal-grid .journal-entry.has-thumb{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto;column-gap:12px;align-items:center}
 .journal-entry .journal-thumb{grid-row:1/3;width:64px;height:48px;object-fit:cover;border:1px solid #b7c5aa33;background:#141b17}
 @media(max-width:420px){.item-shot{float:none;width:min(70%,220px);margin:0 auto 12px}}
+
+/* 4.1: a camera contact sheet, with one named object and its real prop image. */
+.search-card{display:flex;align-items:center;gap:10px;width:min(100%,440px);min-height:58px;margin-top:10px;padding:7px 10px;text-align:left;border:1px solid #7b8060;background:#14211ef2;color:#e8e2ce;border-radius:2px;pointer-events:auto;font:inherit;cursor:pointer}
+.search-card:focus-visible{outline:2px solid #f1d48e;outline-offset:3px}
+.search-card img{width:64px;height:48px;object-fit:contain;flex:none;border:1px solid #4e584a;background:#141b17}
+.search-card-copy{display:grid;gap:4px;min-width:0;flex:1}
+#search-location{font-size:12px;color:#eee8d8;line-height:1.45}
+#search-phase{font-size:10px;color:#c7cbb8;line-height:1.5}
+.search-open{font-size:10px;color:#edcf8e;white-space:nowrap}
+.search-card[data-phase="ready"]{border-color:#f1d48e;background:#243329;color:#fff0c9}
+.search-card[data-phase="ready"] #search-phase{color:#fff0c9}
+.search-idle-hint{max-width:440px;padding:8px 10px;margin:6px 0 0;border-left:2px solid #ddc285;background:#14211ef5;color:#e2e4d4;font-size:11px;line-height:1.7}
+.search-detail{display:grid;grid-template-columns:minmax(100px,180px) minmax(0,1fr);gap:22px;margin:0 0 22px;align-items:start}
+.search-detail:not(:has(figure)){grid-template-columns:1fr}
+.search-detail figure{margin:0;border:1px solid #8b8c71;background:#141b17;color:#dce0ce}
+.search-detail figure img{display:block;width:100%;height:auto;object-fit:contain}
+.search-detail figcaption{padding:8px;font-size:10px;line-height:1.6;text-align:center;color:#cbd0bc}
+.search-detail h3{margin:3px 0 14px;font-size:22px;line-height:1.4}
+.search-detail .search-kicker{margin:0;color:#c6c9af;font-size:11px;letter-spacing:.16em}
+.search-detail dl{display:grid;grid-template-columns:3em 1fr;gap:10px 14px;margin:0;font-size:13px;line-height:1.75}
+.search-detail dt{color:#e1c58b}.search-detail dd{margin:0}
+.search-tip{border-top:1px solid #676e5a;padding-top:12px;font-size:12px;line-height:1.8;color:#d7ddc9}
+.scene-photo{margin:0 0 22px;border:1px solid #777e67;background:#141b17;color:#d4d9c5}
+.scene-photo img{display:block;width:100%;height:auto;max-height:250px;object-fit:cover}
+.scene-photo figcaption{padding:9px 12px;font-size:11px;line-height:1.5}
+.map-search{display:flex;align-items:center;gap:12px;width:100%;padding:8px 12px;text-align:left;background:#14211e;color:#e8e2ce;border:1px solid #7b8060;cursor:pointer}
+.map-search img{width:48px;height:36px;object-fit:contain}.map-search>span:first-of-type{flex:1}.map-search strong,.map-search small{display:block;line-height:1.6}.map-search strong{font-size:13px}.map-search small{font-size:11px;color:#c7cbb8}
+.exact-map{max-width:clamp(260px,calc(100dvh - 520px),540px)}
+body[data-danger="high"] .search-card{min-height:44px}
+body[data-danger="high"] .search-card img,body[data-danger="high"] #search-phase{display:none}
+@media(max-width:760px){
+  .search-card{min-height:46px;gap:6px;padding:5px 6px;margin-top:6px}
+  .search-card img{width:42px;height:34px}.search-open{font-size:9px}
+  #search-location{font-size:10px}#search-phase{font-size:9px}.search-card-copy{gap:2px}
+  .search-idle-hint{font-size:10px;padding:5px 7px;max-width:250px}
+  .search-detail{grid-template-columns:100px minmax(0,1fr);gap:14px}.search-detail h3{font-size:18px}
+  .search-detail dl{font-size:12px;grid-template-columns:2.5em 1fr;gap:7px 8px}
+  .scene-photo img{max-height:190px}
+}
+@media(max-width:420px){
+  .search-card{flex-wrap:wrap}.search-open{margin-left:auto}.search-card-copy{flex-basis:80px}
+  .search-detail{grid-template-columns:1fr}.search-detail figure{width:160px;max-width:100%;margin:0 auto}.search-detail h3{margin-top:5px}
+}
+@media(max-height:520px) and (orientation:landscape){
+  .search-card{max-width:260px;min-height:44px;margin-top:4px}.search-card img{width:36px;height:30px}
+  #search-location{font-size:10px}#search-phase{font-size:9px}.search-idle-hint{display:none}
+  .hud-header .toast{top:116px;left:calc(50% + 95px);max-width:calc(100% - 240px)}
+}

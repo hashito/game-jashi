@@ -54,7 +54,7 @@ test('a priority line supersedes waiting place and ambient lines; an interrupted
   const waiting = tagSpeech([...lines('bridge'), ...lines('enemyListen'), ...lines('note')], { time: 0, origin: BRIDGE });
   const active = tagSpeech(lines('radioTuned'), { time: 0 })[0];
   const { queue, dropped } = enqueueSpeechLines(waiting, tagSpeech(lines('firstAttack'), { time: 1 }), { priority: true, interrupted: active });
-  assert.deepEqual(queue.map(l => l.beat), ['firstAttack', 'firstAttack', 'radioTuned', 'note', 'note']);
+  assert.deepEqual(queue.map(l => l.beat), ['firstAttack', 'firstAttack', 'radioTuned', ...DIALOGUE.note.map(()=>'note')]);
   assert.equal(queue[2].logged, true, 'the resumed line is not logged twice');
   assert.deepEqual(dropped.map(d => d.line.beat).sort(), ['bridge', 'bridge', 'enemyListen']);
   // An interrupted ambient line is not re-queued; duplicate texts are not queued twice.

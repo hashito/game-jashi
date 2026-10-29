@@ -1,0 +1,41 @@
+{
+  "method": "Local ComfyUI; FLUX.1-schnell; generated scene photos, not prop identification references",
+  "version": "4.1",
+  "jobs": [
+    {
+      "id": "arrival",
+      "output": "tools/_raw/local-media/candidates/arrival-flux-schnell.webp",
+      "purpose": "導入。片付けのために来た、昼の別荘の記録。",
+      "prompt": "Photorealistic 16:9 amateur DV still, upstairs room of a modest old Japanese mountain holiday cabin on an overcast late autumn afternoon. Faded warm wood floor and plain aged plaster walls with dark wood framing, a few taped cardboard moving boxes and a folded dust sheet near the right wall, an open sliding doorway in the center leading to a narrow wooden balcony, a small dark brass telescope on a simple three-legged tripod on the balcony. Outside are natural dense cedar trees and a distant low mountain in cool mist. No people, no monster, no writing, no UI, no watermarks. Human eye height from inside the room; broad doorway and telescope clearly readable, restrained desaturated warm-gray palette, believable ordinary modest home rather than luxury architecture, gentle daylight and authentic subtle DV grain. The telescope is small and low, an actual practical instrument, not oversized.",
+      "model": "flux1-schnell-fp8.safetensors",
+      "seed": 4103001,
+      "width": 1344,
+      "height": 768,
+      "steps": 4
+    },
+    {
+      "id": "return",
+      "output": "tools/_raw/local-media/candidates/return-flux-schnell.webp",
+      "purpose": "生還後。山を下りたことを写真で伝える。",
+      "prompt": "Photorealistic 16:9 quiet Japanese folk-horror aftermath photograph, view from the passenger seat of an old compact car stopped at the side of an empty narrow paved mountain road just before dawn. Dashboard and a worn small silver DV camcorder occupy only the lower foreground. The windshield frames a road descending out of dense cedar woods toward the faint first gray-blue light in the valley. No people, no visible monster, no accident, no lettering or screen text, no logos or watermarks. A subdued ordinary location, sense of exhausted relief with lingering unease, plausible documentary photo, fine film grain, dark forest behind fading into mist, details readable without artificial neon or heavy blur. Landscape 16:9.",
+      "model": "flux1-schnell-fp8.safetensors",
+      "seed": 4103002,
+      "width": 1344,
+      "height": 768,
+      "steps": 4
+    },
+    {
+      "id": "evidence",
+      "output": "tools/_raw/local-media/candidates/evidence-flux-schnell.webp",
+      "purpose": "古写真。手前の森と奥の白い頭を読み分けられる資料。",
+      "prompt": "Create an old documentary photograph for a Japanese mountain horror game's collectible evidence. A quiet cedar woodland setting, aged desaturated green-gray amateur film appearance, concealed tiny pale bald head and one shoulder behind a broad trunk in the right third, and a barely visible rusty curved agricultural sickle on the other side of that trunk. The head must remain tiny, under three percent of image height, with its face hidden. Improve readable natural separation between foreground bark, midground branches and distant mist, maintain ominous ambiguity, slightly faded old color print with very fine grain, no excessive blur or digital artifacts. No full body, no extra figure, no visible face or eye, no gore, no writing or border or watermark. Landscape 4:3.",
+      "model": "flux1-schnell-fp8.safetensors",
+      "seed": 4103003,
+      "width": 1152,
+      "height": 864,
+      "steps": 4
+    }
+  ],
+  "endpoint": "http://127.0.0.1:8188",
+  "recordDirectory": "tools/_raw/local-media/candidates/records"
+}

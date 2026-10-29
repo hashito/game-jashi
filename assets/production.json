@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "file": "dist/assets/photos/arrival-v4-1.webp",
+      "purpose": "導入。片付けのために来た、昼の別荘の記録。",
+      "status": "ready",
+      "credit": "AI-generated scene photograph; source method explicitly recorded; not a real-event photograph.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "image_gen",
+        "operation": "image generation",
+        "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-0428df43-1f23-4f0e-a961-ba2d87d4eab2.png",
+        "sourceSha256": "a30ffbf4329c7161df511d791a50c3573d10342251a0cf674cdb6c9dcf968433",
+        "model": "not reported by tool",
+        "seed": "not reported by tool",
+        "sha256": "402b735e942d529244195cbd3b8c02a5688551f06acb7589cd53fb6e09f2bdc2",
+        "record": "tools/local-media-records/image-arrival.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/mountain-v4-1.webp",
+      "purpose": "古写真。手前の森と奥の白い頭を読み分けられる資料。",
+      "status": "ready",
+      "credit": "AI-generated scene photograph; source method explicitly recorded; not a real-event photograph.",
+      "source": {
+        "kind": "edited-builtin",
+        "engine": "image_gen",
+        "operation": "image edit",
+        "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-d1f08650-4358-4e83-a15d-dbf626692210.png",
+        "sourceSha256": "be70ae0265f9fbcbb9380e7dc3e4db31e98ee8f145170e540819b70fc1660179",
+        "model": "not reported by tool",
+        "seed": "not reported by tool",
+        "referenceFile": "dist/assets/mountain-photo.webp",
+        "referenceSha256": "58f7ab12fdb506703334ef98a7d24f8b5f83670c2e21d954bfe6a5ee4dc0d080",
+        "sha256": "8918af349fd71add007194c57e88135c688ed9a3055634a0b93e421c14cb9fb8",
+        "record": "tools/local-media-records/image-evidence.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/return-v4-1.webp",
+      "purpose": "生還後。山を下りたことを写真で伝える。",
+      "status": "ready",
+      "credit": "AI-generated scene photograph; source method explicitly recorded; not a real-event photograph.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "image_gen",
+        "operation": "image generation",
+        "originalFile": "C:/Users/hasit/.codex/generated_images/01a17abc-33fb-7811-a323-50521555304b/exec-df09d62a-16ae-423a-ab94-4314e6fae777.png",
+        "sourceSha256": "4a397f520c6550ac91d40b74add2ce74092b20e759914529b5a7b5da20ddc05b",
+        "model": "not reported by tool",
+        "seed": "not reported by tool",
+        "sha256": "5685cde2a116e53b3edae8bdf6bad6091fa22f9a599249ba71fc6256827839c5",
+        "record": "tools/local-media-records/image-return.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-bottle.wav",
+      "purpose": "修司の探索案内 / voice-bottle",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "1eba9b7b1af8f7205893c4442d86b6e7ccd639a6f5ae18be7eb8799513770a86",
+        "record": "tools/local-media-records/voice-bottle.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-car.wav",
+      "purpose": "修司の探索案内 / voice-car",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "2d18b9eeb1c5e9047163403624b02037c6308272d5ed1bc9b5d4e684f3d4d18c",
+        "record": "tools/local-media-records/voice-car.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-crank.wav",
+      "purpose": "修司の探索案内 / voice-crank",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "febc013054e6be63c65ba74e055f8fee6359854291b3e737da0f3728d8dddade",
+        "record": "tools/local-media-records/voice-crank.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-gate.wav",
+      "purpose": "修司の探索案内 / voice-gate",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "33465a2b5e7d290b107b31619cc7e5ef9b1e02fc9932db60ac329e4ca22d8338",
+        "record": "tools/local-media-records/voice-gate.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-glasses.wav",
+      "purpose": "修司の探索案内 / voice-glasses",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "e3f63957b5a39b64e0c22cbe83b406a6f10441ba92525e3d3c1a0487e3d017f4",
+        "record": "tools/local-media-records/voice-glasses.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-note.wav",
+      "purpose": "修司の探索案内 / voice-note",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "e52444b0e155c12b83276ccf7e3e3544250699601ad162ae194100ac5f4cd223",
+        "record": "tools/local-media-records/voice-note.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-radio.wav",
+      "purpose": "修司の探索案内 / voice-radio",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "a1ee76e17e54250852e69584d8c8ca5c47e7fac071aed6dc3473011ed637656b",
+        "record": "tools/local-media-records/voice-radio.json"
+      }
+    },
+    {
+      "file": "dist/assets/audio/guide-telescope.wav",
+      "purpose": "修司の探索案内 / voice-telescope",
+      "status": "ready",
+      "credit": "VOICEVOX:麒ヶ島宗麟",
+      "source": {
+        "kind": "generated-local",
+        "engine": "VOICEVOX",
+        "sha256": "ffa38cce14a060b2836fc273c266a7b7fb9fa248462676ab0532e0bbfed801b4",
+        "record": "tools/local-media-records/voice-telescope.json"
+      }
+    }
+  ]
+}
