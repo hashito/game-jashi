@@ -236,7 +236,7 @@ test('search help pauses the real game and shows a matching prop, place, purpose
   const h=await harness();h.fresh();
   assert.equal(h.nodes.get('objective').textContent,'三脚の望遠鏡');
   assert.equal(h.nodes.get('search-thumb').src,'assets/items/telescope.png');
-  h.click('search-help');assert.equal(h.run('panelKind'),'search-help');
+  h.press('KeyH');assert.equal(h.run('panelKind'),'search-help');
   const time=h.run('time');h.advance(25);assert.equal(h.run('time'),time);
   const body=h.nodes.get('panel-body').innerHTML;
   for(const text of ['三脚の望遠鏡','二階のベランダ','場所','見た目','目的','操作','ゲーム内の物と同じ形'])assert.ok(body.includes(text),text);
