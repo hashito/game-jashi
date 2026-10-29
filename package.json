@@ -1,0 +1,12 @@
+{
+  "name": "jashi-mountain",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "description": "投稿怪談『邪視』をもとにした一人称ホラー探索ゲーム",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "node tools/build-site.js",
+    "check": "node --check dist/main.js && node --check dist/world.js && node --check dist/audio.js && node --check dist/software-renderer.js && node --check dist/layout.js && node --check dist/narrative.js && node --check dist/survival.js && node --check dist/vhs.js && node --check dist/enemy.js && node --check dist/story.js && node --check dist/creature.js && node --check dist/dialogue.js && node --check dist/gimmicks.js"
+  }
+}

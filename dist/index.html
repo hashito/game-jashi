@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#111512">
+    <meta name="description" content="投稿怪談『邪視』をもとにした一人称3Dホラー。別荘の二階のベランダから始まる、望遠鏡越しの目撃。少しずつ変わる記録をたどり、迫る怪異から逃げ切ってください。">
+    <title>邪視 — 視線の山</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="main.js"></script>
+  </head>
+  <body data-screen="title" data-scene="explore">
+    <div id="world" aria-label="一人称視点のゲーム画面"></div>
+    <div id="danger-vignette" aria-hidden="true"></div>
+    <div id="veil" aria-hidden="true"></div>
+
+    <section id="title-screen" aria-labelledby="game-title">
+      <div class="title-grain" aria-hidden="true"></div>
+      <header class="title-header">
+        <div class="archive-mark" aria-label="山岳怪異記録">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3C7 8 7 20 14 25c7-5 7-17 0-22Z"/><path d="M14 9v10M4 14H1m26 0h-3"/><circle cx="14" cy="14" r="2.2"/></svg>
+          <span>山岳怪異記録<span class="archive-number">ARCHIVE 001</span></span>
+        </div>
+        <nav class="title-tools" aria-label="ゲーム設定">
+          <button id="mute-button" class="text-tool" type="button" data-action="mute" aria-label="音の切り替え">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 5-4 3H2v4h2l4 3V5Zm4 2a5 5 0 0 1 0 6m3-9a9 9 0 0 1 0 12"/></svg>
+            <span>音：入</span>
+          </button>
+          <span class="tool-divider" aria-hidden="true"></span>
+          <button class="text-tool" type="button" data-action="settings">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14M7 3v4m6 1v4m-5 1v4"/></svg>
+            <span>設定</span>
+          </button>
+        </nav>
+      </header>
+
+      <main class="title-content">
+        <p class="title-eyebrow"><span></span>あの山で、何を見た。</p>
+        <h1 id="game-title">邪視</h1>
+        <div class="roman-title"><span>JASHI</span><i></i><span>視線の山</span></div>
+        <h2 class="title-copy">目が合う。<br>それだけで、帰れなくなる。</h2>
+        <p class="title-description">別荘の二階。ベランダに残された、古い望遠鏡。<br>一つ撮るたび、知らなかったことが見えてくる。</p>
+        <div class="title-actions">
+          <button id="start-button" class="button-primary" type="button" data-action="start" disabled>
+            <span>記録を始める</span><svg viewBox="0 0 28 16" aria-hidden="true"><path d="M1 8h24m-7-6 7 6-7 6"/></svg>
+          </button>
+          <button class="button-quiet" type="button" data-action="help"><span>操作方法</span><span class="button-plus" aria-hidden="true">＋</span></button>
+          <button id="continue-button" class="continue-button" type="button" data-action="continue" hidden>記録から続ける <span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="loading-status" role="status">
+          <span id="loading-label">山を準備しています…</span>
+          <div class="loading-track"><div id="loading-bar"></div></div>
+        </div>
+      </main>
+
+      <aside class="title-aside" aria-hidden="true"><span class="aside-line"></span><p>振り返らずに、帰れますか。</p><span class="aside-index">N° 001 — THE GAZE</span></aside>
+
+      <footer class="title-footer">
+        <div class="game-facts"><span>一人称ホラー・探索と追跡</span><i></i><span>目安 10–15分</span><i></i><span>3つの生還</span></div>
+        <div class="footer-bottom"><p>音あり推奨<span>・</span>ホラー表現あり</p><button class="credits-link" type="button" data-action="credits">原話・制作について <span aria-hidden="true">↗</span></button></div>
+      </footer>
+    </section>
+
+    <section id="hud" aria-label="ゲーム情報">
+      <div class="hud-header">
+        <div class="hud-top-left">
+          <p id="chapter-label" class="hud-chapter">一 / 二階の備品</p>
+          <p id="objective" class="hud-objective">二階のベランダにある望遠鏡を調べる</p>
+        </div>
+        <div class="hud-top-right">
+          <div class="dv-recorder" aria-label="DV録画時間"><span class="dv-format">DV</span><span class="rec-mark">REC</span><time id="tape-clock">00:00:00</time></div>
+          <div class="hud-tool-row">
+            <span id="floor-label" class="floor-label" aria-label="現在の階">2F</span>
+            <span id="compass-label" class="compass-label">N</span>
+            <span class="hud-top-divider" aria-hidden="true"></span>
+            <button class="hud-icon-button" type="button" data-action="journal" aria-label="記録を開く" title="記録を開く">
+              <svg viewBox="0 0 22 22" aria-hidden="true"><path d="M5 3h13v16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 0v16m3-11h7m-7 4h7"/></svg><span>記録</span><span id="record-updates" class="record-badge" aria-label="未読の追記" hidden></span>
+            </button>
+            <button class="hud-icon-button pause-button" type="button" data-action="pause" aria-label="一時停止" title="一時停止（Esc）"><svg viewBox="0 0 22 22" aria-hidden="true"><path d="M8 5v12M14 5v12"/></svg></button>
+          </div>
+        </div>
+        <div id="hunt-banner" class="hunt-banner" role="status" hidden>追跡されている</div>
+
+        <div class="focus-status survival-status" role="group" aria-label="体力、心の余白、スタミナ">
+          <div class="vital-meter health-meter">
+            <div class="focus-heading"><span class="focus-name"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 10h4l2-5 4 10 2-5h6"/></svg>体力</span><span id="health-value" class="vital-value">100</span></div>
+            <div class="focus-track" aria-hidden="true"><div id="health-bar"></div></div>
+          </div>
+          <div class="vital-meter focus-meter">
+            <div class="focus-heading"><span class="focus-name"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 10s3-5 9-5 9 5 9 5-3 5-9 5-9-5-9-5Z"/><circle cx="10" cy="10" r="2.5"/></svg>心の余白</span><span id="focus-value" class="vital-value">100</span></div>
+            <div class="focus-track" aria-hidden="true"><div id="focus-bar"></div></div>
+          </div>
+          <div class="vital-meter stamina-meter">
+            <div class="focus-heading"><span class="focus-name"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 2-7 9h5l-2 7 7-10h-5l2-6Z"/></svg>スタミナ</span><span id="stamina-value" class="vital-value">100</span></div>
+            <div class="focus-track" aria-hidden="true"><div id="stamina-bar"></div></div>
+          </div>
+          <p id="gaze-status">気配はない</p>
+        </div>
+        <div id="toast" class="toast" role="status" hidden></div>
+      </div>
+
+      <div id="crosshair" aria-hidden="true"></div>
+      <div class="hud-message-stack">
+        <div id="interaction" class="interaction-prompt" hidden><kbd>E</kbd><span id="interaction-text">調べる</span><span class="interaction-line" aria-hidden="true"></span></div>
+        <div id="action-status" class="action-status" role="status" hidden><span id="action-label">ゲートを開けている</span><div class="action-track" aria-hidden="true"><div id="action-bar"></div></div></div>
+        <section id="subtitle" class="subtitle dialogue-card" aria-label="会話" data-speaker="player" hidden>
+          <div id="subtitle-previous" class="subtitle-previous" aria-hidden="true" hidden><span id="subtitle-previous-speaker"></span><p id="subtitle-previous-text"></p></div>
+          <div class="subtitle-current">
+            <figure id="subtitle-figure" class="subtitle-figure" data-icon="camera" data-has-portrait="false">
+              <img id="subtitle-portrait" alt="" width="96" height="112" hidden>
+              <svg class="speaker-icon speaker-icon-camera" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 21h31v26H12zM43 28l12-7v26l-12-7M19 21v-7h17v7M18 48v5h13v-5"/><circle cx="29" cy="34" r="8"/><path d="M26 34h6m-3-3v6"/></svg>
+              <svg class="speaker-icon speaker-icon-person" viewBox="0 0 64 64" aria-hidden="true"><path d="M17 53v-8c0-7 7-12 15-12s15 5 15 12v8M22 17c0-7 20-7 20 0v8c0 13-20 13-20 0Z"/></svg>
+              <svg class="speaker-icon speaker-icon-phone" viewBox="0 0 64 64" aria-hidden="true"><path d="M23 10h19v45H23zM27 15h11v28H27zM30 49h6M45 17c7 7 7 17 0 24M50 12c10 10 10 24 0 34"/></svg>
+              <span class="subtitle-photo-mark" aria-hidden="true">CONTACT</span>
+            </figure>
+            <div class="subtitle-copy" role="status" aria-live="polite" aria-atomic="true">
+              <div class="subtitle-heading"><span id="subtitle-speaker"></span><span id="subtitle-role"></span><span id="subtitle-channel"></span></div>
+              <div id="subtitle-location" class="subtitle-location"></div>
+              <p id="subtitle-text"></p>
+            </div>
+          </div>
+          <div class="subtitle-footer">
+            <div class="subtitle-timing"><div><span id="subtitle-state">自動送り</span><span id="subtitle-count">会話履歴に記録</span></div><div class="subtitle-progress-track"><div id="subtitle-progress" role="progressbar" aria-label="この発言の表示時間" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></div></div></div>
+            <div class="subtitle-actions">
+              <button id="subtitle-log" type="button" data-action="journal-dialogue" title="会話の履歴を開く">履歴</button>
+              <button id="subtitle-hold" type="button" data-action="speech-hold" aria-pressed="false"><kbd>T</kbd><span id="subtitle-hold-label">読む間停止</span></button>
+              <button id="subtitle-next" type="button" data-action="speech-next"><span id="subtitle-next-label">次へ</span><kbd>Enter</kbd><span class="subtitle-next-arrow" aria-hidden="true">›</span></button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="inventory-dock" aria-label="所持品">
+        <button id="inventory-lamp" class="inventory-item" type="button" data-action="flashlight" title="灯りを切り替える（F）">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="m11 8-3 5v12h7V13l-4-5ZM5 5l4 5m3-9 1 7m8-4-6 5m5 2-5 1M8 16h7"/></svg><span><kbd>F</kbd> 灯り</span><i class="inventory-status"></i>
+        </button>
+        <button id="inventory-glasses" class="inventory-item unavailable" type="button" data-action="glasses" title="サングラスを切り替える（Q）">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="m4 12 2-7m18 7-2-7M2 12h9v6H3l-1-6Zm15 0h9l-1 6h-8v-6Zm-6 1h6"/></svg><span><kbd>Q</kbd> サングラス</span><i class="inventory-status"></i>
+        </button>
+        <button id="inventory-bottle" class="inventory-item unavailable" type="button" data-action="repel" title="ボトルを使う（R）">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M11 3h6v5l3 4v12H8V12l3-4V3Zm0 3h6M8 16h12"/></svg><span><kbd>R</kbd> ボトル</span><b id="charge-count" aria-label="ボトル残数">—</b><i class="inventory-status"></i>
+        </button>
+      </div>
+
+      <div class="desktop-controls-hint"><kbd>W A S D</kbd> 移動 <span>／</span> <kbd>Shift</kbd> 走る <span>／</span> <kbd>Space</kbd> 目を閉じる <span>／</span> <kbd>Esc</kbd> 休む</div>
+    </section>
+
+    <div id="mobile-controls" aria-label="タッチ操作">
+      <div id="joystick" role="button" aria-label="移動スティック" tabindex="0"><div class="joystick-axis axis-h"></div><div class="joystick-axis axis-v"></div><div id="joystick-knob"></div></div>
+      <div class="mobile-look-hint">右側をドラッグして見回す</div>
+      <div class="mobile-action-buttons">
+        <button class="touch-button touch-secondary" type="button" data-action="sprint" aria-label="走る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 9 4 3 5 1M7 10l4-3 3 5-4 5-4 5m4-5 7 4m-7-4-5-2"/><circle cx="15" cy="4" r="2"/></svg><span>走る</span></button>
+        <button class="touch-button touch-secondary" type="button" data-action="close-eyes" aria-label="押している間、目を閉じる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9s4 6 10 6 10-6 10-6M4 12l-2 3m6-1-1 4m5-3v4m4-5 1 4m3-6 2 3"/></svg><span>目を閉じる</span></button>
+        <button class="touch-button touch-interact" type="button" data-action="interact" aria-label="調べる"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 6 6M10 7v6m-3-3h6"/></svg><span>調べる</span></button>
+      </div>
+    </div>
+
+    <section id="scope-sequence" class="scope-sequence" aria-label="二階の望遠鏡から見える風景" hidden>
+      <div class="scope-vignette" aria-hidden="true"></div>
+      <div class="scope-lens" aria-hidden="true">
+        <svg class="scope-reticle" viewBox="0 0 100 100" aria-hidden="true"><path d="M15 50h9m52 0h9M50 15v9m0 52v9M40 50h3m14 0h3M50 40v3m0 14v3"/><circle cx="50" cy="50" r="1"/></svg>
+        <span class="scope-optic-mark">OPTICAL / 12 ×</span>
+      </div>
+      <div class="scope-caption">
+        <div class="scope-narration" aria-live="polite" aria-atomic="true">
+          <p id="scope-eyebrow">二階のベランダ ／ 望遠鏡</p>
+          <h2 id="scope-title">木の間に、動くもの。</h2>
+          <div id="scope-text"><p>鳥かと思って、少しだけレンズを動かした。</p></div>
+        </div>
+        <div class="scope-timeline">
+          <span id="scope-counter">01 / 03</span>
+          <div class="scope-progress-track" aria-hidden="true"><div id="scope-progress"></div></div>
+          <button id="scope-leave" type="button" data-action="scope-leave" hidden>目を離す <span aria-hidden="true">↗</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel" class="panel-overlay" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden>
+      <div class="panel-shell">
+        <button id="panel-close" class="panel-close" type="button" data-action="close-panel" aria-label="閉じる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        <header class="panel-heading"><p id="panel-eyebrow">ARCHIVE 001</p><h2 id="panel-title">記録</h2></header>
+        <div id="panel-body"></div>
+        <div id="panel-actions" class="panel-actions"></div>
+      </div>
+    </section>
+
+    <noscript><div class="no-script">このゲームを遊ぶには、ブラウザでJavaScriptを有効にしてください。</div></noscript>
+  </body>
+</html>
