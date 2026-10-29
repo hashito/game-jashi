@@ -226,3 +226,105 @@ test('the HUD bearing follows the walkable route instead of a line through walls
   assert.ok(g.length >= flat({ x: 0, z: 18.3 }, STAIRS.top) + flat(STAIRS.top, STAIRS.bottom) - .01, 'the length is the walking route down the stairs');
   assert.match(h.nodes.get('compass-label').textContent, new RegExp(`${Math.round(g.length)}m$`));
 });
+
+// v4.0.2 playtest-2 regressions, against the real controller and world.
+const calm = 'speechQueue=[];activeSpeech=null;speechTime=0;flags.leashUntil=0;flags.radioTuned=true;relocateEnemy(enemy,{x:-30,z:-30,level:0});monster=enemy.position;survival.grace=999;survival.cooldown=999;';
+
+test('place lines from the bridge never play at the phone; the story plan still does and the log keeps them', async () => {
+  const h = await harness(); h.encounter(); h.advance(.5);
+  h.run(calm + 'Object.assign(player,{x:.8,z:-11.5,level:0});');
+  h.run(`talk('bridge');say('私','ラベルの字が、雨で滲んでいる。');talk('enemyListen');talk('enemySearch');talk('trail');talk('enemyTurn');`);
+  assert.ok(h.run(`speechQueue.filter(l=>l.kind!=='critical').length`) <= 2, 'at most two place/ambient lines wait');
+  for (let i = 0; i < 4; i++) { h.frame(); if (h.run(`activeSpeech?.beat==='bridge'`)) break; }
+  assert.equal(h.run('activeSpeech?.beat'), 'bridge', 'the place line plays where it was triggered');
+  // Walk to the dropped phone: about 40 s later and 25 m away.
+  h.run('time+=40;Object.assign(player,{x:18.5,z:-19.5,level:0});');
+  const shown = [], current = h.run('activeSpeech?.text||""');
+  for (let t = 0; t < 40; t += .05) { h.frame(); const a = h.run('activeSpeech?.text||""'); if (a && a !== current && shown.at(-1) !== a) shown.push(a); }
+  assert.ok(!shown.some(t => /橋まで来た|滲んで|向こうの音も止まった|調べてる/.test(t)), `stale lines at the phone: ${shown.join(' / ')}`);
+  for (const line of narrative.DIALOGUE.trail) assert.ok(shown.includes(line.text) || h.run(`conversation.some(l=>l.text===${JSON.stringify(line.text)})`), 'the uncle\'s plan is never lost');
+  assert.ok(h.run(`conversation.some(l=>/滲んで/.test(l.text))`), 'a dropped place line stays in the log');
+  assert.ok(!h.run(`conversation.some(l=>/調べてる/.test(l.text))`), 'stale reactions are not logged');
+});
+
+test('the scythe warning says where it is; it is not repeated as a toast or a subtitle', async () => {
+  const h = await harness(); h.encounter(); h.advance(.5);
+  h.run(calm + 'flags.firstAttack=false;survival.cooldown=0;survival.grace=0;Object.assign(player,{x:0,z:8,level:0});yaw=0;relocateEnemy(enemy,{x:-1.6,z:8,level:0,heading:Math.PI/2});monster=enemy.position;enemy.mode="hunt";$("toast").hidden=true;');
+  let phase = '';
+  for (let t = 0; t < 4 && phase !== 'windup'; t += .05) { h.run('enemy.position.x=-1.6;enemy.position.z=8;'); h.frame(); phase = h.run('survival.phase'); }
+  assert.equal(phase, 'windup');
+  const warning = h.nodes.get('attack-warning'), edge = h.nodes.get('threat-edge');
+  assert.equal(warning.hidden, false); assert.equal(edge.hidden, false);
+  assert.equal(h.nodes.get('attack-warning-text').textContent, '左から — 右へ離れる'); assert.equal(edge.dataset.side, 'left');
+  assert.ok(h.nodes.get('toast').hidden || !/鎌/.test(h.nodes.get('toast').textContent), 'no duplicate toast');
+  assert.ok(h.nodes.get('subtitle').hidden || !/鎌/.test(h.nodes.get('subtitle-text').textContent), 'no duplicate subtitle');
+  // Turning during the windup: the creature is now behind.
+  h.run('yaw=-Math.PI/2;'); h.frame();
+  assert.equal(h.nodes.get('attack-warning-text').textContent, '背後 — 前へ走る'); assert.equal(edge.dataset.side, 'behind');
+  h.advance(1.2);
+  assert.equal(warning.hidden, true); assert.equal(edge.hidden, true);
+  assert.equal(h.run('flags.firstAttack'), true, 'the first-attack lines come after the swing');
+});
+
+test('inside the shed the creature keeps off the door for a while, warns, then comes in', async () => {
+  const h = await harness(); h.encounter(); h.advance(.5);
+  h.run(calm + 'survival.grace=0;survival.cooldown=0;Object.assign(player,{x:-19,z:-3.3,level:0});yaw=Math.PI;relocateEnemy(enemy,{x:-19,z:2.5,level:0,heading:Math.PI});monster=enemy.position;enemy.lastKnown={...player};enemy.mode="hunt";flags.hunt=true;');
+  const door = layout.BUILDINGS.find(b => b.id === 'shed').entrance;
+  let nearest = 99, warnedAt = null;
+  for (let t = 0; t < 19; t += .05) {
+    h.frame(); const m = h.state('monster'); if (t > 6) nearest = Math.min(nearest, flat(m, door));
+    assert.equal(h.run('survival.health'), 100, 'no strike while the player is reading inside');
+  }
+  assert.ok(nearest > 5, `the doorway is left clear (${nearest.toFixed(1)} m)`);
+  for (let t = 0; t < 3 && warnedAt === null; t += .05) { h.frame(); if (/出口は一つだけ/.test(h.nodes.get('toast').textContent)) warnedAt = h.run('shelter.inside'); }
+  assert.ok(warnedAt !== null && warnedAt >= 20, 'a clear warning after about 20 s');
+  let entered = false;
+  for (let t = 0; t < 40 && h.run('mode') === 'play'; t += .05) { h.frame(); if (flat(h.state('monster'), door) < 2.5 || flat(h.state('monster'), h.state('player')) < 3) entered = true; }
+  assert.ok(entered, 'staying on lets the creature in');
+});
+
+test('after the telescope the prompt is gone; the phone ring is hinted once and marked on the map', async () => {
+  const h = await harness(); h.encounter(); h.advance(.5);
+  h.run(`Object.assign(player,{x:${LANDMARKS.telescope.x},z:${LANDMARKS.telescope.z + .45},level:1});yaw=0;pitch=0;`); h.frame();
+  assert.notEqual(h.run('findTarget()?.id'), 'telescope');
+  assert.ok(h.nodes.get('interaction').hidden || !/望遠鏡/.test(h.nodes.get('interaction-text').textContent));
+  h.run(calm + 'story.stage=4;flags.phoneHint=false;lastPhone=-99;Object.assign(player,{x:16,z:-11,level:0});yaw=Math.PI;$("toast").hidden=true;');
+  h.frame();
+  assert.equal(h.run('flags.phoneHint'), true);
+  assert.match(h.nodes.get('toast').textContent, /着信音がする（.+）— 地図に記した/);
+  assert.equal(h.run('getObjective().id') === 'phone', false, 'the phone is not an objective');
+  h.click('journal');
+  assert.match(h.nodes.get('panel-body').innerHTML, /着信音？/);
+});
+
+test('the drag-to-look hint is shown at most twice per session', async () => {
+  const h = await harness(); h.encounter(); h.advance(.5);
+  h.run('world.canvas.requestPointerLock=()=>Promise.reject(new Error("no lock"));');
+  let shown = 0;
+  for (let i = 0; i < 6; i++) {
+    h.run('time+=70;$("toast").hidden=true;$("toast").textContent="";lockPointer();'); await new Promise(r => setTimeout(r, 0));
+    if (/ドラッグ/.test(h.nodes.get('toast').textContent)) shown++;
+  }
+  assert.equal(shown, 2);
+});
+
+test('a brief blur or pointer-lock blip no longer pauses; a real absence or Esc still does', async () => {
+  const h = await harness(); h.encounter(); h.advance(.5);
+  h.run(calm);
+  const paused = () => h.run('mode') === 'panel' && h.run('panelKind') === 'pause';
+  // An IME box / notification takes focus for a second, then gives it back.
+  h.run('document.hasFocus=()=>false;onWindowBlur();'); h.advance(1.2); h.run('document.hasFocus=()=>true;onWindowFocus();'); h.advance(3);
+  assert.equal(paused(), false, 'a one-second blur is ignored');
+  // The pointer lock drops and is regained at once.
+  h.run('document.pointerLockElement=null;onPointerLockChange();'); h.advance(.15); h.run('document.pointerLockElement=world.canvas;onPointerLockChange();'); h.advance(1);
+  assert.equal(paused(), false, 'a pointer-lock blip is ignored');
+  // Esc: the lock is released and stays released, the window keeps focus.
+  h.run('document.pointerLockElement=null;onPointerLockChange();'); h.advance(.2);
+  assert.equal(paused(), false); h.advance(.4);
+  assert.equal(paused(), true, 'Esc still pauses');
+  h.click('close-panel'); assert.equal(h.run('mode'), 'play');
+  // Really switching to another window still pauses, after the grace period.
+  h.run('document.pointerLockElement=world.canvas;document.hasFocus=()=>false;onWindowBlur();'); h.advance(2);
+  assert.equal(paused(), false); h.advance(.7);
+  assert.equal(paused(), true, 'a lasting blur pauses');
+});

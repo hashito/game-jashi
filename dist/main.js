@@ -1,14 +1,14 @@
 import * as THREE from './vendor/three.module.js';
 import { MountainWorld } from './world.js';
-import { LANDMARKS, TRAILS, BUILDINGS, WORLD_BOUNDS, SPAWN, LORE_PLACEMENTS, PARKING, BRIDGE, FLOORS, STAIRS, BALCONY, REVEAL_POINT, MAP_ZONES, COVER_PATCHES } from './layout.js';
+import { LANDMARKS, TRAILS, BUILDINGS, WORLD_BOUNDS, SPAWN, LORE_PLACEMENTS, PARKING, BRIDGE, FLOORS, STAIRS, BALCONY, REVEAL_POINT, MAP_ZONES, COVER_PATCHES, shelterAt } from './layout.js';
 import { Soundscape } from './audio.js';
 import { TapeEffects } from './vhs.js';
-import { RULES, clamp, createSurvival, updateSurvival, movementSpeed, stunEnemy, canThrow, endingFor, advanceEscapeAction } from './survival.js';
+import { RULES, clamp, createSurvival, updateSurvival, movementSpeed, stunEnemy, canThrow, endingFor, advanceEscapeAction, threatDirection } from './survival.js';
 import { INTRO, DOCUMENTS, LORE, CHAINS, DIALOGUE, ENDINGS, TELESCOPE_SCENES, endingParagraphs } from './narrative.js';
 import { createEnemyState, stepEnemy, relocateEnemy } from './enemy.js';
 import { createStoryState, advanceStory, getStoryDocument, canCompleteStoryChain, markStoryRead } from './story.js';
-import { speakerProfile, dialogueDuration, createDialogueView } from './dialogue.js';
-import { RADIO, createMechanisms, adjustDial, radioSignal, advanceTuning, ringBell } from './gimmicks.js';
+import { speakerProfile, dialogueDuration, createDialogueView, speechKind, tagSpeech, pruneSpeechQueue, enqueueSpeechLines, speechDuration } from './dialogue.js';
+import { RADIO, createMechanisms, adjustDial, radioSignal, advanceTuning, ringBell, createShelterState, updateShelter, shelterLeash } from './gimmicks.js';
 
 const $=id=>document.getElementById(id), SAVE_KEY='jashi-mountain-checkpoint-v4', LEGACY_SAVE_KEY='jashi-mountain-checkpoint-v3', OPTIONS_KEY='jashi-mountain-options-v1', END_KEY='jashi-mountain-endings-v2';
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
@@ -34,6 +34,9 @@ let speechQueue=[],speechTime=0,speechTotal=0,conversation=[],activeSpeech=null,
 const dialogueView=createDialogueView(document);
 let companionState='present',mechanisms=createMechanisms(),radioActive=false;
 let story=createStoryState(),scope=null,noiseEvent=null,noiseSerial=0,mapFloor='auto',lastStoryAdvance=0;
+// v4.0.2: single-door shelter timer, one-time hints (drag to look, T to hold).
+const HOLD_HINT_KEY='jashi-mountain-hold-hint-v1';
+let shelter=createShelterState(),dragHints=0,lastDragHint=-999,holdHintShown=!!read(HOLD_HINT_KEY,false);
 const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false,leashUntil:0});
 const textHTML=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
 const paragraphs=arr=>(arr||[]).map(t=>`<p>${textHTML(t)}</p>`).join('');
@@ -115,23 +118,37 @@ function updateRecordBadge(){
   $('record-updates').hidden=count===0;$('record-updates').textContent=count?String(count):'';
 }
 function toast(text,ms=3600){$('toast').textContent=text;$('toast').hidden=false;toastUntil=performance.now()+ms;}
-function enqueueSpeech(lines,priority=false){
-  if(priority){const interrupted=activeSpeech&&speechTime>0?[activeSpeech]:[];speechQueue=[...lines,...interrupted,...speechQueue];speechTime=0;activeSpeech=null;}
-  else speechQueue.push(...lines);
+// v4.0.2: every line carries its kind (critical / context / ambient), the time
+// and the place it was triggered. Context lines expire when the player leaves
+// the area, ambient reactions after a few seconds, and the backlog is capped.
+// Critical lines are never dropped; dropped context lines stay in the log.
+function enqueueSpeech(lines,priority=false,options={}){
+  const tagged=tagSpeech(lines,{time,origin:options.origin||player,radius:options.radius});
+  const result=enqueueSpeechLines(speechQueue,tagged,{priority,interrupted:priority&&activeSpeech&&speechTime>0?activeSpeech:null});
+  speechQueue=result.queue;logDroppedSpeech(result.dropped);
+  if(priority){speechTime=0;activeSpeech=null;}
+  pruneSpeech();
 }
-function say(speaker,text,priority=false){enqueueSpeech([{speaker,text}],priority);}
+function logDroppedSpeech(dropped){
+  for(const {line}of dropped){if(speechKind(line)==='ambient'||line.logged)continue;conversation.push({...line,logged:true,time:Math.floor(time)});if(conversation.length>90)conversation.shift();}
+}
+function pruneSpeech(){if(!speechQueue.length)return;const result=pruneSpeechQueue(speechQueue,{time,player});if(result.dropped.length){speechQueue=result.queue;logDroppedSpeech(result.dropped);}}
+function say(speaker,text,priority=false,options={}){enqueueSpeech([{speaker,text}],priority,options);}
 
 function talk(key,priority=false){enqueueSpeech((DIALOGUE[key]||[]).map(line=>({...line,beat:key})),priority);}
 
 function updateSpeech(dt){
   if(!dialoguePaused)speechTime-=dt;
+  if(!dialoguePaused)pruneSpeech();
   if(speechTime>0){dialogueView.tick(speechTime,{paused:dialoguePaused,queued:speechQueue.length});return;}
   const previous=activeSpeech;activeSpeech=speechQueue.shift()||null;
   if(!activeSpeech){dialogueView.hide();dialoguePaused=false;return;}
-  speechTime=speechTotal=dialogueDuration(activeSpeech);
+  speechTime=speechTotal=speechDuration(activeSpeech,speechQueue.length);
   dialogueView.show(activeSpeech,{remaining:speechTime,total:speechTotal,queued:speechQueue.length,paused:dialoguePaused,previous:previous?.beat===activeSpeech.beat?previous:null});
-  conversation.push({...activeSpeech,time:Math.floor(time)});if(conversation.length>90)conversation.shift();
+  if(!activeSpeech.logged){conversation.push({...activeSpeech,time:Math.floor(time)});if(conversation.length>90)conversation.shift();}
   if(/^無線/.test(speakerProfile(activeSpeech).channel))cue('radio');
+  $('subtitle-hold')?.classList.remove('hint');
+  if(!holdHintShown&&mode==='play'){holdHintShown=true;write(HOLD_HINT_KEY,true);$('subtitle-hold')?.classList.add('hint');toast(touch?'「読む間停止」を押すと、会話を読むあいだ進行が止まります':'T で、会話を読むあいだ進行が止まります（もう一度 T で再開）',6500);}
 }
 function nextSpeech(){if(mode!=='play'||!activeSpeech)return;speechTime=0;updateSpeech(0);if(!dialoguePaused)lockPointer();}
 function toggleDialogueHold(){
@@ -141,13 +158,15 @@ function toggleDialogueHold(){
 }
 function freezeInput(){keys={};autoWalk=false;joystick={x:0,y:0};touchEyes=false;touchRun=false;drag=null;$('joystick-knob').style.transform='translate(0,0)';}
 function panel(kind,eyebrow,title,body,actions,closable=true){
-  if(kind!=='radio')radioActive=false;$('attack-warning').hidden=true;
+  if(kind!=='radio')radioActive=false;hideAttackWarning();
   if(mode!=='panel')previousMode=mode;mode='panel';panelKind=kind;freezeInput();document.exitPointerLock?.();
   $('panel-eyebrow').textContent=eyebrow;$('panel-title').textContent=title;$('panel-body').innerHTML=body;$('panel-actions').innerHTML=actions;
   $('panel-close').hidden=!closable;$('panel').hidden=false;$('panel-body').scrollTop=0;$('veil').style.opacity=0;tape.canvas.hidden=true;
   quietSound();dialogueView.tick(speechTime,{paused:true});requestAnimationFrame(()=>$('panel-actions').querySelector('button')?.focus());
 }
-function lockPointer(){if(touch||mode!=='play'||dialoguePaused)return;try{world.canvas.requestPointerLock?.()?.catch(()=>toast('画面をドラッグして見回せます',1800));}catch{}}
+// v4.0.2: the drag hint appears at most twice per session, a minute apart.
+function dragHint(){if(dragHints>=2||time-lastDragHint<60)return;dragHints++;lastDragHint=time;toast('画面をドラッグして見回せます',2200);}
+function lockPointer(){if(touch||mode!=='play'||dialoguePaused)return;if(!world.canvas.requestPointerLock){dragHint();return;}try{world.canvas.requestPointerLock()?.catch?.(dragHint);}catch{dragHint();}}
 function resume(){
   radioActive=false;quietSound();
   if(panelKind==='intro'){beginPlay();return;}
@@ -168,7 +187,7 @@ function newGame(){
   sound.start();flags=freshFlags();collected=new Set();completed=new Set();scares=new Set();stats={repels:0,escapes:0};survival=createSurvival();story=createStoryState();
   player={x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};yaw=SPAWN.yaw;pitch=-.02;enemy=createEnemyState(REVEAL_POINT);monster=enemy.position;time=0;charges=0;lamp=true;glassesOn=false;
   lastSave=0;lastPhone=0;ambientTime=12;action=null;checkpoint=null;speechQueue=[];activeSpeech=null;speechTime=0;conversation=[];throwTime=0;scope=null;noiseEvent=null;noiseSerial=0;mapFloor='auto';lastStoryAdvance=0;tape.clear();
-  speechTotal=0;dialoguePaused=false;radioActive=false;mechanisms=createMechanisms();companionState='present';dialogueView.hide();
+  speechTotal=0;dialoguePaused=false;radioActive=false;mechanisms=createMechanisms();shelter=createShelterState();companionState='present';dialogueView.hide();
   $('scope-sequence').hidden=true;document.body.dataset.scene='explore';remove(SAVE_KEY);remove(LEGACY_SAVE_KEY);syncWorld();
   const instruction=touch?'左のスティックで移動。右側をなぞって見回します。':'W A S D で移動、マウスで見回し、E で調べます。';
   panel('intro',INTRO.eyebrow,INTRO.title,'<div class="ending-copy">'+paragraphs(INTRO.paragraphs)+'</div><div class="intro-hint">'+instruction+'<br>二階の部屋から、ベランダへ。まず望遠鏡を確かめてください。</div>',button('begin','録画を始める'),false);previousMode='play';
@@ -215,7 +234,7 @@ function restore(s){
   mechanisms=createMechanisms(s.mechanisms);companionState=flags.seen?'away':'present';radioActive=false;dialoguePaused=false;
   player={...s.player};enemy=createEnemyState(REVEAL_POINT,s.enemy);monster=enemy.position;story=createStoryState(s.story);yaw=s.yaw||0;pitch=clamp(s.pitch||0,-1.2,1.2);time=s.time;
   survival={...createSurvival(),...s.survival,phase:'idle',phaseTime:0,stun:0,dead:false,hit:0,cooldown:2};
-  charges=clamp(s.charges||0,0,2);lamp=s.lamp!==false;glassesOn=!!s.glassesOn;conversation=s.conversation||[];speechQueue=Array.isArray(s.speechQueue)?s.speechQueue.map(l=>({...l})):[];activeSpeech=s.activeSpeech?{...s.activeSpeech}:null;speechTime=activeSpeech?Math.max(0,s.speechTime||0):0;lastStoryAdvance=Number.isFinite(s.lastStoryAdvance)?s.lastStoryAdvance:time;action=null;scope=null;noiseEvent=null;noiseSerial=s.noiseSerial||0;
+  shelter=createShelterState();charges=clamp(s.charges||0,0,2);lamp=s.lamp!==false;glassesOn=!!s.glassesOn;conversation=s.conversation||[];speechQueue=Array.isArray(s.speechQueue)?s.speechQueue.map(l=>({...l})):[];activeSpeech=s.activeSpeech?{...s.activeSpeech}:null;speechTime=activeSpeech?Math.max(0,s.speechTime||0):0;lastStoryAdvance=Number.isFinite(s.lastStoryAdvance)?s.lastStoryAdvance:time;action=null;scope=null;noiseEvent=null;noiseSerial=s.noiseSerial||0;
   throwTime=0;lastSave=time;lastPhone=time;ambientTime=12;mapFloor='auto';speechTotal=activeSpeech?Math.max(speechTime,dialogueDuration(activeSpeech)):0;freezeInput();
   world.setGateOpen(!!flags.gate);world.setShutterClosed?.(!!flags.shutterClosed);if(!world.isFreeAt(player))player={x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};
   if(!world.isFreeAt(monster,.3)){enemy=createEnemyState(REVEAL_POINT);monster=enemy.position;}
@@ -270,8 +289,12 @@ function encounter(){
 function maybeHunt(){
   if(flags.seen&&flags.crank&&story.stage>=5&&!flags.hunt){flags.hunt=true;emitNoise(55,'crank');cue('hunt');tape.trigger('hunt');toast('金具が鳴った。森の足音が止まる。',4200);}
 }
-function docHTML(d){
-  let body=d.image?'<figure class="photo-frame"><img src="'+d.image+'" alt="'+textHTML(d.title)+'"><figcaption>'+textHTML(d.caption||'撮影した記録。')+'</figcaption></figure>':'';
+// v4.0.2: pictures of the in-game item models (tools/make-item-images.mjs).
+const ITEM_IMAGES=new Set(['glasses','note','bottle','crank','photo','phone','radio','bell','telescope','boots','ledger','cassette','mirror','ribbon','toy','tag']);
+const itemImage=(id,cls='item-figure')=>ITEM_IMAGES.has(id)?`<img class="${cls}" src="assets/items/${id}.png" alt="" width="320" height="240" decoding="async">`:'';
+function docHTML(d,id=''){
+  let body=!d.image&&ITEM_IMAGES.has(id)?`<figure class="item-shot">${itemImage(id)}<figcaption>DVで撮った ${textHTML(d.title)}</figcaption></figure>`:'';
+  body+=d.image?'<figure class="photo-frame"><img src="'+d.image+'" alt="'+textHTML(d.title)+'"><figcaption>'+textHTML(d.caption||'撮影した記録。')+'</figcaption></figure>':'';
   if(d.unread)body+='<p class="record-revision">撮影した面を見返して、分かったことがある。</p>';
   body+='<div class="document-card">'+paragraphs(d.paragraphs)+'</div>';
   if(d.pending)body+='<p class="small-note record-pending">裏面や細かい字も撮影してある。ほかの記録と照合できそうだ。</p>';
@@ -290,7 +313,7 @@ function readObject(id,collect=true){
   const d=getStoryDocument(id,storyContext(),story);if(!d)return;
   const chains=checkChains();for(const key of completed)if(!prior.has(key)&&!chains.includes(CHAINS[key]))chains.push(CHAINS[key]);
   cue(['cassette','mirror'].includes(id)?'tape':id==='toy'?'bell':'page',player);
-  let body=docHTML(d);
+  let body=docHTML(d,id);
   for(const c of chains)body+='<section class="linked-story"><small>つながった記録</small><h3>'+textHTML(c.title)+'</h3>'+paragraphs(c.paragraphs)+'</section>';
   markStoryRead(story,id,d.revision);updateRecordBadge();
   panel('document',d.eyebrow||'備品記録 / '+(d.category||'拾得物'),d.title,body,button('close-panel','記録を閉じる'));
@@ -306,6 +329,7 @@ function findTarget(){
   const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let best=null,score=Infinity;
   for(const item of Object.values(world.items)){
     if(['glasses','bottle','crank'].includes(item.id)&&flags[item.id])continue;
+    if(item.id==='telescope'&&flags.seen)continue;
     if(item.id==='gate'&&flags.gate)continue;
     if(Math.abs(world.actorHeight(player)-world.actorHeight(item))>1.25)continue;
     const d=actorDistance(player,item);if(d>3.4)continue;
@@ -445,6 +469,8 @@ function mapHTML(){
     plan+=COVER_PATCHES.map(c=>`<rect x="${x(c.x-c.w/2)}" y="${z(c.z-c.d/2)}" width="${c.w*scale}" height="${c.d*scale}" fill="#596451" stroke="#bac4a5"/>`).join('');
     plan+=MAP_ZONES.filter(zone=>zone.id!=='cabin').map(zone=>`<text x="${x(zone.x)}" y="${z(zone.z)+28}" text-anchor="middle" fill="${zone.color}" font-size="9">${textHTML(zone.label)}</text>`).join('');
     for(const[id,label]of[['bell','呼び鐘'],['radio','無線機']]){const p=LANDMARKS[id];plan+=marker(p,3,'#dac491')+`<text x="${x(p.x)+7}" y="${z(p.z)-7}" fill="#dac491" font-size="9">${label}</text>`;}
+    // v4.0.2: once the ringing has been heard, its rough place is noted (optional).
+    if(flags.phoneHint&&!flags.phone){const p=LANDMARKS.phone;plan+=`<circle cx="${x(p.x)}" cy="${z(p.z)}" r="8" fill="none" stroke="#c9a08e" stroke-width="1.2" stroke-dasharray="2 3"/><text x="${x(p.x)+11}" y="${z(p.z)+3}" fill="#c9a08e" font-size="9">着信音？</text>`;}
   }
   plan+=LORE_PLACEMENTS.filter(p=>(p.level||0)===floor&&collected.has(p.id)).map(p=>`<circle cx="${x(p.x)}" cy="${z(p.z)}" r="2.3" fill="#8aab9a"/>`).join('');
   if(target&&(target.level||0)===floor)plan+=marker(target,9,'#d8be77');
@@ -460,7 +486,7 @@ function journal(tab='map'){
   else{
     const chains=Object.entries(CHAINS).filter(([,c])=>c.ids.some(k=>collected.has(k)));
     const found=Object.keys({...DOCUMENTS,...LORE}).filter(id=>collected.has(id));
-    body=`<div class="story-progress">${chains.map(([id,c])=>`<section class="story-chain"><small>${c.ids.filter(k=>collected.has(k)||flags[k]).length} / ${c.ids.length} 個の記録</small><h3>${textHTML(completed.has(id)?c.title:'まだ、つながらない記録')}</h3>${completed.has(id)?`<div class="chain-complete">記録がつながった</div>${paragraphs(c.paragraphs)}`:'<p>撮影した面を見返すと、ほかの物とのつながりが分かるかもしれない。</p>'}</section>`).join('')}</div><div class="journal-grid">${found.map(id=>{const d=getStoryDocument(id,storyContext(),story),unread=d.revision>(story.readRevisions[id]||0);return `<button class="journal-entry ${unread?'unread-entry':''}" data-action="read-${id}"><small>${unread?'追記あり':'記録済み'}</small><strong>${textHTML(d.title)}</strong></button>`;}).join('')}</div>${found.length?'':'<p>まだ小物の記録はありません。近づいて E で調べると、ここに残ります。</p>'}`;
+    body=`<div class="story-progress">${chains.map(([id,c])=>`<section class="story-chain"><small>${c.ids.filter(k=>collected.has(k)||flags[k]).length} / ${c.ids.length} 個の記録</small><h3>${textHTML(completed.has(id)?c.title:'まだ、つながらない記録')}</h3>${completed.has(id)?`<div class="chain-complete">記録がつながった</div>${paragraphs(c.paragraphs)}`:'<p>撮影した面を見返すと、ほかの物とのつながりが分かるかもしれない。</p>'}</section>`).join('')}</div><div class="journal-grid">${found.map(id=>{const d=getStoryDocument(id,storyContext(),story),unread=d.revision>(story.readRevisions[id]||0);return `<button class="journal-entry ${unread?'unread-entry':''} ${ITEM_IMAGES.has(id)?'has-thumb':''}" data-action="read-${id}">${itemImage(id,'journal-thumb')}<small>${unread?'追記あり':'記録済み'}</small><strong>${textHTML(d.title)}</strong></button>`;}).join('')}</div>${found.length?'':'<p>まだ小物の記録はありません。近づいて E で調べると、ここに残ります。</p>'}`;
   }
   panel('journal','DV記録 ／ 拾得物と会話','帰る道を、確かめる。',navigation+body,button('close-panel',mode==='scope'||mode==='panel'&&previousMode==='scope'?'望遠鏡へ戻る':'探索へ戻る'));
 }
@@ -473,7 +499,7 @@ function pause(){if(mode!=='play'&&mode!=='scope')return;const scoped=mode==='sc
 
 function updateEnemyMotion(dt,moving=false,running=false,closed=false){
   const looking=gazeAtMonster(closed);
-  const events=stepEnemy(enemy,{player,active:flags.seen,hunt:flags.hunt,playerMoving:moving,playerRunning:running,playerLooking:looking,closedEyes:closed,playerPitch:pitch,lamp,attackPhase:survival.phase,stun:survival.stun,dead:survival.dead,noiseEvent,leash:earlyLeash()},dt,world);
+  const events=stepEnemy(enemy,{player,active:flags.seen,hunt:flags.hunt,playerMoving:moving,playerRunning:running,playerLooking:looking,closedEyes:closed,playerPitch:pitch,lamp,attackPhase:survival.phase,stun:survival.stun,dead:survival.dead,noiseEvent,leash:earlyLeash()||currentShelterLeash()},dt,world);
   for(const event of events){
     if(event==='search'&&actorDistance(player,monster)<26)storyBeat('enemySearch');
     if(event==='heard'&&actorDistance(player,monster)<22)storyBeat('enemyListen');
@@ -495,8 +521,9 @@ function gazeAtMonster(closed){
 
 function handleSurvivalEvents(events){
   for(const event of events){
-    if(event==='windup'){cue('windup',monster);if(!flags.firstAttack){flags.firstAttack=true;storyBeat('firstAttack');}toast('鎌が上がった。横へ、離れる。',1100);}
-    if(event==='swing')cue('attack',monster);
+    // v4.0.2: the windup is told once, by the centre warning (with direction) and its sound.
+    if(event==='windup'){cue('windup',monster);updateAttackWarning();}
+    if(event==='swing'){cue('attack',monster);if(!flags.firstAttack){flags.firstAttack=true;storyBeat('firstAttack');}}
     if(event==='hit'){
       cue('hit');tape.trigger('hit');action=null;$('health-value').textContent=Math.ceil(survival.health);$('health-bar').style.width=survival.health+'%';const d=Math.max(.01,distance(player,monster));
       world.move(player,(player.x-monster.x)/d*.65,(player.z-monster.z)/d*.65);toast(survival.health>RULES.attackDamage?'被弾 — まだ動ける。鎌の届かない所へ。':'被弾 — 次は耐えられない。',3200);
@@ -505,13 +532,32 @@ function handleSurvivalEvents(events){
     if(event==='exhausted'){cue('breath');toast('息が切れた。少し歩いて呼吸を整える。',2400);}
     if(event==='resumeHunt'){flags.hunt=true;cue('hunt');tape.trigger('hunt');toast('また、足音が近づく。',2500);}
     if(event==='death')death('attack');
-    if(event==='swing'||event==='death'||event==='gazeDeath')$('attack-warning').hidden=true;
+    if(event==='swing'||event==='death'||event==='gazeDeath')hideAttackWarning();
     if(event==='gazeDeath')death('gaze');
   }
 }
 
+function hideAttackWarning(){$('attack-warning').hidden=true;$('threat-edge').hidden=true;delete document.body.dataset.threat;}
+// v4.0.2: the warning names where the scythe is and which way to get clear.
+function updateAttackWarning(){
+  if(survival.phase!=='windup'){hideAttackWarning();return;}
+  const dir=threatDirection({player,yaw,monster});
+  $('attack-warning').hidden=false;$('attack-warning').dataset.side=dir.side;$('attack-warning-text').textContent=dir.label;$('attack-warning-arrow').textContent=dir.arrow;
+  $('threat-edge').hidden=false;$('threat-edge').dataset.side=dir.side;document.body.dataset.threat=dir.side;
+}
+const SOUND_SIDE={front:'前の方',left:'左手の奥',right:'右手の奥',behind:'背後の奥'};
+function currentShelterLeash(){if(!flags.seen||earlyLeash())return null;const b=shelterAt(player);return shelterLeash(shelter,b,!!b);}
+function shelterEvents(dt){
+  const building=flags.seen&&!earlyLeash()?shelterAt(player):null;
+  for(const event of updateShelter(shelter,building?.id||null,dt)){
+    if(event==='enter'&&building?.id==='shelter'&&flags.phoneHint&&!flags.phone&&!scares.has('phone-hut')){scares.add('phone-hut');toast('着信音は、小屋の先の尾根から聞こえる。',4200);}
+    if(event==='warn'){cue('knock');toast('出口は一つだけ。長く留まると、戸口をふさがれる。',5200);}
+    if(event==='release'){cue('knock');emitNoise(45,'shelter',player);toast('戸口の外で、足音が止まった。',3600);}
+  }
+}
 function environmentalEvents(dt){
   if(!flags.seen)return;
+  shelterEvents(dt);
   if(!flags.downstairs&&player.level===0&&Math.abs(world.actorHeight(player)-world.ground(player.x,player.z))<.35){
     flags.downstairs=true;flags.leashUntil=Math.max(flags.leashUntil||0,time+EARLY.downstairsSeconds);world.setStairGuide?.(false);storyBeat('downstairs');cue('knock');world.triggerScare('window');
   }
@@ -520,7 +566,7 @@ function environmentalEvents(dt){
   if(story.stage>=3&&!flags.bridge&&player.level===0&&distance(player,BRIDGE)<4.3){flags.bridge=true;world.triggerScare('bridge');cue('tape');storyBeat('bridge');tape.trigger('tape');}
   if(story.stage>=4&&flags.bottle&&!scares.has('window')&&distance(player,BUILDINGS[0])<15){scares.add('window');world.triggerScare('window');cue('knock');storyBeat('nearCabin');tape.trigger('tape');}
   const nearPhone=player.level===0&&distance(player,LANDMARKS.phone)<24;
-  if(story.stage>=4&&!flags.phone&&nearPhone&&time-lastPhone>23){lastPhone=time;emitNoise(24,'phone',LANDMARKS.phone);cue('phone',LANDMARKS.phone);world.triggerScare('phone');if(!flags.phoneHint){flags.phoneHint=true;say('私','尾根のほうで、携帯が鳴っている。ここは圏外のはずだ。');}}
+  if(story.stage>=4&&!flags.phone&&nearPhone&&time-lastPhone>23){lastPhone=time;emitNoise(24,'phone',LANDMARKS.phone);cue('phone',LANDMARKS.phone);world.triggerScare('phone');if(!flags.phoneHint){flags.phoneHint=true;const dir=threatDirection({player,yaw,monster:LANDMARKS.phone});say('私','尾根のほうで、携帯が鳴っている。ここは圏外のはずだ。',false,{radius:30});toast(`どこかで、着信音がする（${SOUND_SIDE[dir.side]}）— 地図に記した`,5200);}}
   ambientTime-=dt;
   if(ambientTime<=0){ambientTime=22+Math.random()*16;if(story.stage>=3&&actorDistance(player,monster)<22&&survival.stun<=0){cue('tape');if(story.stage>=4&&Math.random()<.3)tape.trigger('tape');}}
 }
@@ -543,7 +589,7 @@ function stepGame(dt){
   const events=updateSurvival(survival,{moving,closed,run,active:flags.seen,gaze,blocked,glasses:glassesOn,distance:d,attackAligned:enemy.attackAligned,attackVisible},dt);
   handleSurvivalEvents(events);
   if(mode!=='play')return;
-  $('attack-warning').hidden=survival.phase!=='windup';
+  updateAttackWarning();
   if(action){
     const result=advanceEscapeAction(action,{dt,distance:actorDistance(player,action.target),damaged:events.includes('hit'),dead:survival.dead});action=result.action;
     if(result.result==='cancelled')toast('操作を中断した。もう一度 E で始める。',2300);
@@ -570,6 +616,8 @@ function stepGame(dt){
   $('veil').style.opacity=closed?'1':'0';
   document.body.classList.toggle('chased',enemy.mode==='hunt'&&d<13);document.body.classList.toggle('injured',survival.health<50);
   const danger=threatLevel(gaze,d);$('danger-vignette').style.opacity=String(clamp(danger*.65+survival.hit*.2,0,.85));
+  // v4.0.2: in danger the subtitle card shrinks out of the way.
+  const tense=survival.phase==='windup'||survival.phase==='strike'||danger>.55||enemy.mode==='hunt'&&d<10;if(tense)document.body.dataset.danger='high';else delete document.body.dataset.danger;
   const inside=BUILDINGS.some(b=>Math.abs(player.x-b.x)<b.w/2&&Math.abs(player.z-b.z)<b.d/2);
   const surface=climbing?'stairs':inside?'wood':player.z>16||player.x<-21?'gravel':'leaves';
   sound.update({danger,moving,running:moving&&speed>RULES.walk,inside,time,stamina:survival.stamina,pursuit:enemy.mode==='hunt',monsterDistance:flags.seen?d:999,enemyMode:enemy.mode,enemySpeed:enemy.speed,listener:{...player,yaw},monster,occluded:blocked,surface,dialogue:!!activeSpeech,paused:false,radioTuning:{active:false}});
@@ -591,8 +639,28 @@ function renderFrame(dt){
   tape.update({dt,time,danger,source:world.canvas,enabled:options.tape>0,intensity:options.tape,reduced:reduced||!options.motion,playing:['play','scope','dying'].includes(mode)&&!dialoguePaused,health:survival.health});
 }
 
+// v4.0.2: the automatic pause ("sleep") was too eager: any window blur (an
+// IME candidate box, a notification, a permission bubble) or a momentary loss
+// of pointer lock paused at once. Now a blur must last 2.5 s with the window
+// still unfocused, and a lost pointer lock pauses only if it is not regained
+// within 0.4 s while the window keeps focus (that is the Esc key). A hidden tab
+// still pauses at once. Clicking the view re-locks the pointer without a pause.
+const SLEEP=Object.freeze({blurMs:2500,unlockMs:400});
+let blurredAt=0,unlockedAt=0;
+function onWindowBlur(){freezeInput();if(mode==='play'||mode==='scope')blurredAt=performance.now()||1;}
+function onWindowFocus(){blurredAt=0;unlockedAt=0;}
+function onPointerLockChange(){
+  if(document.pointerLockElement){unlockedAt=0;return;}
+  if(mode==='play'&&!touch&&!dialoguePaused)unlockedAt=performance.now()||1;
+}
+function checkSleep(now){
+  if(mode!=='play'&&mode!=='scope'){blurredAt=0;unlockedAt=0;return;}
+  const focused=document.hasFocus?.()!==false;
+  if(blurredAt&&now-blurredAt>=SLEEP.blurMs){blurredAt=0;unlockedAt=0;if(!focused)pause();return;}
+  if(unlockedAt&&now-unlockedAt>=SLEEP.unlockMs){unlockedAt=0;if(!document.pointerLockElement&&!dialoguePaused&&!blurredAt&&focused&&mode==='play')pause();}
+}
 function tick(now){
-  animationFrame=requestAnimationFrame(tick);const dt=Math.min(.25,Math.max(0,(now-lastFrame)/1000));lastFrame=now;
+  animationFrame=requestAnimationFrame(tick);checkSleep(now);const dt=Math.min(.25,Math.max(0,(now-lastFrame)/1000));lastFrame=now;
   if(mode==='play'&&!dialoguePaused){let remaining=dt;while(remaining>0&&mode==='play'&&!dialoguePaused){const step=Math.min(1/30,remaining);stepGame(step);remaining-=step;}if(mode==='play'||mode==='dying')renderFrame(dt);}
   else if(mode==='play'&&dialoguePaused){dialogueView.tick(speechTime,{paused:true,queued:speechQueue.length});renderFrame(0);}
   else if(mode==='scope'){stepScope(dt);renderFrame(dt);}
@@ -656,11 +724,11 @@ document.addEventListener('keydown',event=>{
   if(event.code==='KeyZ'){autoWalk=!autoWalk;toast(autoWalk?'自動歩行：Zで停止':'自動歩行を止めた',1300);}
 });
 document.addEventListener('keyup',event=>{delete keys[event.code];});
-document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&mode==='play'&&!touch&&!dialoguePaused)pause();});
+document.addEventListener('pointerlockchange',onPointerLockChange);
 document.addEventListener('mousemove',event=>{if(mode==='play'&&!dialoguePaused&&document.pointerLockElement===world?.canvas){yaw-=event.movementX*.0021*options.sensitivity;pitch=clamp(pitch-event.movementY*.0019*options.sensitivity,-1.3,1.3);}});
 function bindPointers(){
-  world.canvas.addEventListener('pointerdown',event=>{if(mode!=='play'||dialoguePaused)return;sound.start();if(document.pointerLockElement===world.canvas)return;drag={id:event.pointerId,x:event.clientX,y:event.clientY};world.canvas.setPointerCapture?.(event.pointerId);});
-  world.canvas.addEventListener('pointermove',event=>{if(mode!=='play'||!drag||drag.id!==event.pointerId)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;yaw-=dx*.004*options.sensitivity;pitch=clamp(pitch-dy*.0035*options.sensitivity,-1.3,1.3);drag.x=event.clientX;drag.y=event.clientY;});
+  world.canvas.addEventListener('pointerdown',event=>{if(mode!=='play'||dialoguePaused)return;sound.start();if(document.pointerLockElement===world.canvas)return;dragHints=2;if(!touch&&world.canvas.requestPointerLock&&event.pointerType==='mouse')lockPointer();drag={id:event.pointerId,x:event.clientX,y:event.clientY};world.canvas.setPointerCapture?.(event.pointerId);});
+  world.canvas.addEventListener('pointermove',event=>{if(mode!=='play'||!drag||drag.id!==event.pointerId||document.pointerLockElement)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;yaw-=dx*.004*options.sensitivity;pitch=clamp(pitch-dy*.0035*options.sensitivity,-1.3,1.3);drag.x=event.clientX;drag.y=event.clientY;});
   const endDrag=()=>{drag=null;};world.canvas.addEventListener('pointerup',endDrag);world.canvas.addEventListener('pointercancel',endDrag);
   const stick=$('joystick');let stickId=null;
   const moveStick=event=>{if(stickId!==event.pointerId||mode!=='play'||dialoguePaused)return;const r=stick.getBoundingClientRect(),dx=(event.clientX-r.left-r.width/2)/(r.width*.34),dy=(event.clientY-r.top-r.height/2)/(r.height*.34),n=Math.max(1,Math.hypot(dx,dy));joystick={x:dx/n,y:dy/n};$('joystick-knob').style.transform='translate('+(joystick.x*r.width*.27)+'px,'+(joystick.y*r.height*.27)+'px)';};
@@ -669,7 +737,7 @@ function bindPointers(){
   const endStick=()=>{stickId=null;joystick={x:0,y:0};$('joystick-knob').style.transform='translate(0,0)';};stick.addEventListener('pointerup',endStick);stick.addEventListener('pointercancel',endStick);
   for(const name of ['sprint','close-eyes']){const el=document.querySelector('[data-action="'+name+'"]');const set=value=>{if(name==='sprint')touchRun=value;else touchEyes=value;};el.addEventListener('pointerdown',event=>{if(mode!=='play'||dialoguePaused)return;event.preventDefault();el.setPointerCapture(event.pointerId);set(true);});el.addEventListener('pointerup',()=>set(false));el.addEventListener('pointercancel',()=>set(false));}
 }
-addEventListener('blur',()=>{freezeInput();if(mode==='play'||mode==='scope')pause();});
+addEventListener('blur',onWindowBlur);addEventListener('focus',onWindowFocus);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){freezeInput();if(mode==='play'||mode==='scope')pause();}});
 async function boot(){
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));

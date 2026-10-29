@@ -75,3 +75,8 @@ export function distanceToSegment(x,z,a,b){
   return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);
 }
 export function distanceToTrail(x,z){return Math.min(...TRAILS.flatMap(trail=>trail.points.slice(1).map((p,i)=>distanceToSegment(x,z,trail.points[i],p)-trail.width/2)));}
+// v4.0.2: the single-door building (shed or evacuation hut) a ground-floor point is inside, or null.
+export function shelterAt(p){
+  if(!p||(p.level||0)!==0)return null;
+  return BUILDINGS.find(b=>b.id!=='cabin'&&Math.abs(p.x-b.x)<b.w/2&&Math.abs(p.z-b.z)<b.d/2)||null;
+}

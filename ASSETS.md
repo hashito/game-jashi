@@ -110,3 +110,11 @@ built-in image_genで各素材を別々に生成しました。Pillowによる�
 - 生成プロンプト：
 
 > Use case: stylized-concept. Asset type: square portrait used for a brief non-graphic horror encounter in a Japanese first-person game. One 1024 by 1024 frontal portrait of an uncanny adult humanoid head against pure black. Only the head and a small part of the neck are visible. Completely hairless pale gray-white head with dry plaster-like pores, fine shallow surface cracks, and slight uneven age-worn surface texture. The anatomy must have EXACTLY ONE eye: one narrow VERTICAL slit-shaped eye in the CENTER of the forehead, running vertically along the midline just above the nose. The tiny iris within that single vertical eye is dark amber. There are NO ordinary paired eyes anywhere: the left and right eye areas are solid smooth pale skin, no eye sockets, no eyelids, no brows, no horizontal eye shapes. A small ordinary nose and a small closed, faintly asymmetrical mouth remain. Quiet blank expression, not screaming, no teeth, no aggression pose. Chilling stillness. Cold dim side light catches the plaster-like surface and the single central vertical eye, the sides of the skull fade into black. Believable practical creature prosthetic photographed as an old grainy film still, desaturated gray palette, deep shadows, eerie but readable form. No blood, no wounds, no exposed anatomy, no torso, no nudity, no text, no UI, no scanlines, no VHS tearing, no border, no watermark. The game will add video corruption separately. Absolutely no pair of conventional eyes: only one vertical central eye.
+
+## 4.0.2 小物の画像（2026-10-29）
+
+外部サービスは使っていません。`node tools/make-item-images.mjs` が、ゲーム内の3Dモデル（`dist/world.js` の小物）をヘッドレス Edge で暗い背景の撮影台に置き、灯りに近い暖色の光で描画して PNG にしています。
+
+- ファイル：`dist/assets/items/<id>.png`（320 × 240、16点）と一覧 `dist/assets/items/manifest.json`
+- 対象：glasses, note, bottle, crank, photo, phone, radio, bell, telescope, boots, ledger, cassette, mirror, ribbon, toy, tag
+- 用途：記録画面の「DVで撮った」写真と、記録一覧の小さな見本。モデルを変えたら上のコマンドで撮り直す。

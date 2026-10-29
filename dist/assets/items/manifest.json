@@ -1,0 +1,133 @@
+{
+  "generated": "2026-10-29",
+  "items": [
+    {
+      "id": "glasses",
+      "label": "サングラスと鍵束",
+      "file": "assets/items/glasses.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "note",
+      "label": "叔父の書き置き",
+      "file": "assets/items/note.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "bottle",
+      "label": "蓋つきの容器 二本",
+      "file": "assets/items/bottle.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "crank",
+      "label": "巻上げハンドル",
+      "file": "assets/items/crank.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "photo",
+      "label": "古い写真の封筒",
+      "file": "assets/items/photo.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "phone",
+      "label": "古い携帯電話",
+      "file": "assets/items/phone.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "radio",
+      "label": "携帯無線機",
+      "file": "assets/items/radio.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "bell",
+      "label": "林業用の呼び鐘",
+      "file": "assets/items/bell.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "telescope",
+      "label": "望遠鏡",
+      "file": "assets/items/telescope.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "boots",
+      "label": "揃えられた長靴",
+      "file": "assets/items/boots.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "ledger",
+      "label": "作業日誌",
+      "file": "assets/items/ledger.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "cassette",
+      "label": "カセットケース",
+      "file": "assets/items/cassette.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "mirror",
+      "label": "手鏡",
+      "file": "assets/items/mirror.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "ribbon",
+      "label": "橋の赤い紐",
+      "file": "assets/items/ribbon.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "toy",
+      "label": "布袋の鈴",
+      "file": "assets/items/toy.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    },
+    {
+      "id": "tag",
+      "label": "作業札",
+      "file": "assets/items/tag.png",
+      "width": 320,
+      "height": 240,
+      "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
+    }
+  ]
+}

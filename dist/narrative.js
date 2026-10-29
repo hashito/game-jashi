@@ -256,7 +256,7 @@ export const DIALOGUE = {
     { speaker: '修司（無線）', text: '帰りはその橋を南へ渡る。別荘の手前で西へ曲がるんだ。' },
   ],
   firstAttack: [
-    { speaker: '私', text: '鎌を上げた。こっちへ来る。' },
+    { speaker: '私', text: '鎌が、振り下ろされた。……次も来る。' },
     { speaker: '修司（無線）', text: '止まるな。木でも壁でもいい、間に入れろ。' },
   ],
   enemyTurn: [

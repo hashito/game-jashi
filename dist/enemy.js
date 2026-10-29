@@ -140,8 +140,12 @@ function leashTarget(state,target,leash,nav){
   const r=finite(leash.radius);if(!(r>0))return null;
   if((target.level||0)===0&&distance(target,leash)>=r)return null;
   const base=Math.atan2(state.position.x-leash.x,state.position.z-leash.z);
-  for(const offset of [0,.18,-.18,.36,-.36,.6,-.6,.9,-.9]){
+  // v4.0.2: a ring with a door keeps the parked creature off the doorway.
+  const door=leash.door&&Number.isFinite(leash.door.x)&&Number.isFinite(leash.door.z)?leash.door:null,clear=finite(leash.doorClear);
+  const offsets=door?[0,.18,-.18,.36,-.36,.6,-.6,.9,-.9,1.25,-1.25,1.6,-1.6,2,-2,2.5,-2.5,Math.PI]:[0,.18,-.18,.36,-.36,.6,-.6,.9,-.9];
+  for(const offset of offsets){
     const a=base+offset,p={x:leash.x+Math.sin(a)*r,z:leash.z+Math.cos(a)*r,level:0};
+    if(door&&distance(p,door)<clear)continue;
     if(typeof nav.isFreeAt==='function'&&!nav.isFreeAt(p,.32))continue;
     return {point:p,arrived:(state.position.level||0)===0&&distance(state.position,p)<.7};
   }

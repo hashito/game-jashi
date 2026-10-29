@@ -623,3 +623,70 @@ body[data-scene="scope"] .dv-recorder{opacity:.85}
   .dialogue-card #subtitle-text{font-size:14px;line-height:1.6}
   .subtitle-footer{margin-top:7px}
 }
+
+/* v4.0.2: the scythe warning says where it is and which way to go; the screen edge on that side pulses. */
+.attack-warning{gap:12px;padding:9px 18px 9px 16px}
+.attack-warning-arrow{font-size:22px;line-height:1;color:#ffb39a;font-family:var(--sans);text-shadow:0 0 10px #e0866a}
+.attack-warning-title{font-size:11px;letter-spacing:.12em;color:#e6b5a3;border-right:1px solid #c2715a80;padding-right:12px}
+.attack-warning[data-side="behind"],.attack-warning[data-side="left"],.attack-warning[data-side="right"]{border-color:#e08a6c;background:rgba(58,15,10,.9)}
+.threat-edge{position:fixed;inset:0;z-index:29;pointer-events:none;animation:threat-edge .42s ease-in-out infinite alternate}
+.threat-edge[hidden]{display:none}
+.threat-edge[data-side="left"]{background:linear-gradient(90deg,rgba(196,62,40,.62),rgba(196,62,40,.18) 9%,transparent 24%)}
+.threat-edge[data-side="right"]{background:linear-gradient(270deg,rgba(196,62,40,.62),rgba(196,62,40,.18) 9%,transparent 24%)}
+.threat-edge[data-side="behind"]{background:linear-gradient(0deg,rgba(196,62,40,.66),rgba(196,62,40,.2) 10%,transparent 28%),linear-gradient(90deg,rgba(196,62,40,.28),transparent 12%,transparent 88%,rgba(196,62,40,.28))}
+.threat-edge[data-side="front"]{background:radial-gradient(ellipse at 50% 45%,transparent 48%,rgba(196,62,40,.28))}
+.threat-edge:after{position:absolute;font:600 44px/1 var(--sans);color:#ffb39a;text-shadow:0 0 18px #c43e28}
+.threat-edge[data-side="left"]:after{content:"‹";left:18px;top:50%;transform:translateY(-50%);font-size:72px}
+.threat-edge[data-side="right"]:after{content:"›";right:18px;top:50%;transform:translateY(-50%);font-size:72px}
+.threat-edge[data-side="behind"]:after{content:"⌄";left:50%;bottom:22px;transform:translateX(-50%);font-size:64px}
+@keyframes threat-edge{from{opacity:.55}to{opacity:1}}
+@media(max-width:760px) and (orientation:portrait){
+  .attack-warning{flex-wrap:wrap;justify-content:center;max-width:calc(100% - 40px);white-space:normal;row-gap:2px}
+  .attack-warning-title{border-right:0;padding-right:0;width:100%;text-align:center;order:-1}
+}
+
+/* v4.0.2: a smaller, quieter conversation card. It sits lower, lets the scene
+   show through, and shrinks to the words alone while the player is in danger. */
+.hud-message-stack{bottom:clamp(92px,12vh,128px);width:min(640px,calc(100% - 80px))}
+.hud-message-stack .dialogue-card{padding:11px 16px 9px;background:linear-gradient(110deg,rgba(14,21,17,.8),rgba(8,13,10,.72));box-shadow:0 10px 30px #0004;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:opacity .25s,transform .25s}
+.hud-message-stack .subtitle-current{grid-template-columns:62px minmax(0,1fr);gap:14px}
+.hud-message-stack .subtitle-figure{width:62px;height:74px}
+.hud-message-stack .subtitle-figure .speaker-icon{width:38px;height:38px}
+.hud-message-stack .subtitle-heading{min-height:20px}
+.hud-message-stack .dialogue-card #subtitle-speaker{font-size:15px}
+.hud-message-stack .subtitle-location{margin:1px 0 5px;font-size:10px}
+.hud-message-stack .dialogue-card #subtitle-text{font-size:17px;line-height:1.7}
+.hud-message-stack .subtitle-previous{margin-bottom:7px;padding-bottom:6px}
+.hud-message-stack .subtitle-footer{margin-top:8px}
+.hud-message-stack .subtitle-actions button{min-height:30px;padding:5px 9px}
+#subtitle-hold.hint{border-color:#e2ce9b;color:#f6e8c4;animation:hold-hint 1s ease-in-out infinite alternate}
+@keyframes hold-hint{from{box-shadow:0 0 0 #e2ce9b00}to{box-shadow:0 0 14px #e2ce9b80}}
+body[data-danger="high"] .hud-message-stack .dialogue-card{opacity:.62;transform:scale(.9);transform-origin:50% 100%;padding:7px 12px}
+body[data-danger="high"] .hud-message-stack .subtitle-figure,body[data-danger="high"] .hud-message-stack .subtitle-location,body[data-danger="high"] .hud-message-stack .subtitle-previous,body[data-danger="high"] .hud-message-stack .subtitle-footer{display:none}
+body[data-danger="high"] .hud-message-stack .subtitle-current{display:block}
+body[data-danger="high"] .hud-message-stack .dialogue-card #subtitle-text{font-size:15px}
+@media(max-width:760px){
+  .hud-message-stack{width:calc(100% - 56px)}
+  .hud-message-stack .dialogue-card #subtitle-text{font-size:14px;line-height:1.6}
+}
+@media(max-width:760px) and (orientation:portrait) and (pointer:coarse){
+  .hud-message-stack{bottom:calc(208px + env(safe-area-inset-bottom));width:calc(100% - 72px)}
+  .hud-message-stack .dialogue-card{padding:8px 10px 7px}
+  .hud-message-stack .subtitle-current{grid-template-columns:34px minmax(0,1fr);gap:8px}
+  .hud-message-stack .subtitle-figure{width:34px;height:42px}
+  .hud-message-stack .subtitle-figure .speaker-icon{width:24px;height:24px}
+  .hud-message-stack .subtitle-photo-mark,.hud-message-stack .subtitle-location,#subtitle-log{display:none}
+  .hud-message-stack .dialogue-card #subtitle-speaker{font-size:13px}
+  #subtitle-role{font-size:9px}
+  .hud-message-stack .dialogue-card #subtitle-text{font-size:13px;line-height:1.55}
+  .hud-message-stack .subtitle-footer{margin-top:5px;gap:6px}
+  .hud-message-stack .subtitle-actions button{min-height:40px;min-width:40px;padding:4px 8px;font-size:10px}
+}
+
+/* v4.0.2: pictures of the item models, in the record and as small journal thumbnails. */
+.item-shot{float:right;width:min(42%,190px);margin:2px 0 12px 16px;padding:5px 5px 7px;background:#11180f;border:1px solid #b7c5aa33;box-shadow:0 8px 20px #0005;text-align:center}
+.item-shot .item-figure{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;background:#141b17}
+.item-shot figcaption{margin-top:5px;font-size:9px;letter-spacing:.08em;color:#a5b29c;line-height:1.5}
+#panel-body .journal-grid .journal-entry.has-thumb{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto;column-gap:12px;align-items:center}
+.journal-entry .journal-thumb{grid-row:1/3;width:64px;height:48px;object-fit:cover;border:1px solid #b7c5aa33;background:#141b17}
+@media(max-width:420px){.item-shot{float:none;width:min(70%,220px);margin:0 auto 12px}}

@@ -48,3 +48,20 @@ export function advanceEscapeAction(action,{dt,distance,damaged,dead}){
   const next={...action,elapsed:action.elapsed+dt};
   return next.elapsed>=next.duration?{action:null,result:next.type}:{action:next,result:null};
 }
+
+// v4.0.2: where the raised scythe is, relative to the camera, and which way to
+// get clear. yaw follows the camera: forward is (-sin, -cos), right is (cos, -sin).
+export const THREAT_SIDES=Object.freeze({
+  front:{label:'正面 — 横へ、離れる',arrow:'↑'},
+  left:{label:'左から — 右へ離れる',arrow:'←'},
+  right:{label:'右から — 左へ離れる',arrow:'→'},
+  behind:{label:'背後 — 前へ走る',arrow:'↓'},
+});
+export function threatDirection({player,yaw=0,monster}={}){
+  if(!player||!monster)return {side:'front',angle:0,...THREAT_SIDES.front};
+  const dx=monster.x-player.x,dz=monster.z-player.z,d=Math.hypot(dx,dz);
+  if(d<1e-6)return {side:'front',angle:0,...THREAT_SIDES.front};
+  const forward=(-Math.sin(yaw)*dx-Math.cos(yaw)*dz)/d,right=(Math.cos(yaw)*dx-Math.sin(yaw)*dz)/d,angle=Math.atan2(right,forward);
+  const side=Math.abs(angle)<=Math.PI/4?'front':Math.abs(angle)>=Math.PI*3/4?'behind':angle>0?'right':'left';
+  return {side,angle,...THREAT_SIDES[side]};
+}

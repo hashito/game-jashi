@@ -190,7 +190,7 @@ export class MountainWorld {
     for(const [x,z]of [[3.8,26.6],[4.6,27.4],[3.4,27.8]]){this.box(.8,.75,.7,mat('#84755a'),x,rise+.38,z-24,g);this.obstacle(x,z,.8,.7,.75,'upper-box',base+rise);}
     this.box(.75,.9,.65,planks,2.8,rise+.45,-2,g);this.obstacle(2.8,22,.75,.65,.9,'upper-cabinet',base+rise);
     const windowMat=new THREE.MeshBasicMaterial({color:'#c89b5f'});this.box(1.7,1.2,.04,windowMat,3.7,2.15,-5.16,g);this.box(.06,1.3,.07,darkwood,3.7,2.15,-5.2,g);this.box(1.8,.06,.07,darkwood,3.7,2.15,-5.2,g);
-    this.lantern(-2,base+2.65,18.6,1.4);this.lantern(0,base+2.6,25,1.3);this.lantern(1.5,base+rise+2.3,23.8,.85);this.lantern(STAIRS.x,base+rise+1.4,27.75,.7);
+    this.lantern(-2,base+2.65,18.6,1.4);this.lantern(0,base+2.6,25,1.3);this.lantern(4.4,base+rise+2.55,23.8,.85,.62);this.lantern(STAIRS.x+.85,base+rise+2.4,28.6,.7,.62);
     // v4.0.1: after the telescope, a pulsing warm light and floor chevrons mark
     // the top of the stairs, so the way down is visible from the upper room.
     const guide=new THREE.Group(),glow=new THREE.MeshBasicMaterial({color:'#f0c77c',transparent:true,opacity:.6,depthWrite:false});
@@ -394,8 +394,9 @@ export class MountainWorld {
     this.companionMouth.scale.y=speaking?.6+Math.abs(Math.sin(time*11))*2.1:1;
     this.companion.position.set(this.companionPos.x,this.actorHeight(this.companionPos)+(walking?Math.abs(Math.sin(time*7.2))*.025:0),this.companionPos.z);
   }
-  lantern(x,y,z,intensity=1){
-    const warm=new THREE.MeshBasicMaterial({color:'#e4b66c'});this.mesh(new THREE.CylinderGeometry(.12,.12,.27,6),warm,x,y,z);this.mesh(new THREE.ConeGeometry(.22,.14,6),iron,x,y+.2,z);const light=new THREE.PointLight('#ffd38e',intensity*9,9,1.5);light.position.set(x,y,z);this.scene.add(light);this.flickers.push({light,intensity:intensity*9});
+  // v4.0.2: size < 1 for the low upstairs ceiling, so the lamp never fills a phone screen.
+  lantern(x,y,z,intensity=1,size=1){
+    const warm=new THREE.MeshBasicMaterial({color:'#e4b66c'});this.mesh(new THREE.CylinderGeometry(.12*size,.12*size,.27*size,6),warm,x,y,z);this.mesh(new THREE.ConeGeometry(.22*size,.14*size,6),iron,x,y+.2*size,z);const light=new THREE.PointLight('#ffd38e',intensity*9,9,1.5);light.position.set(x,y,z);this.scene.add(light);this.flickers.push({light,intensity:intensity*9});
   }
   sign(x,z,text,rotation=0){
     const c=document.createElement('canvas');c.width=512;c.height=160;const ctx=c.getContext('2d');ctx.fillStyle='#373b2d';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#9b9a76';ctx.strokeRect(9,9,494,142);ctx.font='500 40px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#e0ddbd';ctx.fillText(text,256,80);

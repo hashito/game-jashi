@@ -35,3 +35,36 @@ export function ringBell(state,time) {
   state.bellReadyAt=time+BELL.cooldownSeconds;
   return {rang:true,remaining:BELL.cooldownSeconds,hearingRadius:BELL.hearingRadius};
 }
+
+// v4.0.2: the shed and the evacuation hut have a single door. For a while
+// after the player steps inside, the creature keeps its distance and does not
+// stand in the doorway (a leash ring around the building, away from the door).
+// After `warn` seconds the player is told clearly that staying is dangerous;
+// after `release` seconds the ring is lifted and the creature comes in.
+// Stepping out briefly does not reset the clock; only a real absence does.
+export const SHELTER = Object.freeze({ warn:20, release:30, reset:10, margin:5.5, doorClear:6.8 });
+
+export function createShelterState() {
+  return { id:null, inside:0, outside:0, warned:false, released:false };
+}
+
+/** buildingId: the small building the player stands in now, or null. Returns cue events. */
+export function updateShelter(state, buildingId, dt) {
+  const events=[], step=clamp(Number.isFinite(dt)?dt:0,0,.25);
+  if(buildingId){
+    if(state.id!==buildingId){Object.assign(state,createShelterState(),{id:buildingId});events.push('enter');}
+    state.outside=0;state.inside+=step;
+    if(!state.warned&&state.inside>=SHELTER.warn){state.warned=true;events.push('warn');}
+    if(!state.released&&state.inside>=SHELTER.release){state.released=true;events.push('release');}
+  }else if(state.id){
+    state.outside+=step;
+    if(state.outside>=SHELTER.reset){Object.assign(state,createShelterState());events.push('leave');}
+  }
+  return events;
+}
+
+/** The ring that keeps the creature off the door while the player is inside, or null. */
+export function shelterLeash(state, building, inside) {
+  if(!building||!inside||state.released||state.id!==building.id)return null;
+  return { x:building.x, z:building.z, radius:Math.max(building.w,building.d)/2+SHELTER.margin, door:{ x:building.entrance.x, z:building.entrance.z }, doorClear:SHELTER.doorClear };
+}

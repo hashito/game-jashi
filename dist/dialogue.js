@@ -131,3 +131,77 @@ export function createDialogueView(doc) {
 
   return { show, tick, hide };
 }
+
+// v4.0.2: the speech queue no longer grows without limit. Each line carries a
+// kind. Story-critical lines (the uncle's plan, discoveries, the phone) are
+// never dropped. Context lines (a place, an item just read) belong to where
+// they were triggered and expire once the player has walked away or they are
+// too old. Ambient reactions (the creature turned, it is listening) only make
+// sense for a few seconds. Dropped context lines are still kept in the log.
+export const SPEECH_RULES = Object.freeze({ maxPending: 2, ambientTtl: 6, contextTtl: 24, contextRadius: 14, catchUpPending: 2, catchUpScale: .6, catchUpMin: 3.5 });
+const AMBIENT_BEATS = new Set(['enemyTurn', 'enemySearch', 'enemyCrawl', 'enemyListen', 'firstAttack', 'repel', 'stamina']);
+const CONTEXT_BEATS = new Set(['bridge', 'nearCabin', 'bell', 'shutter', 'earlyGlasses', 'earlyNote', 'earlyBottle', 'earlyCrank']);
+const KINDS = new Set(['critical', 'context', 'ambient']);
+
+export function speechKind(line = {}) {
+  if (KINDS.has(line.kind)) return line.kind;
+  if (typeof line.beat === 'string') return AMBIENT_BEATS.has(line.beat) ? 'ambient' : CONTEXT_BEATS.has(line.beat) ? 'context' : 'critical';
+  return 'context';
+}
+
+/** Stamps lines with their kind, the game time and the place they were triggered. */
+export function tagSpeech(lines = [], { time = 0, origin = null, radius } = {}) {
+  return lines.map(line => {
+    const kind = speechKind(line), tagged = { ...line, kind, at: Number.isFinite(line.at) ? line.at : time };
+    if (kind === 'context' && origin && !line.origin) tagged.origin = { x: origin.x, z: origin.z, level: origin.level || 0 };
+    if (Number.isFinite(radius) && !Number.isFinite(line.radius)) tagged.radius = radius;
+    return tagged;
+  });
+}
+
+function stale(line, time, player) {
+  const kind = speechKind(line), age = time - (Number.isFinite(line.at) ? line.at : time);
+  if (kind === 'ambient') return age > (line.ttl ?? SPEECH_RULES.ambientTtl) ? 'expired' : null;
+  if (kind !== 'context') return null;
+  if (age > (line.ttl ?? SPEECH_RULES.contextTtl)) return 'expired';
+  const o = line.origin;
+  if (o && player && ((o.level || 0) !== (player.level || 0) || Math.hypot(player.x - o.x, player.z - o.z) > (line.radius ?? SPEECH_RULES.contextRadius))) return 'left';
+  return null;
+}
+
+/**
+ * Removes stale lines and caps the backlog. Returns the kept queue and the
+ * dropped lines with a reason. Critical lines are never dropped and do not count
+ * toward the cap; at most maxPending place/ambient lines wait (reactions go first).
+ */
+export function pruneSpeechQueue(queue = [], { time = 0, player = null, maxPending = SPEECH_RULES.maxPending } = {}) {
+  const kept = [], dropped = [];
+  for (const line of queue) {
+    const reason = stale(line, time, player);
+    if (reason) dropped.push({ line, reason }); else kept.push(line);
+  }
+  while (kept.filter(line => speechKind(line) !== 'critical').length > maxPending) {
+    // Reactions go before place lines; within a kind, the oldest goes first.
+    const ambient = kept.findIndex(line => speechKind(line) === 'ambient');
+    const index = ambient >= 0 ? ambient : kept.findIndex(line => speechKind(line) !== 'critical');
+    dropped.push({ line: kept.splice(index, 1)[0], reason: 'backlog' });
+  }
+  return { queue: kept, dropped };
+}
+
+/** Adds lines to the queue. A priority line goes first and supersedes waiting non-critical lines. */
+export function enqueueSpeechLines(queue = [], lines = [], { priority = false, interrupted = null } = {}) {
+  const pendingTexts = new Set(queue.map(line => line.text));
+  const fresh = lines.filter(line => !pendingTexts.has(line.text));
+  if (!priority) return { queue: [...queue, ...fresh], dropped: [] };
+  const dropped = [], kept = [];
+  for (const line of queue) (speechKind(line) === 'critical' ? kept : dropped).push(line);
+  const resumed = interrupted && speechKind(interrupted) === 'critical' ? [{ ...interrupted, logged: true }] : [];
+  return { queue: [...fresh, ...resumed, ...kept], dropped: dropped.map(line => ({ line, reason: 'superseded' })) };
+}
+
+/** Display time, shortened while a backlog is waiting so the player catches up. */
+export function speechDuration(line = {}, pending = 0) {
+  const base = dialogueDuration(line);
+  return pending >= SPEECH_RULES.catchUpPending ? Math.max(SPEECH_RULES.catchUpMin, base * SPEECH_RULES.catchUpScale) : base;
+}
