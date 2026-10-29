@@ -42,4 +42,6 @@ Pythonは `D:/AI/ComfyUI/venv/Scripts/python.exe` のPillow・NumPyを使用す�
 
 この状況で新規ローカル画像推論やACE-Step環境音生成は投入していない。GPUリセット・OS再起動・他の制作ワーカーの停止・既存設定の変更も行っていない。今回の音声は別ポートのCPUサービスだけを使用し、制作後に終了した。診断記録は `tools/_raw/local-media/`。別の制作システムの使用状況を確認してからローカルGPU生成を再開する。
 
+同日08:02頃の再調査では、長尺動画の `build_normal.py` が50021へ接続し、新しいWAVも連続して保存していた。GPU全体100%という測定と合わせ、別システムが実際に音声を制作中と確認した。ComfyUIの不調をGPU全体の停止と解釈してはいけない。VOICEVOX側はComfyUIのキューとは別に稼働するため、共通GPUの利用調整が必要になる。
+
 全11点の個別記録は `tools/local-media-records/`、検証証跡は `tools/local-media-verification/`、公開用台帳は `assets/production.json`。台帳生成時に全ファイルのSHA-256を照合し、内蔵生成・内蔵編集・ローカル生成という実際の由来を保持する。自動波形検査と音声デコード検査は、人による聞き取り品質確認とは区別する。

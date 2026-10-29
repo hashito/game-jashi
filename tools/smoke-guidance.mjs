@@ -60,7 +60,9 @@ try{
         escape.story.stage=6;escape.player={x:-25.8,z:26.3,level:0};escape.enemy.position={x:4,z:-28,level:0};escape.speechQueue=[];escape.activeSpeech=null;escape.speechTime=0;
         await p.eval(`localStorage.setItem('${saveKey}',${JSON.stringify(JSON.stringify(escape))})`);
         await p.goto(base);await p.waitFor("!document.getElementById('start-button').disabled");await click('[data-action="continue"]');await p.sleep(300);await p.key('KeyE');
-        await p.waitFor("document.querySelector('.scene-photo img')?.getAttribute('src')==='assets/photos/return-v4-1.webp'",30000);
+        // Software WebGL on a CPU-only CI runner advances the capped game clock
+        // more slowly than wall time. Keep the same real ending assertion.
+        await p.waitFor("document.querySelector('.scene-photo img')?.getAttribute('src')==='assets/photos/return-v4-1.webp'",90000);
         await p.waitFor("document.querySelector('.scene-photo img')?.naturalWidth>0");await p.shot(path.join(out,'desktop-ending.png'));
       }
       const errors=p.errors.filter(e=>!e.includes('favicon')&&!(layoutOnly&&/assets\/photos\//.test(e)));
