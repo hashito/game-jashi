@@ -38,6 +38,8 @@ Pythonは `D:/AI/ComfyUI/venv/Scripts/python.exe` のPillow・NumPyを使用す�
 
 `tools/local-media-comfy-prompts.json` / `tools/local-media-comfy-queue.json` は未実行のFLUX.1-schnell候補制作レシピ。GPUは1枠。`photo` ワーカーはComfyUI8188のキューが空くまで待ち、受付IDを記録して、履歴の成功と実ファイル保存まで待つ。同じ設定で再実行すると受付IDを再確認する。候補画像と記録は `tools/_raw/local-media/candidates/` に隔離し、採用済み写真・台帳を置換しない。モデルの自動ダウンロードはしない。
 
-2026-10-30はComfyUI8188がAPIに応答せず、前日のCUDAエラー後の残存プロセスがあった。通常停止でも「実行中のインスタンスなし」となったため、新規ローカル画像推論は実施していない。GPUリセット・OS再起動・他の制作ワーカーの停止は行っていない。診断ログは `tools/_raw/local-media/comfy-repair-before.json`。任意のACE-Step環境音も制作していない。既存のD:/AIの設定を書き換えず、生成サービスの復旧は本キューの前提作業に含めない。
+2026-10-30はComfyUI8188のAPIが接続拒否で、ログには前日のCUDAエラーと、再起動時のDBロック・ポート使用中が記録されていた。プロセス照会の結果が一致しないため、残存PIDだけで停止原因を断定しない。追加の読み取り調査では、別系統のGPU版VOICEVOX50021が応答し、WindowsのGPUカウンターでも同プロセスの大きなメモリ使用を確認した。Wan動画とACE-StepはComfyUIを経由するが、GPU版VOICEVOXは別サービスである。ComfyUIのキューだけではGPU全体の空きを判断できない。
+
+この状況で新規ローカル画像推論やACE-Step環境音生成は投入していない。GPUリセット・OS再起動・他の制作ワーカーの停止・既存設定の変更も行っていない。今回の音声は別ポートのCPUサービスだけを使用し、制作後に終了した。診断記録は `tools/_raw/local-media/`。別の制作システムの使用状況を確認してからローカルGPU生成を再開する。
 
 全11点の個別記録は `tools/local-media-records/`、検証証跡は `tools/local-media-verification/`、公開用台帳は `assets/production.json`。台帳生成時に全ファイルのSHA-256を照合し、内蔵生成・内蔵編集・ローカル生成という実際の由来を保持する。自動波形検査と音声デコード検査は、人による聞き取り品質確認とは区別する。
