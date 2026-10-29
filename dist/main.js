@@ -5,7 +5,7 @@ import { Soundscape } from './audio.js';
 import { TapeEffects } from './vhs.js';
 import { RULES, clamp, createSurvival, updateSurvival, movementSpeed, stunEnemy, canThrow, endingFor, advanceEscapeAction } from './survival.js';
 import { INTRO, DOCUMENTS, LORE, CHAINS, DIALOGUE, ENDINGS, TELESCOPE_SCENES, endingParagraphs } from './narrative.js';
-import { createEnemyState, stepEnemy } from './enemy.js';
+import { createEnemyState, stepEnemy, relocateEnemy } from './enemy.js';
 import { createStoryState, advanceStory, getStoryDocument, canCompleteStoryChain, markStoryRead } from './story.js';
 import { speakerProfile, dialogueDuration, createDialogueView } from './dialogue.js';
 import { RADIO, createMechanisms, adjustDial, radioSignal, advanceTuning, ringBell } from './gimmicks.js';
@@ -15,6 +15,10 @@ const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fa
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}};
 const remove=key=>{try{localStorage.removeItem(key);}catch{}};
 const loadSavedGame=()=>read(SAVE_KEY,null)||read(LEGACY_SAVE_KEY,null);
+// v4.0.1 early-section fairness. After the telescope the creature walks in from
+// the forest and can be watched from the balcony, but it stays outside this ring
+// around the cabin until the radio is tuned, unless the player lingers too long.
+const EARLY=Object.freeze({leash:{x:0,z:24,radius:14},balconySeconds:90,downstairsSeconds:90,respawnGrace:5,respawnClearance:.8,respawnCreatureDistance:26});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const defaults={volume:.45,muted:false,sensitivity:1,brightness:1.1,motion:!reduced,quality:'high',tape:reduced?.28:.68};
 let options={...defaults,...read(OPTIONS_KEY,{})};
@@ -30,7 +34,7 @@ let speechQueue=[],speechTime=0,speechTotal=0,conversation=[],activeSpeech=null,
 const dialogueView=createDialogueView(document);
 let companionState='present',mechanisms=createMechanisms(),radioActive=false;
 let story=createStoryState(),scope=null,noiseEvent=null,noiseSerial=0,mapFloor='auto',lastStoryAdvance=0;
-const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false});
+const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false,leashUntil:0});
 const textHTML=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
 const paragraphs=arr=>(arr||[]).map(t=>`<p>${textHTML(t)}</p>`).join('');
 const button=(action,label,secondary=false)=>`<button type="button" data-action="${action}"${secondary?' class="secondary"':''}>${label}</button>`;
@@ -39,6 +43,62 @@ const actorDistance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z,(world?.actorHeight(a)||0)
 const storyContext=()=>({flags,collected,completed,time,level:player.level});
 const objectivePoint=o=>o.target||LANDMARKS[o.id];
 function navigationTarget(){const objective=getObjective(),target=objectivePoint(objective);if(!target)return null;const onStairs=Math.abs(player.x-STAIRS.x)<STAIRS.width/2&&player.z>STAIRS.minZ&&player.z<STAIRS.maxZ;if(objective.id==='stairs')return onStairs?STAIRS.bottom:STAIRS.top;return (target.level||0)!==player.level?(onStairs?(target.level===1?STAIRS.top:STAIRS.bottom):(player.level===1?STAIRS.top:STAIRS.bottom)):target;}
+const yawToward=(from,to)=>Math.atan2(-(to.x-from.x),-(to.z-from.z));
+// The HUD bearing follows the A* route: it points at the furthest route point
+// that can be walked to in a straight line, and reports the route's length.
+function routeGuide(from,target){
+  let route=[];try{route=world.findPath(from,target)||[];}catch{route=[];}
+  if(!route.length)return {point:target,length:distance(from,target)};
+  let length=0,prev=from,pick=route[0];for(const p of route){length+=Math.hypot(p.x-prev.x,p.z-prev.z);prev=p;}
+  for(let i=0;i<route.length&&i<16;i++){const p=route[i];if(!world.isSegmentFree(from,p,.3))break;pick=p;}
+  return {point:pick,length};
+}
+let guide={at:-99,from:null,key:'',point:null,length:0};
+// A* crosses floors itself, so the guide aims at the real destination (the
+// stair foot for the stairs objective) instead of a stair-top proxy.
+// Items sit on tables or shelves; route to a free spot from which they can be used.
+const approaches=new Map();
+function approachPoint(t){
+  const key=`${t.x},${t.z},${t.level||0}`;if(approaches.has(key))return approaches.get(key);
+  let best={x:t.x,z:t.z,level:t.level||0};
+  if(!world.isFreeAt(best,.34))search:for(const r of [.6,.9,1.2,1.5,2,2.6])for(let i=0;i<16;i++){const a=i*Math.PI/8,q={x:t.x+Math.sin(a)*r,z:t.z+Math.cos(a)*r,level:t.level||0};if(world.isFreeAt(q,.34)&&!world.isBlocked(q,t)){best=q;break search;}}
+  approaches.set(key,best);return best;
+}
+function guideTarget(){const o=getObjective(),t=o.id==='stairs'?STAIRS.bottom:objectivePoint(o);return t?approachPoint(t):null;}
+function currentGuide(){
+  const target=guideTarget();if(!target)return null;const key=`${target.x},${target.z},${target.level||0}`;
+  if(!guide.from||guide.key!==key||guide.from.level!==player.level||distance(guide.from,player)>.6||time-guide.at>1.2){guide={...routeGuide({...player},target),at:time,from:{...player},key};}
+  return guide;
+}
+function earlyLeash(){return flags.seen&&!flags.radioTuned&&time<(flags.leashUntil||0)?EARLY.leash:null;}
+function openYaw(p){let best=yaw,score=-1;for(let i=0;i<16;i++){const a=i*Math.PI/8;let free=0;for(let r=.5;r<=6;r+=.5){if(!world.isSegmentFree(p,{x:p.x-Math.sin(a)*r,z:p.z-Math.cos(a)*r,level:p.level},.3))break;free=r;}if(free>score){score=free;best=a;}}return best;}
+// Face along the route to the next objective, or the most open direction.
+function faceRoute(){
+  const target=guideTarget();let next=null;if(target){const g=routeGuide({...player},target);if(distance(g.point,player)>.5)next=g.point;}
+  let facing=next?yawToward(player,next):openYaw(player);
+  const ahead={x:player.x-Math.sin(facing)*1.4,z:player.z-Math.cos(facing)*1.4,level:player.level};
+  if(!world.isSegmentFree(player,ahead,.3))facing=openYaw(player);
+  yaw=facing;pitch=-.04;guide.at=-99;
+}
+// A checkpoint position may be against a wall or on the stairs: move to the
+// nearest open spot on the same floor (never inside the stairwell).
+function safeRespawnSpot(p){
+  const ok=q=>world.isFreeAt(q,EARLY.respawnClearance)&&!world.inStairs?.(q);
+  if(ok(p))return p;
+  for(const r of [.4,.8,1.2,1.6,2.1,2.6,3.2,4,5])for(let i=0;i<16;i++){
+    const a=i*Math.PI/8,q={x:p.x+Math.sin(a)*r,z:p.z+Math.cos(a)*r,level:p.level};
+    if(ok(q)&&(!world.isFreeAt(p)||world.isSegmentFree(p,q,.3)))return q;
+  }
+  return p;
+}
+// Send the creature somewhere out of sight, away from the player, forgetting
+// where the player was. Used after a respawn and when the early leash ends.
+function relocateCreatureAway(minDistance=EARLY.respawnCreatureDistance){
+  const candidates=[REVEAL_POINT,...TRAILS.flatMap(t=>t.points.map(([x,z])=>({x,z,level:0})))].map(c=>({x:c.x,z:c.z,level:0}));
+  const usable=candidates.filter(c=>world.isFreeAt(c,.4)&&distance(c,player)>=minDistance).sort((a,b)=>distance(a,player)-distance(b,player));
+  const where=usable.find(c=>world.isBlocked(player,c))||usable.at(-1)||{...REVEAL_POINT};
+  relocateEnemy(enemy,{...where,heading:Math.atan2(where.x-player.x,where.z-player.z)});monster=enemy.position;
+}
 const cue=(name,position)=>sound.cue(name,position);
 function quietSound(){sound.update({danger:0,moving:false,running:false,inside:true,time,listener:{...player,yaw},monster,monsterDistance:999,enemySpeed:0,paused:true,radioTuning:{active:false,signal:0,staticLevel:0}});}
 function emitNoise(strength,kind='metal',position=player){noiseEvent={id:++noiseSerial,x:position.x,z:position.z,level:position.level||0,strength,kind};}
@@ -81,7 +141,7 @@ function toggleDialogueHold(){
 }
 function freezeInput(){keys={};autoWalk=false;joystick={x:0,y:0};touchEyes=false;touchRun=false;drag=null;$('joystick-knob').style.transform='translate(0,0)';}
 function panel(kind,eyebrow,title,body,actions,closable=true){
-  if(kind!=='radio')radioActive=false;
+  if(kind!=='radio')radioActive=false;$('attack-warning').hidden=true;
   if(mode!=='panel')previousMode=mode;mode='panel';panelKind=kind;freezeInput();document.exitPointerLock?.();
   $('panel-eyebrow').textContent=eyebrow;$('panel-title').textContent=title;$('panel-body').innerHTML=body;$('panel-actions').innerHTML=actions;
   $('panel-close').hidden=!closable;$('panel').hidden=false;$('panel-body').scrollTop=0;$('veil').style.opacity=0;tape.canvas.hidden=true;
@@ -118,7 +178,7 @@ function beginPlay(){
 }
 function syncWorld(){
   if(!world)return;world.setGateOpen(!!flags.gate);world.setShutterClosed?.(!!flags.shutterClosed);
-  for(const id of ['glasses','bottle','crank'])world.setItemCollected(id,!!flags[id]);
+  for(const id of ['glasses','bottle','crank'])world.setItemCollected(id,!!flags[id]);world.setStairGuide?.(!!flags.seen&&!flags.downstairs);
   for(const [id,item]of Object.entries(world.items)){if(!['glasses','bottle','crank'].includes(id))item.marker.visible=!(collected.has(id)||flags[id]||id==='telescope'&&flags.seen);}
   updateInventory();updateRecordBadge();updateObjective();
 }
@@ -159,6 +219,15 @@ function restore(s){
   throwTime=0;lastSave=time;lastPhone=time;ambientTime=12;mapFloor='auto';speechTotal=activeSpeech?Math.max(speechTime,dialogueDuration(activeSpeech)):0;freezeInput();
   world.setGateOpen(!!flags.gate);world.setShutterClosed?.(!!flags.shutterClosed);if(!world.isFreeAt(player))player={x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};
   if(!world.isFreeAt(monster,.3)){enemy=createEnemyState(REVEAL_POINT);monster=enemy.position;}
+  // v4.0.1 respawn safety: an open spot facing the route, the creature out of
+  // sight and away, a short grace without gaze drain or strikes.
+  if(flags.seen){
+    player=safeRespawnSpot(player);
+    const d=actorDistance(player,monster);if(d<EARLY.respawnCreatureDistance-2||d<40&&!world.isBlocked(player,monster))relocateCreatureAway();
+    survival.grace=EARLY.respawnGrace;survival.cooldown=Math.max(survival.cooldown,EARLY.respawnGrace);
+    if(!flags.radioTuned)flags.leashUntil=Math.max(flags.leashUntil||0,time+EARLY.downstairsSeconds);
+  }
+  faceRoute();
   syncWorld();tape.clear();if(activeSpeech&&speechTime>0)dialogueView.show(activeSpeech,{remaining:speechTime,total:speechTotal,queued:speechQueue.length});else dialogueView.hide();checkpoint=s;started=true;mode='play';$('panel').hidden=true;$('scope-sequence').hidden=true;document.body.dataset.screen='play';document.body.dataset.scene='explore';lockPointer();toast('記録から再開しました');
 }
 function startTelescope(){
@@ -195,7 +264,7 @@ function stepScope(dt){
 function encounter(){
   if(flags.seen)return;
   flags.seen=true;collected.add('telescope');survival.sanity=83;companionState='away';
-  enemy=createEnemyState({...REVEAL_POINT,heading:Math.atan2(-REVEAL_POINT.x,18.3-REVEAL_POINT.z)});monster=enemy.position;scope=null;mode='play';$('panel').hidden=true;$('scope-sequence').hidden=true;document.body.dataset.scene='explore';
+  enemy=createEnemyState({...REVEAL_POINT,heading:Math.atan2(-REVEAL_POINT.x,18.3-REVEAL_POINT.z)});monster=enemy.position;scope=null;flags.leashUntil=time+EARLY.balconySeconds;mode='play';$('panel').hidden=true;$('scope-sequence').hidden=true;document.body.dataset.scene='explore';
   tape.trigger('encounter');cue('whisper',player);storyBeat('sighting');syncWorld();lockPointer();saveCheckpoint();
 }
 function maybeHunt(){
@@ -256,9 +325,13 @@ function interact(){
     startTelescope();return;
   }
   if(id==='shutter'){
+    // Closing from the balcony means stepping into the room and pulling the
+    // leaves shut behind you; nobody is left outside the closed shutter.
+    const fromBalcony=!flags.shutterClosed&&player.level===1&&player.z<BALCONY.maxZ-.1;
+    if(fromBalcony){const inside={x:clamp(player.x,-.9,.9),z:19.75,level:1};if(world.isFreeAt(inside)){Object.assign(player,inside);faceRoute();}}
     flags.shutterClosed=!flags.shutterClosed;world.setShutterClosed(flags.shutterClosed);
     cue(flags.shutterClosed?'shutterClose':'shutterOpen',item);emitNoise(18,'shutter',item);
-    toast(flags.shutterClosed?'雨戸を閉めた。窓越しの視線が途切れる。':'雨戸を開けた。',3000);
+    toast(flags.shutterClosed?(fromBalcony?'部屋に入り、雨戸を閉めた。窓越しの視線が途切れる。':'雨戸を閉めた。窓越しの視線が途切れる。'):'雨戸を開けた。',3000);
     if(flags.shutterClosed&&!flags.shutterUsed){flags.shutterUsed=true;storyBeat('shutter');}
     saveCheckpoint();return;
   }
@@ -319,7 +392,11 @@ function updateRadio(dt){
 }
 function finishRadio(){
   if(!radioActive||mechanisms.stable<RADIO.holdSeconds||radioSignal(mechanisms.dial)<.9)return;
-  flags.radioTuned=true;collected.add('radio');world.items.radio.marker.visible=false;radioActive=false;resume();cue('radioLock',LANDMARKS.radio);storyBeat('radioTuned');saveCheckpoint();
+  flags.radioTuned=true;collected.add('radio');world.items.radio.marker.visible=false;radioActive=false;
+  // The early leash ends here. A creature still waiting at the cabin withdraws
+  // into the forest instead of standing in the only doorway.
+  const retreat=flags.seen&&actorDistance(player,monster)<EARLY.respawnCreatureDistance;if(retreat)relocateCreatureAway();
+  resume();cue('radioLock',LANDMARKS.radio);storyBeat('radioTuned');if(retreat)toast('雑音の向こうで、足音が森へ遠ざかった。',3600);saveCheckpoint();
 }
 
 function answerPhone(){flags.phone=true;collected.add('phone');survival.sanity=Math.min(100,survival.sanity+42);survival.stamina=100;world.items.phone.marker.visible=false;world.triggerScare('phone');$('panel').hidden=true;mode='play';lockPointer();storyBeat('phone');saveCheckpoint();}
@@ -388,7 +465,7 @@ function journal(tab='map'){
   panel('journal','DV記録 ／ 拾得物と会話','帰る道を、確かめる。',navigation+body,button('close-panel',mode==='scope'||mode==='panel'&&previousMode==='scope'?'望遠鏡へ戻る':'探索へ戻る'));
 }
 
-function help(){panel('help','操作と記録','山での、身の置き方。',`<div class="control-grid"><kbd>W A S D</kbd><span>移動。階段も歩いて上り下り</span><kbd>マウス</kbd><span>見回す。固定されない場合は画面をドラッグ</span><kbd>E</kbd><span>調べる／道具や車を操作する</span><kbd>Shift</kbd><span>走る。息が切れる前に休む</span><kbd>Z</kbd><span>自動歩行の開始・停止</span><kbd>C / Space</kbd><span>押している間、目を閉じて静かに歩く</span><kbd>F / Q</kbd><span>懐中電灯／サングラス</span><kbd>R</kbd><span>持っているボトルを使う</span><kbd>J / M</kbd><span>階別の地図・小物・会話の記録</span><kbd>Enter</kbd><span>会話の次の発言へ</span><kbd>T</kbd><span>会話を読む間、ゲームごと停止／再開</span><kbd>Esc / P</kbd><span>一時停止。望遠鏡の場面も停止できます</span></div><details class="document-card" ${flags.seen?'open':''}><summary>生存のヒント（先の内容を含みます）</summary><h3>見つかる理由</h3><p>怪異は、視線と音を頼りに動きます。木や壁で姿を隠し、その先で足音を抑えると、最後に見失った場所を探し始めます。走る音と金属音は遠くまで届きます。</p><h3>足元を照らすと</h3><p>怪異は、顔を下げて視線を追ってきます。目を閉じても身体は守れません。近づかれる前に離れてください。</p><h3>鎌が上がったら</h3><p>肩と鎌が上がる間に、横や後ろへ抜けて距離を取ります。振り始めた向きは変わりません。2回まともに受けると死亡します。ボトルは8.5m以内に届き、約6秒だけひるませます。</p><h3>身を隠す道具</h3><p>二階の雨戸は実際に視線と通行を遮ります。西の呼び鐘を鳴らしたら材木の陰へ抜けてください。怪異に見えている間は追跡されますが、姿を隠すと残っている響きを調べに向かいます。鐘の余韻が消えた後は、最後に見た場所を探します。</p><h3>帰るまで</h3><p>サングラスは視線の影響を軽くするだけです。鍵とハンドルでゲートを開け、車のエンジンがかかるまで生き残ってください。操作中の移動や被弾で中断します。</p></details><p class="small-note">スマホ：左スティックで移動、右画面をドラッグして見回し、ボタンで操作。記録と設定を開くと一時停止します。映像の乱れと画面揺れは設定で調整できます。</p>`,button('close-panel','戻る'));}
+function help(){panel('help','操作と記録','山での、身の置き方。',`<div class="control-grid"><kbd>W A S D</kbd><span>移動。階段も歩いて上り下り</span><kbd>マウス</kbd><span>見回す。固定されない場合は画面をドラッグ</span><kbd>E</kbd><span>調べる／道具や車を操作する</span><kbd>Shift</kbd><span>走る。息が切れる前に休む</span><kbd>Z</kbd><span>自動歩行の開始・停止</span><kbd>C / Space</kbd><span>押している間、目を閉じて静かに歩く</span><kbd>F / Q</kbd><span>懐中電灯／サングラス</span><kbd>R</kbd><span>持っているボトルを使う</span><kbd>J / M</kbd><span>階別の地図・小物・会話の記録</span><kbd>Enter</kbd><span>会話の次の発言へ</span><kbd>T</kbd><span>会話を読む間、ゲームごと停止／再開</span><kbd>Esc / P</kbd><span>一時停止。望遠鏡の場面も停止できます</span></div><details class="document-card" ${flags.seen?'open':''}><summary>生存のヒント（先の内容を含みます）</summary><h3>見つかる理由</h3><p>怪異は、視線と音を頼りに動きます。木や壁で姿を隠し、その先で足音を抑えると、最後に見失った場所を探し始めます。走る音と金属音は遠くまで届きます。</p><h3>足元を照らすと</h3><p>怪異は、顔を下げて視線を追ってきます。目を閉じても身体は守れません。近づかれる前に離れてください。</p><h3>鎌が上がったら</h3><p>肩と鎌が上がる間に、横や後ろへ抜けて距離を取ります。振り始めた向きは変わりません。背後からは振り下ろしません。3回まともに受けると死亡します。ボトルは8.5m以内に届き、約6秒だけひるませます。</p><h3>身を隠す道具</h3><p>二階の雨戸は実際に視線と通行を遮ります。西の呼び鐘を鳴らしたら材木の陰へ抜けてください。怪異に見えている間は追跡されますが、姿を隠すと残っている響きを調べに向かいます。鐘の余韻が消えた後は、最後に見た場所を探します。</p><h3>帰るまで</h3><p>サングラスは視線の影響を軽くするだけです。鍵とハンドルでゲートを開け、車のエンジンがかかるまで生き残ってください。操作中の移動や被弾で中断します。</p></details><p class="small-note">スマホ：左スティックで移動、右画面をドラッグして見回し、ボタンで操作。記録と設定を開くと一時停止します。映像の乱れと画面揺れは設定で調整できます。</p>`,button('close-panel','戻る'));}
 
 function settings(){panel('settings','視界・音・操作','記録の調整',`${[['volume','音量',0,1,.05],['sensitivity','視点の速さ',.35,2,.05],['brightness','明るさ',.7,1.8,.05],['tape','ビデオの乱れ',0,1,.05]].map(([id,label,min,max,step])=>`<div class="range-row"><label for="setting-${id}">${label}</label><input id="setting-${id}" type="range" min="${min}" max="${max}" step="${step}" value="${options[id]}" data-setting="${id}"></div>`).join('')}<label class="settings-row"><span>歩行と被弾時の画面揺れ</span><input type="checkbox" data-setting="motion" ${options.motion?'checked':''}></label><label class="settings-row"><span>音を消す</span><input type="checkbox" data-setting="muted" ${options.muted?'checked':''}></label><label class="settings-row"><span>描画品質</span><select data-setting="quality"><option value="high" ${options.quality==='high'?'selected':''}>標準</option><option value="low" ${options.quality==='low'?'selected':''}>軽量</option></select></label><p class="small-note">ビデオの乱れを0にすると走査線とトラッキングの乱れを停止します。攻撃の合図と所持品の表示は残ります。</p>`,button('close-panel','戻る'));}
 function credits(){panel('credits','原話と翻案','投稿怪談「邪視」',`<div class="ending-copy"><p>匿名掲示板に投稿された怪談「邪視」の再録をもとにした翻案です。実在の事件として確認したものではありません。</p></div><div class="document-card"><h3>参照した要素</h3><p>原話では、一階へ水を飲みに行ってから自室へ戻り、望遠鏡をベランダに持ち出します。本作ではその部屋を二階として構成しています。</p><p>望遠鏡越しの遭遇、白い無毛の姿、縦向きの一つ目と鎌、体を揺らす遅い接近と足元へ顔を下げる動き、視線の精神的作用、サングラスの軽減、不浄を嫌う性質、圏外で鳴る電話を参照しました。</p><h3>ゲームのために作った部分</h3><p>成人の主人公による片付けとDV撮影、修司との無線、管理人と作業者の話、小物の記録、地形とゲート、追跡・鎌攻撃・体力・道具の効果・死亡条件・3つの生還結末は本作の創作です。原話にある尿と成人の叔父の露出の場面は、一時的にひるませるボトルへ変更しています。</p><p>文章は新規に作成。画像と質感素材はAI生成です。</p><h3>参照した再録</h3><p>2008年1月17日投稿として伝わる「邪視」。初出スレッドの現物ではなく再録資料を確認しています。</p><p><a href="https://horror2ch.com/archives/2271232.html" target="_blank" rel="noopener noreferrer">洒落怖まとめ厳選「邪視」前半 ↗</a><br><a href="https://horror2ch.com/archives/2271232.html/2" target="_blank" rel="noopener noreferrer">同 後半 ↗</a></p></div><p class="small-note">3D：Three.js r164 / <a href="vendor/THREE-LICENSE.txt" target="_blank" rel="noopener">MIT License</a>。音：Web Audio。設定・進行はこのブラウザ内に保存します。</p>`,button('close-panel','戻る'));}
@@ -396,7 +473,7 @@ function pause(){if(mode!=='play'&&mode!=='scope')return;const scoped=mode==='sc
 
 function updateEnemyMotion(dt,moving=false,running=false,closed=false){
   const looking=gazeAtMonster(closed);
-  const events=stepEnemy(enemy,{player,active:flags.seen,hunt:flags.hunt,playerMoving:moving,playerRunning:running,playerLooking:looking,closedEyes:closed,playerPitch:pitch,lamp,attackPhase:survival.phase,stun:survival.stun,dead:survival.dead,noiseEvent},dt,world);
+  const events=stepEnemy(enemy,{player,active:flags.seen,hunt:flags.hunt,playerMoving:moving,playerRunning:running,playerLooking:looking,closedEyes:closed,playerPitch:pitch,lamp,attackPhase:survival.phase,stun:survival.stun,dead:survival.dead,noiseEvent,leash:earlyLeash()},dt,world);
   for(const event of events){
     if(event==='search'&&actorDistance(player,monster)<26)storyBeat('enemySearch');
     if(event==='heard'&&actorDistance(player,monster)<22)storyBeat('enemyListen');
@@ -422,12 +499,13 @@ function handleSurvivalEvents(events){
     if(event==='swing')cue('attack',monster);
     if(event==='hit'){
       cue('hit');tape.trigger('hit');action=null;$('health-value').textContent=Math.ceil(survival.health);$('health-bar').style.width=survival.health+'%';const d=Math.max(.01,distance(player,monster));
-      world.move(player,(player.x-monster.x)/d*.65,(player.z-monster.z)/d*.65);toast('被弾 — 次は耐えられない。',3200);
+      world.move(player,(player.x-monster.x)/d*.65,(player.z-monster.z)/d*.65);toast(survival.health>RULES.attackDamage?'被弾 — まだ動ける。鎌の届かない所へ。':'被弾 — 次は耐えられない。',3200);
     }
     if(event==='miss')stats.escapes++;
     if(event==='exhausted'){cue('breath');toast('息が切れた。少し歩いて呼吸を整える。',2400);}
     if(event==='resumeHunt'){flags.hunt=true;cue('hunt');tape.trigger('hunt');toast('また、足音が近づく。',2500);}
     if(event==='death')death('attack');
+    if(event==='swing'||event==='death'||event==='gazeDeath')$('attack-warning').hidden=true;
     if(event==='gazeDeath')death('gaze');
   }
 }
@@ -435,7 +513,7 @@ function handleSurvivalEvents(events){
 function environmentalEvents(dt){
   if(!flags.seen)return;
   if(!flags.downstairs&&player.level===0&&Math.abs(world.actorHeight(player)-world.ground(player.x,player.z))<.35){
-    flags.downstairs=true;storyBeat('downstairs');cue('knock');world.triggerScare('window');
+    flags.downstairs=true;flags.leashUntil=Math.max(flags.leashUntil||0,time+EARLY.downstairsSeconds);world.setStairGuide?.(false);storyBeat('downstairs');cue('knock');world.triggerScare('window');
   }
   if(story.stage>=3&&flags.note&&story.delivered.includes('note')&&!scares.has('trail-talk')&&speechTime<=0&&!speechQueue.length){scares.add('trail-talk');storyBeat('trail');}
   if(time-lastStoryAdvance>8&&speechTime<=0&&!speechQueue.length){lastStoryAdvance=time;storyBeat('_progress');}
@@ -460,9 +538,12 @@ function stepGame(dt){
   updateEnemyMotion(dt,moving,moving&&speed>RULES.walk,closed);
   if(throwTime>0){throwTime-=dt;if(throwTime<=0&&!survival.dead){stunEnemy(survival);cue('stun');storyBeat('repel');tape.trigger('repel');toast('ひるんでいる。今のうちに離れる。',2500);}}
   const blocked=world.isBlocked(player,monster),gaze=gazeAtMonster(closed),d=actorDistance(player,monster);
-  const events=updateSurvival(survival,{moving,closed,run,active:flags.seen,gaze,blocked,glasses:glassesOn,distance:d,attackAligned:enemy.attackAligned},dt);
+  // A strike may start only from in front of or beside the camera (about +-105 deg).
+  const planar=Math.max(.001,distance(player,monster)),facing=(-Math.sin(yaw)*(monster.x-player.x)-Math.cos(yaw)*(monster.z-player.z))/planar,attackVisible=planar<.6||facing>-.26;
+  const events=updateSurvival(survival,{moving,closed,run,active:flags.seen,gaze,blocked,glasses:glassesOn,distance:d,attackAligned:enemy.attackAligned,attackVisible},dt);
   handleSurvivalEvents(events);
   if(mode!=='play')return;
+  $('attack-warning').hidden=survival.phase!=='windup';
   if(action){
     const result=advanceEscapeAction(action,{dt,distance:actorDistance(player,action.target),damaged:events.includes('hit'),dead:survival.dead});action=result.action;
     if(result.result==='cancelled')toast('操作を中断した。もう一度 E で始める。',2300);
@@ -470,19 +551,19 @@ function stepGame(dt){
     if(result.result==='engine'){endGame();return;}
   }
   currentTarget=findTarget();$('interaction').hidden=!currentTarget||!!action||closed;
-  if(currentTarget)$('interaction-text').textContent=currentTarget.id==='shutter'?(flags.shutterClosed?'雨戸を開ける':'雨戸を閉める'):currentTarget.id==='radio'&&flags.radioTuned?'同調済みの無線機':currentTarget.label;
+  if(currentTarget)$('interaction-text').textContent=currentTarget.id==='shutter'?(flags.shutterClosed?'雨戸を開ける':player.level===1&&player.z<BALCONY.maxZ-.1?'部屋に入り、雨戸を閉める':'雨戸を閉める'):currentTarget.id==='radio'&&flags.radioTuned?'同調済みの無線機':currentTarget.label;
   $('action-status').hidden=!action;
   if(action){$('action-label').textContent=action.type==='gate'?'ゲートを巻き上げている…':'エンジンを始動している…';$('action-bar').style.width=(action.elapsed/action.duration*100)+'%';}
   $('focus-value').textContent=Math.ceil(survival.sanity);$('focus-bar').style.width=survival.sanity+'%';
   $('health-value').textContent=Math.ceil(survival.health);$('health-bar').style.width=survival.health+'%';
   $('stamina-value').textContent=Math.ceil(survival.stamina);$('stamina-bar').style.width=survival.stamina+'%';
-  const audible=flags.seen&&d<23,near=audible&&d<8;
-  $('gaze-status').textContent=closed?'目を閉じている':gaze?'目が、合っている。':survival.stun>0?'今は、動きを止めている':near?'すぐそばで、足音がする':audible&&enemy.mode==='search'?'足音が、同じ場所を回っている':audible&&enemy.mode==='listen'?'足音が止まった':audible&&enemy.mode==='hunt'?'足音が追ってくる':flags.seen?'どこかから、見られている':'録画中';
+  const audible=flags.seen&&d<23,sameFloor=(monster.level||0)===player.level,near=audible&&d<8&&sameFloor,walking=enemy.speed>.12,behind=near&&!attackVisible&&d<RULES.attackRange+1&&!blocked;
+  $('gaze-status').textContent=closed?'目を閉じている':gaze?'目が、合っている。':survival.stun>0?'今は、動きを止めている':behind?'背後に、息づかいがある':near&&walking?'すぐそばで、足音がする':near&&!blocked?'すぐ近くで、止まっている':audible&&d<8&&!sameFloor&&walking?'床の向こうで、足音がする':audible&&enemy.mode==='search'?'足音が、同じ場所を回っている':audible&&enemy.mode==='listen'?'足音が止まった':audible&&enemy.mode==='hunt'?'足音が追ってくる':flags.seen?'どこかから、見られている':'録画中';
   $('hunt-banner').hidden=!(enemy.mode==='hunt'&&audible)||survival.stun>0;
   $('hunt-banner').textContent=d<9?'足音が近い — 離れる':'足音が速くなる — 身を隠す';
-  const objective=navigationTarget(),goalAngle=objective?Math.atan2(-(objective.x-player.x),-(objective.z-player.z)):yaw;
+  const route=currentGuide(),goalAngle=route?yawToward(player,route.point):yaw;
   let delta=goalAngle-yaw;while(delta>Math.PI)delta-=Math.PI*2;while(delta< -Math.PI)delta+=Math.PI*2;
-  $('compass-label').textContent=(Math.abs(delta)<.25?'↑':delta>0?'←':'→')+' '+(objective?Math.round(distance(player,objective))+'m':'');
+  $('compass-label').textContent=(Math.abs(delta)<.25?'↑':delta>0?'←':'→')+' '+(route?Math.round(route.length)+'m':'');
   const climbing=Math.abs(player.x-STAIRS.x)<STAIRS.width/2&&player.z>STAIRS.minZ+.2&&player.z<STAIRS.maxZ-.2;
   $('floor-label').textContent=climbing?'階段':player.level===1?'2F':'1F';
   $('tape-clock').textContent='00:'+String(Math.floor(time/60)).padStart(2,'0')+':'+String(Math.floor(time%60)).padStart(2,'0');

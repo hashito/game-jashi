@@ -1,0 +1,228 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as THREE from '../dist/vendor/three.module.js';
+import * as layout from '../dist/layout.js';
+import * as survivalRules from '../dist/survival.js';
+import * as narrative from '../dist/narrative.js';
+import * as enemyRules from '../dist/enemy.js';
+import * as storyRules from '../dist/story.js';
+import * as dialogueRules from '../dist/dialogue.js';
+import * as gimmickRules from '../dist/gimmicks.js';
+import { MountainWorld } from '../dist/world.js';
+
+// v4.0.1 playtest regressions. The shipped controller (main.js) runs against the
+// real MountainWorld: actual walls, stairs, shutter, A* and the real enemy AI.
+// Only the browser, audio and GPU boundaries are replaced.
+const noop = () => {};
+function rasterCanvas() { const context = new Proxy({ createLinearGradient: () => ({ addColorStop: noop }), createRadialGradient: () => ({ addColorStop: noop }), createPattern: () => ({}) }, { get: (o, k) => k in o ? o[k] : noop }); return { width: 512, height: 160, style: {}, setAttribute: noop, getContext: () => context }; }
+Object.assign(globalThis, { innerWidth: 1280, innerHeight: 720, devicePixelRatio: 1, addEventListener: noop, document: { createElement: rasterCanvas } });
+
+const source = fs.readFileSync(new URL('../dist/main.js', import.meta.url), 'utf8').replace(/^import[^\n]*\n/gm, '').replace(/^boot\(\);\s*$/m, '');
+const markup = fs.readFileSync(new URL('../dist/index.html', import.meta.url), 'utf8');
+const { LANDMARKS, STAIRS, BALCONY } = layout;
+const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+
+async function harness() {
+  const nodes = new Map(), actions = new Map(), raf = new Map();
+  let now = 0, nextFrame = 0, run, doc;
+  class Element {
+    constructor(tag = 'div') {
+      this.tagName = tag.toUpperCase(); this.hidden = false; this.disabled = false; this.dataset = {}; this.style = {}; this.textContent = ''; this.value = ''; this.listeners = new Map();
+      const classes = new Set();
+      this.classList = { add: (...n) => n.forEach(x => classes.add(x)), remove: (...n) => n.forEach(x => classes.delete(x)), contains: n => classes.has(n), toggle(n, f) { const on = f ?? !classes.has(n); on ? classes.add(n) : classes.delete(n); return on; } };
+    }
+    set innerHTML(html) { this.html = html; parse(html); }
+    get innerHTML() { return this.html || ''; }
+    addEventListener(type, cb) { const l = this.listeners.get(type) || []; l.push(cb); this.listeners.set(type, l); }
+    emit(type, event = {}) { for (const fn of this.listeners.get(type) || []) fn({ target: this, preventDefault() {}, ...event }); }
+    matches(selector) { if (selector === '[data-radio-dial]') return this.id === 'radio-dial'; return selector.split(',').some(t => t.trim().toUpperCase() === this.tagName); }
+    closest(selector) { return selector === '[data-action]' && this.dataset.action ? this : null; }
+    querySelector(selector) { return query(selector); }
+    querySelectorAll() { return []; }
+    focus() {} setPointerCapture() {} setAttribute(k, v) { this[k] = v; } append() {}
+    getBoundingClientRect() { return { left: 0, top: 0, width: 120, height: 120 }; }
+  }
+  function parse(html) {
+    for (const [, tag, attrs] of html.matchAll(/<([a-z][\w-]*)\b([^>]*)>/gi)) {
+      const id = attrs.match(/\bid="([^"]+)"/)?.[1], action = attrs.match(/\bdata-action="([^"]+)"/)?.[1];
+      if (!id && !action) continue;
+      const node = id && nodes.get(id) || new Element(tag);
+      node.hidden = /(?:^|\s)hidden(?:\s|$)/.test(attrs); node.disabled = /(?:^|\s)disabled(?:\s|$)/.test(attrs);
+      if (id) { node.id = id; nodes.set(id, node); }
+      if (action) { node.dataset.action = action; actions.set(action, node); }
+    }
+  }
+  function query(selector) {
+    if (selector.startsWith('#')) return nodes.get(selector.slice(1)) || null;
+    const action = selector.match(/\[data-action="([^"]+)"\]/)?.[1];
+    if (action) return actions.get(action) || null;
+    return null;
+  }
+  doc = new Element('document'); doc.body = new Element('body'); doc.hidden = false; doc.pointerLockElement = null;
+  doc.getElementById = id => nodes.get(id) || null; doc.querySelector = query; doc.exitPointerLock = noop; doc.createElement = tag => new Element(tag);
+  parse(markup);
+  class Soundscape { setVolume() {} setMuted() {} start() { return Promise.resolve(true); } cue() {} update() {} }
+  class TapeEffects { constructor() { this.canvas = new Element('canvas'); } trigger() {} clear() {} update() {} }
+  const renderer = { shadowMap: {}, setPixelRatio: noop, setSize: noop, render: noop, domElement: new Element('canvas') };
+  const textureLoader = { load(_url, onLoad) { const t = new THREE.Texture({ width: 64, height: 64 }); queueMicrotask(() => onLoad?.(t)); return t; } };
+  class World extends MountainWorld {
+    constructor(_container, options) { super({ append: noop }, { ...options, renderer, textureLoader }); this.canvas.requestPointerLock = () => Promise.resolve(); }
+  }
+  const storage = new Map();
+  const context = vm.createContext({
+    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, MountainWorld: World, Soundscape, TapeEffects,
+    document: doc, localStorage: { getItem: k => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) },
+    matchMedia: () => ({ matches: false }), performance: { now: () => now }, devicePixelRatio: 1,
+    requestAnimationFrame: cb => { const id = ++nextFrame; raf.set(id, cb); return id; }, cancelAnimationFrame: id => raf.delete(id), addEventListener: noop, console,
+  });
+  run = code => vm.runInContext(code, context);
+  run(source);
+  const frame = (ms = 50) => { now += ms; const pending = [...raf.values()]; raf.clear(); for (const cb of pending) cb(now); };
+  const promise = run('boot()'); frame(); frame(); await promise;
+  const click = name => doc.emit('click', { target: actions.get(name) || Object.assign(new Element('button'), { dataset: { action: name } }) });
+  const press = code => doc.emit('keydown', { code, repeat: false, target: doc.body });
+  const release = code => doc.emit('keyup', { code, target: doc.body });
+  const state = expr => JSON.parse(JSON.stringify(run(expr)));
+  function encounter() {
+    click('start'); click('begin');
+    run(`Object.assign(player,{x:${LANDMARKS.telescope.x},z:${LANDMARKS.telescope.z + .45},level:1});yaw=0;pitch=0;`);
+    assert.equal(run('findTarget()?.id'), 'telescope'); press('KeyE'); release('KeyE');
+    for (let t = 0; t < narrative.TELESCOPE_SCENES.reduce((n, s) => n + s.duration, 0) + .3; t += .05) frame();
+    assert.equal(run('mode'), 'play'); assert.equal(run('flags.seen'), true);
+  }
+  // Walk by holding W and steering toward the HUD's route point, like a player
+  // following the bearing. Returns a per-frame trace.
+  function walkUntil(done, seconds, { onFrame } = {}) {
+    press('KeyW'); const trace = [];
+    for (let t = 0; t < seconds; t += .05) {
+      if (run('mode') !== 'play') break;
+      run('(()=>{const g=currentGuide();if(g)yaw=yawToward(player,g.point);})()');
+      frame(); const s = state('({player,monster:{...monster},enemyMode:enemy.mode,health:survival.health,sanity:survival.sanity,dead:survival.dead,time,phase:survival.phase})');
+      trace.push(s); onFrame?.(s);
+      if (run(done)) break;
+    }
+    release('KeyW'); return trace;
+  }
+  return { run, nodes, frame, click, press, release, state, encounter, walkUntil, advance: s => { for (let t = 0; t < s - 1e-8; t += .05) frame(); } };
+}
+
+const insideCabin = p => Math.abs(p.x) < 6.3 && p.z > 18.6 && p.z < 29.4;
+
+test('after the telescope a player following the route reaches the 1F radio unhurt; the creature stays outside', async () => {
+  const h = await harness(); h.encounter();
+  assert.equal(h.run('world.stairGuide.group.visible'), true, 'the stair entrance is lit after the telescope');
+  const trace = h.walkUntil('flags.downstairs&&Math.hypot(player.x-LANDMARKS.radio.x,player.z-LANDMARKS.radio.z)<1.6', 60);
+  const last = trace.at(-1);
+  assert.ok(h.run('flags.downstairs'), `reached the ground floor; last=${JSON.stringify(last.player)}`);
+  assert.ok(flat(last.player, LANDMARKS.radio) < 1.6, `reached the radio desk; last=${JSON.stringify(last)} mode=${h.run("mode")} panel=${h.run("panelKind")}`);
+  assert.equal(h.run('world.stairGuide.group.visible'), false, 'the guide turns off downstairs');
+  assert.ok(trace.every(s => !s.dead && s.health === 100), 'no damage on the way down');
+  assert.ok(trace.every(s => !insideCabin(s.monster) && !h.run(`world.inStairs(${JSON.stringify(s.monster)})`)), 'the creature never enters the cabin or the stair corridor');
+  const nearest = Math.min(...trace.map(s => flat(s.monster, { x: 0, z: 24 })));
+  assert.ok(nearest > 13, `creature kept outside the leash (${nearest.toFixed(1)}m)`);
+  assert.ok(trace.at(-1).time - trace[0].time < 30, 'the walk is short');
+  // Tuning the radio ends the leash; a creature waiting at the cabin withdraws out of sight.
+  h.run(`Object.assign(player,{x:${LANDMARKS.radio.x},z:${LANDMARKS.radio.z + .6},level:0});yaw=0;`);
+  assert.equal(h.run('findTarget()?.id'), 'radio'); h.press('KeyE'); h.release('KeyE');
+  h.run('setRadioDial(RADIO.target)'); h.advance(1.4); h.click('radio-lock');
+  assert.equal(h.run('flags.radioTuned'), true);
+  assert.equal(h.run('earlyLeash()'), null);
+  assert.ok(h.run('actorDistance(player,monster)') >= 24 || h.run('world.isBlocked(player,monster)'));
+});
+
+test('the creature approaches visibly from outside and parks at the ring; lingering too long lets it in', async () => {
+  const h = await harness(); h.encounter();
+  // Stand inside the upper room, facing away from the window (careless but not staring).
+  h.run('Object.assign(player,{x:3,z:25,level:1});yaw=Math.PI;');
+  let closest = 99;
+  for (let t = 0; t < 80; t += .05) { h.frame(); const m = h.state('monster'); closest = Math.min(closest, flat(m, { x: 0, z: 24 })); assert.ok(!insideCabin(m), 'outside during the leash'); }
+  assert.ok(closest < 15.5, `it came all the way to the cabin's ring (${closest.toFixed(1)}m)`);
+  assert.equal(h.run('survival.health'), 100);
+  // After the balcony window of 90 s, staying upstairs is lingering badly.
+  let inside = false;
+  for (let t = 0; t < 70 && h.run('mode') === 'play'; t += .05) { h.frame(); if (insideCabin(h.state('monster'))) inside = true; }
+  assert.equal(h.run('earlyLeash()'), null);
+  assert.ok(inside, 'the creature enters the cabin once the player lingers');
+});
+
+test('staring at the creature from the balcony is still fatal, but takes long enough to learn', async () => {
+  const h = await harness(); h.encounter();
+  h.run(`Object.assign(player,{x:0,z:18.3,level:1});`);
+  let firstDrop = null, death = null;
+  for (let t = 0; t < 60 && h.run('mode') === 'play'; t += .05) {
+    h.run('(()=>{const e=world.eyePosition();yaw=Math.atan2(-(e.x-player.x),-(e.z-player.z));pitch=Math.atan2(e.y-(world.actorHeight(player)+1.65),Math.hypot(e.x-player.x,e.z-player.z));})()');
+    h.frame(); const s = h.state('({sanity:survival.sanity,time,mode})');
+    if (firstDrop === null && s.sanity < 82.9) firstDrop = s.time;
+    if (s.mode !== 'play') death = s.time;
+  }
+  assert.ok(firstDrop !== null, 'eye contact drains');
+  assert.equal(h.run('flags.deathReason'), 'gaze');
+  assert.ok(death - firstDrop > 7.5, `gaze death after ${(death - firstDrop).toFixed(1)} s of staring`);
+});
+
+test('the scythe is raised visibly for over 0.9 s before damage, and never starts from behind', async () => {
+  const h = await harness(); h.encounter(); h.run('flags.leashUntil=0;');
+  h.run('Object.assign(player,{x:2,z:24,level:1});yaw=Math.PI/2;'); // facing -x
+  // Behind the camera, in range and aligned: no strike may begin.
+  h.run('Object.assign(enemy.position,{x:3.6,z:24,level:1});monster=enemy.position;enemy.heading=-Math.PI/2;survival.cooldown=0;');
+  for (let t = 0; t < 4; t += .05) { h.run('enemy.position.x=3.6;enemy.position.z=24;enemy.heading=-Math.PI/2;'); h.frame(); assert.notEqual(h.run('survival.phase'), 'windup'); }
+  assert.equal(h.run('survival.health'), 100);
+  assert.match(h.nodes.get('gaze-status').textContent, /背後/);
+  // In front: the warning appears with the windup and stays until the swing.
+  h.run('enemy.position.x=.4;enemy.heading=Math.PI/2;');
+  let warned = null, hit = null;
+  for (let t = 0; t < 4 && hit === null; t += .05) {
+    h.run('enemy.position.x=.4;enemy.position.z=24;'); h.frame();
+    const s = h.state('({time,health:survival.health,warning:!document.getElementById("attack-warning").hidden})');
+    if (warned === null && s.warning) warned = s.time;
+    if (hit === null && s.health < 100) hit = s.time;
+    if (hit === null && warned !== null) assert.equal(s.warning, true);
+  }
+  assert.ok(warned !== null && hit !== null);
+  assert.ok(hit - warned >= .9, `warning ${(hit - warned).toFixed(2)} s before the hit`);
+  assert.equal(h.run('survival.health'), 100 - survivalRules.RULES.attackDamage);
+});
+
+test('retrying a checkpoint saved against a wall beside the creature restores a safe, open, route-facing start', async () => {
+  const h = await harness(); h.encounter();
+  const save = h.state('serialize()');
+  save.player = { x: 5.62, z: 25.2, level: 1 }; save.yaw = -Math.PI / 2; // face pressed to the east wall
+  save.enemy.position = { x: 3.2, z: 25.2, level: 1 }; save.enemy.mode = 'hunt'; save.enemy.lastKnown = { ...save.player };
+  h.run(`restore(${JSON.stringify(save)})`);
+  const p = h.state('player'), m = h.state('monster');
+  assert.ok(h.run('world.isFreeAt(player,.8)'), 'clear of walls');
+  assert.equal(h.run('world.inStairs(player)'), false);
+  assert.ok(h.run('world.isSegmentFree(player,{x:player.x-Math.sin(yaw)*1.4,z:player.z-Math.cos(yaw)*1.4,level:player.level},.3)'), 'facing open space, not a wall');
+  const g = h.run('routeGuide({...player},guideTarget()).point'); const want = Math.atan2(-(g.x - p.x), -(g.z - p.z));
+  assert.ok(Math.cos(h.run('yaw') - want) > .9, 'facing along the route to the stairs');
+  assert.ok(h.run('actorDistance(player,monster)') >= 24, `creature pushed away (${flat(p, m).toFixed(1)}m)`);
+  assert.ok(h.run('world.isBlocked(player,monster)'), 'and out of sight');
+  assert.equal(h.run('enemy.lastKnown'), null, 'it forgot where the player was');
+  assert.equal(h.run('survival.grace'), 5);
+  h.advance(4.5);
+  assert.equal(h.run('survival.health'), 100); assert.ok(h.run('survival.sanity') >= save.survival.sanity);
+});
+
+test('closing the shutter from the balcony leaves the player inside the room', async () => {
+  const h = await harness(); h.encounter();
+  h.run(`Object.assign(player,{x:${LANDMARKS.shutter.x},z:18.5,level:1});yaw=Math.PI;`);
+  assert.equal(h.run('findTarget()?.id'), 'shutter');
+  h.frame(); assert.equal(h.nodes.get('interaction-text').textContent, '部屋に入り、雨戸を閉める');
+  h.press('KeyE'); h.release('KeyE');
+  assert.equal(h.run('flags.shutterClosed'), true);
+  const p = h.state('player');
+  assert.ok(p.z > BALCONY.maxZ + .3 && h.run('world.isFreeAt(player)'), `inside at z=${p.z}`);
+  assert.ok(h.run('world.isBlocked({x:0,z:18,level:1},player)'), 'the closed shutter is between the balcony and the player');
+  const route = h.run('world.findPath(player,STAIRS.top)'); assert.ok(route.length, 'the stairs remain reachable');
+});
+
+test('the HUD bearing follows the walkable route instead of a line through walls', async () => {
+  const h = await harness(); h.encounter();
+  h.run('Object.assign(player,{x:0,z:18.3,level:1});yaw=0;'); h.frame();
+  const g = h.state('currentGuide()');
+  assert.ok(h.run(`world.isSegmentFree(player,${JSON.stringify(g.point)},.3)`), 'the bearing points at a directly walkable route point');
+  assert.ok(g.length >= flat({ x: 0, z: 18.3 }, STAIRS.top) + flat(STAIRS.top, STAIRS.bottom) - .01, 'the length is the walking route down the stairs');
+  assert.match(h.nodes.get('compass-label').textContent, new RegExp(`${Math.round(g.length)}m$`));
+});

@@ -73,18 +73,20 @@ function escapeSimulation(type, game = simulate()) {
 }
 
 for (const fps of [30, 60]) {
-  test(`two close-range hits kill the player at ${fps} FPS`, () => {
+  test(`three close-range hits kill the player at ${fps} FPS`, () => {
     const game = simulate(1 / fps);
     game.until('hit', CLOSE_INPUT);
     assert.ok(game.state.health > 0 && game.state.health < 100,
       'one hit must injure a living player');
     assert.equal(game.state.dead, false);
     assert.equal(game.history.filter(e => e.name === 'hit').length, 1);
+    game.until('hit', CLOSE_INPUT);
+    assert.equal(game.state.dead, false, 'a second clean hit still leaves the player alive');
     game.until('death', CLOSE_INPUT);
     assert.equal(game.state.health, 0);
     assert.equal(game.state.dead, true);
-    assert.equal(game.history.filter(e => e.name === 'hit').length, 2,
-      'death must occur on the second impact');
+    assert.equal(game.history.filter(e => e.name === 'hit').length, 3,
+      'death must occur on the third impact');
     const deadState = structuredClone(game.state);
     assert.deepEqual(game.advance(5, CLOSE_INPUT), [],
       'a dead player must not take further attacks');
@@ -141,11 +143,11 @@ test('moving behind the locked swing direction avoids contact at the same distan
 
 test('closed eyes protect against an otherwise lethal gaze', () => {
   const open = simulate();
-  open.until('gazeDeath', { distance: 12, gaze: true }, 6);
+  open.until('gazeDeath', { distance: 12, gaze: true }, 100 / RULES.gazeDrain + .5);
   assert.equal(open.state.dead, true, 'the control run proves the gaze is dangerous');
 
   const closed = simulate();
-  const events = closed.advance(7, { distance: 12, gaze: true, closed: true });
+  const events = closed.advance(100 / RULES.gazeDrain + 2, { distance: 12, gaze: true, closed: true });
   assert.equal(closed.state.dead, false);
   assert.equal(closed.state.health, 100);
   assert.equal(closed.state.sanity, 100);
@@ -155,10 +157,10 @@ test('closed eyes protect against an otherwise lethal gaze', () => {
 
 test('closed eyes do not protect against the sickle', () => {
   const game = simulate();
-  game.until('death', { ...CLOSE_INPUT, gaze: true, closed: true });
+  game.until('death', { ...CLOSE_INPUT, gaze: true, closed: true }, 15);
   assert.equal(game.state.dead, true);
   assert.equal(game.state.health, 0);
-  assert.equal(game.history.filter(e => e.name === 'hit').length, 2);
+  assert.equal(game.history.filter(e => e.name === 'hit').length, 3);
   assert.equal(game.history.some(e => e.name === 'gazeDeath'), false);
   assert.equal(game.state.lookCount, 0, 'the fatal contact must not be a gaze attack');
 });
@@ -234,7 +236,7 @@ for (const type of ['gate', 'engine']) {
 
   test(`${type}: gaze death interrupts the work even without an impact`, () => {
     const game = simulate();
-    game.advance(4, { distance: 12, gaze: true });
+    game.advance(100 / RULES.gazeDrain - .3, { distance: 12, gaze: true });
     assert.equal(game.state.dead, false);
     const scene = escapeSimulation(type, game);
     scene.advance(0.6, { enemy: { distance: 12, gaze: true } });
@@ -280,3 +282,56 @@ for (const { name, flags, chains, expected } of ENDING_SCENARIOS) {
     assert.equal(endingFor(flags, chains), expected);
   });
 }
+
+// v4.0.1 playtest rules: the windup is a readable telegraph before any damage,
+// strikes never start from behind the camera, and a respawn grace holds both
+// the gaze and the scythe for a few seconds.
+for (const fps of [20, 30, 60]) {
+  test(`the scythe warns for at least 0.9 s before any damage at ${fps} FPS`, () => {
+    const game = simulate(1 / fps);
+    const warned = game.until('windup', CLOSE_INPUT);
+    assert.equal(game.state.health, 100, 'the windup itself is harmless');
+    const hit = game.until('hit', CLOSE_INPUT);
+    assert.ok(hit - warned >= 0.9, `windup lasted ${(hit - warned).toFixed(3)} s`);
+    assert.ok(RULES.windup >= 0.9);
+    assert.equal(game.state.health, 100 - RULES.attackDamage, 'a clean hit costs about a third');
+    assert.ok(game.state.health > 50, 'the first hit no longer leaves the player near death');
+  });
+}
+
+test('an attacker behind the camera cannot begin a strike; turning to face it can', () => {
+  const game = simulate();
+  const events = game.advance(6, { ...CLOSE_INPUT, attackVisible: false });
+  assert.equal(events.some(e => ['windup', 'swing', 'hit'].includes(e)), false);
+  assert.equal(game.state.health, 100);
+  game.until('windup', { ...CLOSE_INPUT, attackVisible: true }, 1);
+});
+
+test('a strike only lands within a clear reach of the raised scythe', () => {
+  const game = simulate();
+  game.until('windup', CLOSE_INPUT);
+  const events = game.advance(RULES.windup + .1, { distance: RULES.attackRange + RULES.strikeReach + .05 });
+  assert.ok(events.includes('miss'));
+  assert.equal(game.state.health, 100);
+  assert.ok(RULES.strikeReach <= .35);
+});
+
+test('respawn grace suspends gaze drain and strikes, then the danger returns', () => {
+  const game = simulate();
+  game.state.grace = 5;
+  const events = game.advance(4.8, { ...CLOSE_INPUT, gaze: true });
+  assert.equal(events.some(e => ['windup', 'hit', 'gazeDeath'].includes(e)), false);
+  assert.equal(game.state.sanity, 100);
+  game.until('windup', CLOSE_INPUT, 1.5);
+});
+
+test('looking away recovers what eye contact took, and distance softens the gaze', () => {
+  const near = simulate(), far = simulate();
+  near.advance(3, { distance: 12, gaze: true });
+  far.advance(3, { distance: 30, gaze: true });
+  assert.ok(near.state.sanity > 60, 'three seconds of eye contact is survivable');
+  assert.ok(far.state.sanity > near.state.sanity);
+  const low = near.state.sanity;
+  near.advance(3, { distance: 12, gaze: false, blocked: true });
+  assert.ok(near.state.sanity > low + 15, 'cover clearly restores the margin');
+});

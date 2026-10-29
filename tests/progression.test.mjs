@@ -365,17 +365,20 @@ test('gate and car enforce prerequisites, timed actions, distance cancellation a
   assert.equal(h.run('read(SAVE_KEY,null)'), null); assert.equal(h.run('checkpoint'), null);
 });
 
-test('an actual attack cancels engine startup and a second attack kills even with eyes closed', async () => {
+test('an actual attack cancels engine startup and a third attack kills even with eyes closed', async () => {
   const h = await harness(); h.fresh(); h.encounter(); h.equip(); h.safeEnemy(); h.settleStory();
   h.use('gate'); h.advance(survivalRules.RULES.gateSeconds + .1); h.use('car');
-  const player = h.state('player'); h.placeEnemy(player.x, player.z + .9);
+  // In front of the camera (use() faces -z): strikes never begin from behind.
+  const player = h.state('player'); h.placeEnemy(player.x, player.z - .9, 0);
   h.run('world.freezeEnemy=false;survival.cooldown=0;');
   h.press('Space'); h.advance(1.2);
-  assert.equal(h.run('survival.health'), 46);
+  assert.equal(h.run('survival.health'), 100 - survivalRules.RULES.attackDamage);
   assert.equal(h.run('action'), null); assert.equal(h.run('flags.firstAttack'), true);
   assert.ok(h.calls.cues.includes('windup')&&h.calls.cues.includes('attack')&&h.calls.cues.includes('hit'));
   assert.ok(h.calls.tape.includes('hit'));
   h.advance(4);
+  assert.equal(h.run('survival.dead'), false, 'two hits are survivable');
+  h.advance(4.5);
   assert.equal(h.run('survival.dead'), true);
   assert.equal(h.run('flags.deathReason'), 'attack');
   assert.deepEqual(h.state('read(END_KEY,[])'), []);

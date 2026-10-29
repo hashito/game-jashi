@@ -191,7 +191,14 @@ export class MountainWorld {
     this.box(.75,.9,.65,planks,2.8,rise+.45,-2,g);this.obstacle(2.8,22,.75,.65,.9,'upper-cabinet',base+rise);
     const windowMat=new THREE.MeshBasicMaterial({color:'#c89b5f'});this.box(1.7,1.2,.04,windowMat,3.7,2.15,-5.16,g);this.box(.06,1.3,.07,darkwood,3.7,2.15,-5.2,g);this.box(1.8,.06,.07,darkwood,3.7,2.15,-5.2,g);
     this.lantern(-2,base+2.65,18.6,1.4);this.lantern(0,base+2.6,25,1.3);this.lantern(1.5,base+rise+2.3,23.8,.85);this.lantern(STAIRS.x,base+rise+1.4,27.75,.7);
+    // v4.0.1: after the telescope, a pulsing warm light and floor chevrons mark
+    // the top of the stairs, so the way down is visible from the upper room.
+    const guide=new THREE.Group(),glow=new THREE.MeshBasicMaterial({color:'#f0c77c',transparent:true,opacity:.6,depthWrite:false});
+    for(const [z,scale]of [[28.55,1],[28.05,.86],[27.6,.72]])for(const side of [-1,1]){const bar=this.box(.5*scale,.02,.07,glow,STAIRS.x+side*.16*scale,base+rise+.03,z,guide);bar.rotation.y=-side*Math.PI/4;bar.receiveShadow=false;}
+    const guideLight=new THREE.PointLight('#ffc779',0,8,1.4);guideLight.position.set(STAIRS.x,base+rise+2.1,28.1);guide.add(guideLight);
+    guide.visible=false;this.scene.add(guide);this.stairGuide={group:guide,light:guideLight,material:glow};
   }
+  setStairGuide(on){if(this.stairGuide)this.stairGuide.group.visible=!!on;}
   createShed(){
     const b=BUILDINGS.find(b=>b.id==='shed'),{x,z,w,d}=b,y=terrainY(x,z);this.box(w,.15,d,wood,x,y,z);
     for(const sx of [-w/2+.05,w/2-.05]){this.box(.19,2.8,d,wood,x+sx,y+1.4,z);this.obstacle(x+sx,z,.25,d,2.8);}
@@ -253,9 +260,11 @@ export class MountainWorld {
   setGateOpen(open){this.gateOpen=!!open;if(this.gateCollider)this.gateCollider.enabled=!this.gateOpen;}
   makeItem(id,label,x,z,mesh,y=0){const level=LANDMARKS[id]?.level??LORE_PLACEMENTS.find(p=>p.id===id)?.level??0,base=this.ground(x,z,level);if(mesh){mesh.position.set(x,base+y,z);this.scene.add(mesh);}const marker=this.mesh(new THREE.OctahedronGeometry(.045),new THREE.MeshBasicMaterial({color:'#cbbd8e',transparent:true,opacity:.65,depthWrite:false}),x,base+y+.5,z);this.items[id]={id,label,x,z,level,mesh,marker,y:marker.position.y,floorHeight:base,collected:false};return mesh;}
   createObjects(){
-    const telescope=new THREE.Group();const tube=this.mesh(new THREE.CylinderGeometry(.12,.17,1.35,16),mat('#a8a18c',{metalness:.5}),0,1.35,0,telescope);tube.rotation.x=Math.PI/2-.14;
-    const lens=this.mesh(new THREE.CylinderGeometry(.135,.135,.03,16),mat('#233c40',{metalness:.7,roughness:.12}),0,1.46,-.67,telescope);lens.rotation.x=Math.PI/2;
-    for(let i=0;i<3;i++){const leg=this.mesh(new THREE.CylinderGeometry(.025,.035,1.3,5),iron,Math.cos(i*2.09)*.22,.6,Math.sin(i*2.09)*.22,telescope);leg.rotation.z=Math.cos(i*2.09)*.32;leg.rotation.x=Math.sin(i*2.09)*.32;}
+    // v4.0.1: a shorter, darker tube set low and forward of the tripod, so the
+    // eyepiece end no longer fills the lower half of the view when standing at it.
+    const telescope=new THREE.Group();const tube=this.mesh(new THREE.CylinderGeometry(.075,.11,.92,16),mat('#5f5b4f',{metalness:.45,roughness:.6}),0,1.08,-.3,telescope);tube.rotation.x=Math.PI/2-.14;
+    const lens=this.mesh(new THREE.CylinderGeometry(.085,.085,.03,16),mat('#233c40',{metalness:.7,roughness:.12}),0,1.15,-.76,telescope);lens.rotation.x=Math.PI/2;
+    for(let i=0;i<3;i++){const leg=this.mesh(new THREE.CylinderGeometry(.02,.03,1.06,5),iron,Math.cos(i*2.09)*.2,.5,Math.sin(i*2.09)*.2-.15,telescope);leg.rotation.z=Math.cos(i*2.09)*.3;leg.rotation.x=Math.sin(i*2.09)*.3;}
     this.makeItem('telescope','望遠鏡を覗く',LANDMARKS.telescope.x,LANDMARKS.telescope.z,telescope);this.items.telescope.persistent=true;
     const glasses=new THREE.Group();for(const x of [-.1,.1]){this.mesh(new THREE.SphereGeometry(.09,12,8),mat('#142329',{metalness:.5,roughness:.15}),x,.01,0,glasses).scale.set(1,.25,.75);this.box(.015,.015,.22,iron,x*1.8,.015,.08,glasses);}this.box(.1,.015,.015,iron,0,0,0,glasses);const keys=this.mesh(new THREE.TorusGeometry(.055,.007,5,14),iron,.22,.01,.12,glasses);keys.rotation.x=Math.PI/2;this.box(.025,.014,.12,iron,.23,.01,.22,glasses);this.makeItem('glasses','サングラスと自分の車の鍵',LANDMARKS.glasses.x,LANDMARKS.glasses.z,glasses,.94);
     const note=new THREE.Group();this.box(.42,.025,.32,mat('#d1c6a5'),0,0,0,note);for(let i=0;i<5;i++)this.box(.24-i*.012,.002,.005,mat('#6d695b'),-.025,.014,-.1+i*.035,note);this.makeItem('note','叔父の書き置き',LANDMARKS.note.x,LANDMARKS.note.z,note,.94);this.items.note.persistent=true;
@@ -551,6 +560,7 @@ export class MountainWorld {
     }
     updateCreatureDetails(this,{time,dt,scope,attackPhase,attackProgress,repelled,enemyVisual:enemyVisual||{},active});
     this.updateCompanion(companionState,companionSpeaking,pos,time,dt);
+    if(this.stairGuide?.group.visible){const pulse=.5+.5*Math.sin(time*2.6);this.stairGuide.material.opacity=.32+.4*pulse;this.stairGuide.light.intensity=4+5*pulse;}
     this.shutterSlide=THREE.MathUtils.damp(this.shutterSlide,this.shutterClosed?0:1,9,dt);
     this.shutterPanels.forEach(panel=>{panel.position.x=panel.userData.side*(.65+this.shutterSlide*1.3);});
     const bellAge=time-this._bellTime;this.bellProp.rotation.z=bellAge>=0&&bellAge<5?Math.sin(bellAge*13)*Math.exp(-bellAge*.9)*.55:Math.sin(time*.3)*.006;

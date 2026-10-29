@@ -136,10 +136,33 @@ function finish(state,input,nav,dt,events){
   return events;
 }
 
+function leashTarget(state,target,leash,nav){
+  const r=finite(leash.radius);if(!(r>0))return null;
+  if((target.level||0)===0&&distance(target,leash)>=r)return null;
+  const base=Math.atan2(state.position.x-leash.x,state.position.z-leash.z);
+  for(const offset of [0,.18,-.18,.36,-.36,.6,-.6,.9,-.9]){
+    const a=base+offset,p={x:leash.x+Math.sin(a)*r,z:leash.z+Math.cos(a)*r,level:0};
+    if(typeof nav.isFreeAt==='function'&&!nav.isFreeAt(p,.32))continue;
+    return {point:p,arrived:(state.position.level||0)===0&&distance(state.position,p)<.7};
+  }
+  return {point:point(state.position),arrived:true};
+}
+/** Moves the creature somewhere else and forgets what it knew of the player,
+ * e.g. after a respawn. It resumes as a search around its new position. */
+export function relocateEnemy(state,where){
+  Object.assign(state.position,point(where));
+  Object.assign(state,{mode:'search',modeTime:0,speed:0,route:[],routeAge:0,routeTarget:null,blockedTime:0,lastKnown:null,focusPoint:null,
+    playerVisible:false,wasVisible:false,notice:0,attention:.3,searchOrigin:point(where),searchTarget:null,searchIndex:0,searchPauseUntil:state.clock+2,
+    watchUntil:0,listenUntil:0,turnPauseUntil:0,pendingBell:null,attackAligned:false,crouch:0,wasStunned:false});
+  if(Number.isFinite(where.heading))state.heading=where.heading;
+  return state;
+}
+
 /**
  * input: {player:{x,z,level}, active,hunt,playerMoving,playerRunning,
  * playerLooking,closedEyes,playerPitch,lamp,attackPhase,stun,dead,
- * noiseEvent?:{id,x,z,level,strength,kind}}.
+ * noiseEvent?:{id,x,z,level,strength,kind}, leash?:{x,z,radius}}.
+ * A leash keeps every walking target on level 0 outside its radius.
  * noise strength is an unobstructed audible radius in metres. Each id is used
  * exactly once, even when out of range. An audible bell leaves a five-second
  * immutable echo, usable once after losing sight; it never tracks its ringer.
@@ -226,6 +249,12 @@ export function stepEnemy(state,input,delta,nav){
     startSearch(state,nav,events);
     if(state.searchTarget&&sameLevel(state.position,state.searchTarget)&&distance(state.position,state.searchTarget)<.6){state.searchTarget=null;state.searchPauseUntil=state.clock+1.2;state.route=[];}
     if(state.clock>=state.searchPauseUntil){if(!state.searchTarget)chooseSearchPoint(state,nav);target=state.searchTarget;speed=ENEMY_RULES.searchSpeed;}
+  }
+  // Early-story leash (v4.0.1): the creature may approach and be seen outside,
+  // but it parks on the circle's edge instead of entering. It still watches.
+  if(target&&input.leash){
+    const parked=leashTarget(state,target,input.leash,nav);
+    if(parked){target=parked.point;if(parked.arrived){target=null;speed=0;}}
   }
   if(state.clock<state.turnPauseUntil)speed=0;
   const focus=state.playerVisible?state.focusPoint:target||state.focusPoint;
