@@ -14,6 +14,8 @@ test('all adopted photographs and voices match their recorded provenance and aud
   for(const asset of ledger.assets){
     assert.equal(asset.status,'ready',asset.file);
     const bytes=read(asset.file),record=JSON.parse(read(asset.source.record));
+    assert.equal(record.file,asset.file,'the shared ledger worker can rebuild every adopted record');
+    assert.ok(record.credit);assert.ok(record.engine);
     const hash=createHash('sha256').update(bytes).digest('hex');
     assert.equal(hash,asset.source.sha256,asset.file);assert.equal(hash,record.sha256,asset.file);
     if(asset.file.endsWith('.webp')){

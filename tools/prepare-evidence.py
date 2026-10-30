@@ -18,10 +18,11 @@ for job in brief['jobs']:
         dims=list(im.size)
     record_path=f"tools/local-media-records/{job['id']}-v4-2.json"
     record={'id':job['id'],'engine':'built-in image_gen','model':'not reported by tool','seed':'not reported by tool','prompt':job['prompt'],'sourceFile':str(source),'sourceSha256':sha(source),'output':job['output'],'sha256':sha(out),'dimensions':dims,'bytes':out.stat().st_size,'processing':'RGB, bounded 960x720 Lanczos resize, WebP quality83 method6; no retouching','review':'Generated fictional evidence close-up; visually inspected. The 3D model thumbnail remains the authoritative object recognition guide. Fine writing is provided as readable HTML, not generated lettering.'}
-    (ROOT/record_path).write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    record.update({'file':job['output'],'purpose':'小物の任意調査に使う接写写真','credit':'AI-generated fictional evidence photograph, built-in image_gen.','source':{'kind':'generated-builtin','engine':'image_gen','originalFile':str(source),'sourceSha256':sha(source)}})
+    (ROOT/record_path).write_bytes((json.dumps(record,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
     ledger['assets']=[a for a in ledger['assets'] if a['file']!=job['output']]
     ledger['assets'].append({'file':job['output'],'purpose':'小物の任意調査に使う接写写真','status':'ready','credit':'AI-generated fictional evidence photograph, built-in image_gen.','source':{'kind':'generated-builtin','engine':'image_gen','sha256':sha(out),'record':record_path}})
     job['status']='ready';job['record']=record_path
     print(job['id'],dims,out.stat().st_size,sha(out))
-brief_path.write_text(json.dumps(brief,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-ledger_path.write_text(json.dumps(ledger,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+brief_path.write_bytes((json.dumps(brief,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
+ledger_path.write_bytes((json.dumps(ledger,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))

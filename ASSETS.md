@@ -168,4 +168,3 @@ built-in image_genで各素材を別々に生成しました。Pillowによる�
 プロンプト・制作方式・用途は `tools/photo-briefs-v4.2.json`、元ファイルと出力のSHA-256・寸法・検収記録は `tools/local-media-records/{boots,ledger,mirror}-detail-v4-2.json`、配信ファイルは `dist/assets/photos/*-detail-v4-2.webp`。`tools/prepare-evidence.py` は選定済み原画の圧縮のみを行う。共通キューの検証ジョブは `tools/verify-evidence.mjs` で出力ハッシュ・WebP形式・容量を確認する。
 
 新しい戸・木・息の効果音は `dist/audio.js` のWeb Audio合成。外部録音や生成音声は追加していない。既存のVOICEVOX案内のクレジットは継続する。
-

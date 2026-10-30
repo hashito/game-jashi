@@ -842,4 +842,3 @@ async function boot(){
   }catch(error){console.error(error);$('loading-label').textContent='読み込みに失敗しました。ページを更新してください。';$('loading-bar').style.background='#a66b58';}
 }
 boot();
-

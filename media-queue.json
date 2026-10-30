@@ -295,7 +295,17 @@
         "tools/local-media-verification/voice-bottle.json",
         "tools/local-media-verification/voice-crank.json",
         "tools/local-media-verification/voice-gate.json",
-        "tools/local-media-verification/voice-car.json"
+        "tools/local-media-verification/voice-car.json",
+        "tools/local-media-records/boots-detail-v4-2.json",
+        "dist/assets/photos/boots-detail-v4-2.webp",
+        "tools/local-media-verification/boots-detail-v4-2.json",
+        "tools/local-media-records/ledger-detail-v4-2.json",
+        "dist/assets/photos/ledger-detail-v4-2.webp",
+        "tools/local-media-verification/ledger-detail-v4-2.json",
+        "tools/local-media-records/mirror-detail-v4-2.json",
+        "dist/assets/photos/mirror-detail-v4-2.webp",
+        "tools/local-media-verification/mirror-detail-v4-2.json",
+        "tools/photo-briefs-v4.2.json"
       ],
       "outputs": [
         "assets/production.json"

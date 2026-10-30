@@ -33,7 +33,7 @@ def read_json(path):
 def write_json(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_bytes((json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
 
 
 def request(url, data=None, timeout=60, binary=False):
@@ -230,8 +230,11 @@ def ledger():
         assets.append({"file": r["file"], "purpose": r.get("purpose", "修司の探索案内 / " + path.stem),
                        "status": "ready", "credit": r["credit"],
                        "source": source})
-    if len(assets) != 11:
-        raise ValueError(f"Expected 3 photographs and 8 voice clips; got {len(assets)}")
+    details = read_json(ROOT / "tools/photo-briefs-v4.2.json")["jobs"]
+    expected = 11 + len(details)
+    files = {asset["file"] for asset in assets}
+    if len(assets) != expected or len(files) != expected or any(job["output"] not in files for job in details):
+        raise ValueError(f"Expected 3 scene photographs, 8 voices and {len(details)} detail photographs; got {len(assets)}")
     write_json(ROOT / "assets/production.json", {"version": 1, "assets": assets})
     print(f"Verified ledger: {len(assets)} assets", flush=True)
 

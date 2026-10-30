@@ -119,7 +119,7 @@ export class MountainWorld {
     // texture is attached to individual vertical branches, never a solid crown.
     const boughGeometry=()=>new THREE.PlaneGeometry(1,1).translate(.5,-.5,0);
     // Branch records are grouped by their tree root; only nearby GPU meshes exist.
-    
+
     const dummy=new THREE.Object3D(),axis=new THREE.Vector3(0,1,0),direction=new THREE.Vector3();
     trees.forEach((t,i)=>{const y=terrainY(t.x,t.z);dummy.position.set(t.x,y+t.h/2,t.z);dummy.scale.set(t.r,t.h,t.r);dummy.rotation.set((rand()-.5)*.012,t.angle,(rand()-.5)*.012);dummy.updateMatrix();trunkRecords.push(instanceRecord(dummy.matrix,t));
       for(let tier=0;tier<5;tier++)for(let side=0;side<3;side++){

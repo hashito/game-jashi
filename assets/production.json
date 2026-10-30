@@ -2,6 +2,20 @@
   "version": 1,
   "assets": [
     {
+      "file": "dist/assets/photos/boots-detail-v4-2.webp",
+      "purpose": "小物の任意調査に使う接写写真",
+      "status": "ready",
+      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-89150f7c-6203-478f-982b-502bcbde652e.png",
+        "sourceSha256": "15fe07111c3d6b5d7bc920ac521217420a8fb5807033fc8632444e49c13264c3",
+        "sha256": "9dbff3d88aacecd2c5655f3a83bf48e7fa8a3e3b346ffe083792ad8dec1b51e2",
+        "record": "tools/local-media-records/boots-detail-v4-2.json"
+      }
+    },
+    {
       "file": "dist/assets/photos/arrival-v4-1.webp",
       "purpose": "導入。片付けのために来た、昼の別荘の記録。",
       "status": "ready",
@@ -52,6 +66,34 @@
         "seed": "not reported by tool",
         "sha256": "5685cde2a116e53b3edae8bdf6bad6091fa22f9a599249ba71fc6256827839c5",
         "record": "tools/local-media-records/image-return.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/ledger-detail-v4-2.webp",
+      "purpose": "小物の任意調査に使う接写写真",
+      "status": "ready",
+      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-1c7d0f54-b08d-49ad-b911-1226eb29ea32.png",
+        "sourceSha256": "82345ec1bf82c32608fdc44fe7cce566cc58f116ba7aed51ff4867625095d9d9",
+        "sha256": "a56c291ac4cde3747979a50a2c26958f54c5ba23e3f01444265ce291918f1c31",
+        "record": "tools/local-media-records/ledger-detail-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/mirror-detail-v4-2.webp",
+      "purpose": "小物の任意調査に使う接写写真",
+      "status": "ready",
+      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-52a91ee4-972b-4232-9e66-dd6d160cedbc.png",
+        "sourceSha256": "49cc330c4ffec7ac65da777c7c8b9d45c3ad649150d4637b35564535b947df6f",
+        "sha256": "a59b8e633b7ec77ead0518d7f02066f269826681bf2e0ae413fc269a6ed30cf1",
+        "record": "tools/local-media-records/mirror-detail-v4-2.json"
       }
     },
     {
@@ -148,42 +190,6 @@
         "engine": "VOICEVOX",
         "sha256": "ffa38cce14a060b2836fc273c266a7b7fb9fa248462676ab0532e0bbfed801b4",
         "record": "tools/local-media-records/voice-telescope.json"
-      }
-    },
-    {
-      "file": "dist/assets/photos/boots-detail-v4-2.webp",
-      "purpose": "小物の任意調査に使う接写写真",
-      "status": "ready",
-      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
-      "source": {
-        "kind": "generated-builtin",
-        "engine": "image_gen",
-        "sha256": "9dbff3d88aacecd2c5655f3a83bf48e7fa8a3e3b346ffe083792ad8dec1b51e2",
-        "record": "tools/local-media-records/boots-detail-v4-2.json"
-      }
-    },
-    {
-      "file": "dist/assets/photos/ledger-detail-v4-2.webp",
-      "purpose": "小物の任意調査に使う接写写真",
-      "status": "ready",
-      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
-      "source": {
-        "kind": "generated-builtin",
-        "engine": "image_gen",
-        "sha256": "a56c291ac4cde3747979a50a2c26958f54c5ba23e3f01444265ce291918f1c31",
-        "record": "tools/local-media-records/ledger-detail-v4-2.json"
-      }
-    },
-    {
-      "file": "dist/assets/photos/mirror-detail-v4-2.webp",
-      "purpose": "小物の任意調査に使う接写写真",
-      "status": "ready",
-      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
-      "source": {
-        "kind": "generated-builtin",
-        "engine": "image_gen",
-        "sha256": "a59b8e633b7ec77ead0518d7f02066f269826681bf2e0ae413fc269a6ed30cf1",
-        "record": "tools/local-media-records/mirror-detail-v4-2.json"
       }
     }
   ]
