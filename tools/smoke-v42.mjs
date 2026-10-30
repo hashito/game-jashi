@@ -44,18 +44,28 @@ try{
       const nums=data.transform.match(/[-+]?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(Number),up=data.label.startsWith('二階');
       lastPose={x:up?(nums[0]-195)/23:(nums[0]-30)/5-34,z:up?(nums[1]-25)/23+16:(nums[1]-28)/5-34,level:up?1:0,yaw:-nums[2]*Math.PI/180};await closePanel();return lastPose;
     };
-    const hold=async(code,ms)=>{await p.key(code,'down');await p.sleep(ms);await p.key(code,'up');await p.sleep(80);};
+    const hold=async(code,ms)=>{
+      await p.key(code,'down');
+      try{await p.sleep(ms);await p.eval('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');}
+      finally{await p.key(code,'up');}
+      await p.sleep(80);
+    };
     const turnToward=async target=>{
       let at=await pose();
-      // Arrow controls are also supported on touch browsers. Read the rendered
-      // compass after every turn, so CPU-only frame rates cannot skew the aim.
-      // A seven-degree aim still faces the center of a real doorway; very short
-      // key pulses can fall between frames on the software-rendered CI runner.
+      // Use the actual right-screen drag on touch devices. Keyboard holds must
+      // span rendered frames; a wall-time pulse can land wholly between frames.
       const turns=[];
       for(let i=0;i<24;i++){
         const desired=Math.atan2(-(target.x-at.x),-(target.z-at.z)),delta=wrap(desired-at.yaw);if(Math.abs(delta)<.12)return at;
         turns.push({yaw:at.yaw,desired,delta});
-        await hold(delta>0?'ArrowLeft':'ArrowRight',Math.max(120,Math.min(800,Math.abs(delta)*520)));at=await pose();
+        if(profile.mobile){
+          const x=profile.width*.5,y=profile.height*.45,dx=Math.max(-120,Math.min(120,-delta/.004));
+          await p.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:3}]});
+          await p.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+dx,y,id:3}]});
+          await p.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+          await p.eval('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
+        }else await hold(delta>0?'ArrowLeft':'ArrowRight',Math.max(120,Math.min(800,Math.abs(delta)*520)));
+        at=await pose();
       }
       throw Error(`could not face ${JSON.stringify(target)} from ${JSON.stringify(at)}; turns=${JSON.stringify(turns)}`);
     };
