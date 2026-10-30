@@ -21,7 +21,7 @@ try{
     if(selected&&selected!==name)continue;
     console.log(`${name}: launching browser`);
     const p=await launch(profile);
-    const trace=[];let lastPose=null,stage='initial load';
+    const trace=[];let lastPose=null,stage='initial load',mouse={x:0,y:0};
     const uiState=()=>p.eval(`(()=>({screen:document.body.dataset.screen,scene:document.body.dataset.scene,panelHidden:document.getElementById('panel')?.hidden,panelTitle:document.getElementById('panel-title')?.textContent,scopeHidden:document.getElementById('scope-sequence')?.hidden,clock:document.getElementById('tape-clock')?.textContent,interactionHidden:document.getElementById('interaction')?.hidden,interaction:document.getElementById('interaction-text')?.textContent,focused:document.hasFocus(),pointerLocked:!!document.pointerLockElement,activeElement:document.activeElement?.id||document.activeElement?.tagName,dialoguePaused:document.getElementById('subtitle-hold')?.getAttribute('aria-pressed'),toast:document.getElementById('toast')?.textContent}))()`);
     const traceState=async label=>{const state={label,pose:lastPose,...await uiState()};trace.push(state);console.log(`${name}: ${JSON.stringify(state)}`);return state;};
     const gameplay=()=>p.waitFor("document.body.dataset.screen==='play'&&document.getElementById('panel').hidden&&document.getElementById('scope-sequence').hidden&&document.getElementById('subtitle-hold').getAttribute('aria-pressed')!=='true'",15000);
@@ -29,7 +29,7 @@ try{
     const tap=async selector=>{
       const rect=await p.eval(`(async()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled)throw Error('missing control: '+${JSON.stringify(selector)});e.scrollIntoView({block:'center'});await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const r=e.getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
       if(profile.mobile){await p.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...rect,id:1}]});await p.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
-      else await p.click(rect.x,rect.y);
+      else{mouse=rect;await p.click(rect.x,rect.y);}
     };
     const interact=async()=>profile.mobile?tap('[data-action="interact"]'):p.key('KeyE');
     // Closing with a mouse click can move Chromium's pointer as pointer-lock is
@@ -44,16 +44,11 @@ try{
       const nums=data.transform.match(/[-+]?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(Number),up=data.label.startsWith('二階');
       lastPose={x:up?(nums[0]-195)/23:(nums[0]-30)/5-34,z:up?(nums[1]-25)/23+16:(nums[1]-28)/5-34,level:up?1:0,yaw:-nums[2]*Math.PI/180};await closePanel();return lastPose;
     };
-    const hold=async(code,ms)=>{
-      await p.key(code,'down');
-      try{await p.sleep(ms);await p.eval('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');}
-      finally{await p.key(code,'up');}
-      await p.sleep(80);
-    };
     const turnToward=async target=>{
       let at=await pose();
-      // Use the actual right-screen drag on touch devices. Keyboard holds must
-      // span rendered frames; a wall-time pulse can land wholly between frames.
+      // Camera input is displacement-based, so use real mouse/touch movement.
+      // Timed arrow holds are unsuitable for software-rendered CI: queued
+      // protocol calls can span several simulation ticks and overshoot.
       const turns=[];
       for(let i=0;i<24;i++){
         const desired=Math.atan2(-(target.x-at.x),-(target.z-at.z)),delta=wrap(desired-at.yaw);if(Math.abs(delta)<.12)return at;
@@ -64,7 +59,11 @@ try{
           await p.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+dx,y,id:3}]});
           await p.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
           await p.eval('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');
-        }else await hold(delta>0?'ArrowLeft':'ArrowRight',Math.max(120,Math.min(800,Math.abs(delta)*520)));
+        }else{
+          assert.equal((await uiState()).pointerLocked,true,'desktop camera uses the normal locked mouse');
+          mouse={x:mouse.x+Math.max(-200,Math.min(200,-delta/.0021)),y:mouse.y};
+          await p.send('Input.dispatchMouseEvent',{type:'mouseMoved',...mouse});
+        }
         at=await pose();
       }
       throw Error(`could not face ${JSON.stringify(target)} from ${JSON.stringify(at)}; turns=${JSON.stringify(turns)}`);
@@ -124,14 +123,18 @@ try{
         // normal axis, and keep the player between the posts, rather than
         // treating valid sideways movement as passing through the closed door.
         assert.ok(Math.abs(stillBlocked.z-blocked.z)<.08&&stillBlocked.z>d.z+.25&&Math.abs(stillBlocked.x-d.x)<d.width/2,`${id}: continued walking cannot cross the closed leaf: ${JSON.stringify({blocked,stillBlocked,door:d})}`);
-        await turnToward(d);await interact();await p.waitFor(`JSON.parse(localStorage.getItem('${saveKey}')).doors[${JSON.stringify(id)}]===true`);await p.sleep(600);
+        await turnToward(d);await interact();
+        // Check the live door state. Checkpoint writes are intentionally
+        // suppressed when the creature approaches; that must not look like a
+        // door interaction failure. Actual passage below validates collision.
+        await p.waitFor(`document.getElementById('interaction-text').textContent.includes(${JSON.stringify(d.label+'を閉める')})`);await p.sleep(600);
         await p.shot(path.join(out,`${name}-${id}-open.png`));
         let inside=await pose();for(let i=0;i<8&&inside.z>d.z-.65;i++){await turnToward({x:d.x,z:d.z-2});await forward(1);inside=await pose();await traceState(`${id}: open movement ${i+1}`);}
         assert.ok(inside.z<d.z-.65,`${id}: opening permits actual movement through the doorway: ${JSON.stringify({inside,door:d,ui:await uiState()})}`);await p.shot(path.join(out,`${name}-${id}-crossed.png`));
         report.push({profile:name,door:id,blocked,inside});
         if(id==='shed-entry'){
           await turnToward({x:-19,z:-3});await p.waitFor("document.getElementById('interaction-text').textContent.includes('ボトル')");await interact();
-          await p.waitFor(`JSON.parse(localStorage.getItem('${saveKey}')).flags.bottle===true`);assert.equal(await p.eval("document.getElementById('charge-count').textContent"),'×2');await bounds('bottle record');await p.shot(path.join(out,`${name}-shed-bottle.png`));await closePanel();
+          await p.waitFor("document.getElementById('charge-count').textContent==='×2'&&!document.getElementById('panel').hidden");assert.equal(await p.eval("document.getElementById('charge-count').textContent"),'×2');await bounds('bottle record');await p.shot(path.join(out,`${name}-shed-bottle.png`));await closePanel();
         }
       }
       // Approach the actual poster and mounted photo from normal checkpoint
