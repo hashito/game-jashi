@@ -42,7 +42,11 @@ try{
       const data=await p.eval(`(()=>{const svg=document.querySelector('.trail-map');return{label:svg.getAttribute('aria-label'),transform:[...svg.querySelectorAll('g[transform]')].find(g=>g.querySelector('path[fill="#f0cf8a"]'))?.getAttribute('transform')};})()`);
       assert.ok(data.transform,'map exposes the actual current location');
       const nums=data.transform.match(/[-+]?\d*\.?\d+(?:e[-+]?\d+)?/gi).map(Number),up=data.label.startsWith('二階');
-      lastPose={x:up?(nums[0]-195)/23:(nums[0]-30)/5-34,z:up?(nums[1]-25)/23+16:(nums[1]-28)/5-34,level:up?1:0,yaw:-nums[2]*Math.PI/180};await closePanel();return lastPose;
+      lastPose={x:up?(nums[0]-195)/23:(nums[0]-30)/5-34,z:up?(nums[1]-25)/23+16:(nums[1]-28)/5-34,level:up?1:0,yaw:-nums[2]*Math.PI/180};
+      // Each map visit releases pointer lock. Re-establish the mouse baseline
+      // while paused so the next real camera displacement starts at the center.
+      if(!profile.mobile){mouse={x:profile.width/2,y:profile.height/2};await p.send('Input.dispatchMouseEvent',{type:'mouseMoved',...mouse});}
+      await closePanel();return lastPose;
     };
     const turnToward=async target=>{
       let at=await pose();
@@ -95,7 +99,7 @@ try{
     };
     const checkpoint=(player,extra={})=>{
       const c=structuredClone(initial);Object.assign(c.flags,{seen:true,downstairs:true,radioTuned:true,glasses:true,key:true,note:true});
-      c.story.stage=4;c.story.events=['opening','sighting','downstairs','radioTuned','glasses','note'];c.player=player;c.time=20;c.lastStoryAdvance=20;c.speechQueue=[];c.activeSpeech=null;c.speechTime=0;c.enemy.position={x:4,z:-28,level:0};c.enemy.mode='search';c.enemy.lastKnown=null;c.enemy.route=[];c.doors=Object.fromEntries(DOORS.map(d=>[d.id,true]));return Object.assign(c,extra);
+      c.story.stage=4;c.story.events=['opening','sighting','downstairs','radioTuned','glasses','note'];c.player=player;c.time=20;c.lastStoryAdvance=20;c.speechQueue=[];c.activeSpeech=null;c.speechTime=0;c.enemy.position={x:18,z:-28,level:0};c.enemy.mode='search';c.enemy.lastKnown=null;c.enemy.route=[];c.doors=Object.fromEntries(DOORS.map(d=>[d.id,true]));return Object.assign(c,extra);
     };
     try{
       console.log(`${name}: loading game`);
@@ -133,7 +137,11 @@ try{
         assert.ok(inside.z<d.z-.65,`${id}: opening permits actual movement through the doorway: ${JSON.stringify({inside,door:d,ui:await uiState()})}`);await p.shot(path.join(out,`${name}-${id}-crossed.png`));
         report.push({profile:name,door:id,blocked,inside});
         if(id==='shed-entry'){
-          await turnToward({x:-19,z:-3});await p.waitFor("document.getElementById('interaction-text').textContent.includes('ボトル')");await interact();
+          // Door traversal is proven above. Start the pickup check from that
+          // reached position with a fresh safe save; slow software rendering
+          // must not let an unrelated chase kill the player during screenshots.
+          await load(checkpoint({x:inside.x,z:inside.z,level:0},{yaw:inside.yaw,pitch:0}));
+          stage='shed bottle';await turnToward({x:-19,z:-3});await p.waitFor("document.getElementById('interaction-text').textContent.includes('ボトル')");await interact();
           await p.waitFor("document.getElementById('charge-count').textContent==='×2'&&!document.getElementById('panel').hidden");assert.equal(await p.eval("document.getElementById('charge-count').textContent"),'×2');await bounds('bottle record');await p.shot(path.join(out,`${name}-shed-bottle.png`));await closePanel();
         }
       }
