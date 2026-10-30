@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';
+const briefs=JSON.parse(fs.readFileSync('tools/photo-briefs-v4.2.json','utf8'));
+const id=process.argv[2],job=briefs.jobs.find(j=>j.id===id);assert.ok(job,'Known evidence job');
+const record=JSON.parse(fs.readFileSync(job.record,'utf8')),bytes=fs.readFileSync(job.output);
+assert.equal(createHash('sha256').update(bytes).digest('hex'),record.sha256);
+assert.equal(bytes.toString('ascii',0,4),'RIFF');assert.equal(bytes.toString('ascii',8,12),'WEBP');assert.ok(bytes.length<200000);
+fs.mkdirSync('tools/local-media-verification',{recursive:true});
+fs.writeFileSync(`tools/local-media-verification/${id}-v4-2.json`,JSON.stringify({id,sha256:record.sha256,bytes:bytes.length,verified:true},null,2)+'\n');
+console.log(`${id}: verified ${bytes.length} bytes`);

@@ -11,6 +11,8 @@ import * as storyRules from '../dist/story.js';
 import * as dialogueRules from '../dist/dialogue.js';
 import * as gimmickRules from '../dist/gimmicks.js';
 import * as guidanceRules from '../dist/guidance.js';
+import * as presenceRules from '../dist/presence.js';
+import * as evidenceRules from '../dist/evidence.js';
 import { MountainWorld } from '../dist/world.js';
 
 // v4.0.1 playtest regressions. The shipped controller (main.js) runs against the
@@ -26,7 +28,7 @@ const { LANDMARKS, STAIRS, BALCONY } = layout;
 const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 async function harness() {
-  const nodes = new Map(), actions = new Map(), raf = new Map();
+  const nodes = new Map(), actions = new Map(), raf = new Map(), audioCues=[];
   let now = 0, nextFrame = 0, run, doc;
   class Element {
     constructor(tag = 'div') {
@@ -64,7 +66,7 @@ async function harness() {
   doc = new Element('document'); doc.body = new Element('body'); doc.hidden = false; doc.pointerLockElement = null;
   doc.getElementById = id => nodes.get(id) || null; doc.querySelector = query; doc.exitPointerLock = noop; doc.createElement = tag => new Element(tag);
   parse(markup);
-  class Soundscape { setVolume() {} setMuted() {} start() { return Promise.resolve(true); } cue() {} update() {} }
+  class Soundscape { setVolume() {} setMuted() {} start() { return Promise.resolve(true); } cue(name,position) { audioCues.push({name,time:run?.('time')??0,position:position?{x:position.x,z:position.z,level:position.level}:null}); } update() {} }
   class TapeEffects { constructor() { this.canvas = new Element('canvas'); } trigger() {} clear() {} update() {} }
   const renderer = { shadowMap: {}, setPixelRatio: noop, setSize: noop, render: noop, domElement: new Element('canvas') };
   const textureLoader = { load(_url, onLoad) { const t = new THREE.Texture({ width: 64, height: 64 }); queueMicrotask(() => onLoad?.(t)); return t; } };
@@ -73,7 +75,7 @@ async function harness() {
   }
   const storage = new Map();
   const context = vm.createContext({
-    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, ...guidanceRules, MountainWorld: World, Soundscape, TapeEffects,
+    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, ...guidanceRules, ...presenceRules, ...evidenceRules, MountainWorld: World, Soundscape, TapeEffects,
     document: doc, localStorage: { getItem: k => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) },
     matchMedia: () => ({ matches: false }), performance: { now: () => now }, devicePixelRatio: 1,
     requestAnimationFrame: cb => { const id = ++nextFrame; raf.set(id, cb); return id; }, cancelAnimationFrame: id => raf.delete(id), addEventListener: noop, console,
@@ -106,7 +108,7 @@ async function harness() {
     }
     release('KeyW'); return trace;
   }
-  return { run, nodes, frame, click, press, release, state, encounter, walkUntil, advance: s => { for (let t = 0; t < s - 1e-8; t += .05) frame(); } };
+  return { run, nodes, frame, click, press, release, state, encounter, walkUntil, audioCues, advance: s => { for (let t = 0; t < s - 1e-8; t += .05) frame(); } };
 }
 
 const insideCabin = p => Math.abs(p.x) < 6.3 && p.z > 18.6 && p.z < 29.4;
@@ -282,6 +284,27 @@ test('inside the shed the creature keeps off the door for a while, warns, then c
   let entered = false;
   for (let t = 0; t < 40 && h.run('mode') === 'play'; t += .05) { h.frame(); if (flat(h.state('monster'), door) < 2.5 || flat(h.state('monster'), h.state('player')) < 3) entered = true; }
   assert.ok(entered, 'staying on lets the creature in');
+});
+
+test('a pursuing creature reaches the closed shed door, knocks three times, opens it and walks through',async()=>{
+  const h=await harness();h.encounter();h.advance(.5);
+  h.run(calm+'Object.assign(player,{x:-19,z:-3.3,level:0});yaw=Math.PI;world.setDoor("shed-entry",false,{immediate:true});relocateEnemy(enemy,{x:-19,z:3,level:0,heading:Math.PI});monster=enemy.position;enemy.lastKnown={...player};enemy.searchOrigin={...player};enemy.mode="hunt";flags.hunt=true;shelter={id:"shed",inside:31,outside:0,warned:true,released:true};');
+  const door=layout.BUILDINGS.find(b=>b.id==='shed').entrance;
+  assert.equal(h.run('world.doors["shed-entry"].open'),false);
+  assert.equal(h.run('world.isSegmentFree({x:-19,z:.2,level:0},{x:-19,z:-2,level:0},.3)'),false,'the original closed leaf physically obstructs the route');
+  let pressureAt=null,openedAt=null,entered=false;
+  const cueStart=h.audioCues.length;
+  for(let t=0;t<24;t+=.05){
+    h.frame();const m=h.state('monster'),open=h.run('world.doors["shed-entry"].open');
+    if(pressureAt===null&&h.run('doorPressure!==null'))pressureAt=h.run('time');
+    if(!open)assert.ok(m.z>door.z-.1,'the creature cannot pass through a closed leaf');
+    if(open&&openedAt===null){openedAt=h.run('time');assert.equal(h.audioCues.slice(cueStart).filter(c=>c.name==='doorKnock').length,3,'three audible knocks precede opening');}
+    if(open&&m.z<door.z-.65){entered=true;break;}
+  }
+  assert.ok(pressureAt!==null,'real AI reaches the blocking door');assert.ok(openedAt!==null,'controller pressure opens it');
+  assert.ok(openedAt-pressureAt>=4.3,'the warning delay gives time to retreat');
+  assert.ok(entered,'AI resumes its route through the physically opened passage');
+  assert.equal(h.run('world.isSegmentFree({x:-19,z:.2,level:0},{x:-19,z:-2,level:0},.3)'),true,'animated opening moves its real colliders away');
 });
 
 test('after the telescope the prompt is gone; the phone ring is hinted once and marked on the map', async () => {

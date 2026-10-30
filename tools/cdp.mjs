@@ -18,22 +18,31 @@ export async function launch(o = {}) {
   if (process.env.GF_SOFTWARE_GL === '1') flags.push('--use-gl=angle', '--use-angle=swiftshader');
   else if (process.platform === "win32") flags.push("--use-angle=d3d11");
   const proc = spawn(exe, [...flags, "about:blank"], { stdio: "ignore", windowsHide: true });
+  let startupError=null;proc.once('error',error=>{startupError=error;});
+  const stopOwnedBrowser=async()=>{
+    if(proc.exitCode!==null||!Number.isInteger(proc.pid))return;
+    if(process.platform==='win32')await new Promise(resolve=>{const killer=spawn('taskkill',['/PID',String(proc.pid),'/T','/F'],{stdio:'ignore',windowsHide:true});killer.once('exit',resolve);killer.once('error',resolve);});
+    else proc.kill();
+  };
   let port = null;
-  for (let i = 0; i < 150 && !port; i++) {
+  for (let i = 0; i < 450 && !port && !startupError; i++) {
     const f = path.join(dir, "DevToolsActivePort");
     try {
       if (fs.existsSync(f)) port = fs.readFileSync(f, "utf8").split("\n")[0].trim();
     } catch {} // still being written by the browser (EBUSY on Windows): try again
     if (!port) await sleep(100);
   }
+  if(!port){await stopOwnedBrowser();throw new Error(`Browser startup did not expose DevTools within 45s: ${startupError?.message||exe}`);}
   let wsUrl = null;
-  for (let i = 0; i < 50 && !wsUrl; i++) {
-    const list = await fetch(`http://127.0.0.1:${port}/json/list`).then((r) => r.json()).catch(() => []);
+  for (let i = 0; i < 100 && !wsUrl; i++) {
+    const list = await fetch(`http://127.0.0.1:${port}/json/list`,{signal:AbortSignal.timeout(1000)}).then((r) => r.json()).catch(() => []);
     wsUrl = list.find((t) => t.type === "page")?.webSocketDebuggerUrl;
     if (!wsUrl) await sleep(100);
   }
+  if(!wsUrl){await stopOwnedBrowser();throw new Error('Browser started without an inspectable page');}
   const ws = new WebSocket(wsUrl);
-  await new Promise((res, rej) => ((ws.onopen = res), (ws.onerror = rej)));
+  try{await new Promise((res, rej) => {const timer=setTimeout(()=>rej(new Error('DevTools websocket startup timed out')),10000);ws.onopen=()=>{clearTimeout(timer);res();};ws.onerror=error=>{clearTimeout(timer);rej(error);};});}
+  catch(error){ws.close();await stopOwnedBrowser();throw error;}
   let seq = 0;
   const waits = new Map();
   const errors = [];

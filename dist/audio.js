@@ -1,4 +1,4 @@
-/* Gesture-started, position-aware sound for JASHI. Voices are nonverbal synthesis. */
+/* Gesture-started spatial foley and restrained synthesis; recorded guidance has its own voice. */
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 /** Matches the camera: forward=(-sin(yaw),-cos(yaw)), right=(cos(yaw),-sin(yaw)). */
@@ -48,12 +48,15 @@ export class Soundscape {
     this._cueSpatial = null;
     this._nextCreatureBreath = 2;
     this._nextTimber = 9;
+    this._nextDetail = 0;
+    this._ambientCue = false;
+    this._paused = false;
     this._radio = { active: false, signal: 0, staticLevel: 1 };
     this._guideBuffers = new Map();
     this._guideToken = 0;
     this._guideVoice = null;
     this._lastRadioUpdate = -1;
-    this._onVisibility = () => { if(this._hidden())this.stopGuideVoice();this._syncMaster(); };
+    this._onVisibility = () => { if(this._hidden()){this.stopGuideVoice();this._stopAtmosphere();}this._syncMaster(); };
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', this._onVisibility);
     }
@@ -161,8 +164,8 @@ export class Soundscape {
     this._continuous.push(windSource, high, this._windFilter, this._windGain);
 
     this._airGain = this._drone(49, 'sine', 0.013);
-    this._uneaseA = this._drone(109, 'sine', 0);
-    this._uneaseB = this._drone(113.6, 'sine', 0);
+    this._uneaseA = this._drone(74, 'sine', 0);
+    this._uneaseB = this._drone(74.7, 'sine', 0);
     // High cedar needles and low wind occupy different bands; indoor air has no needles.
     const needles = ctx.createBufferSource(); needles.buffer = this._noiseBuffer; needles.loop = true;
     const needleFilter = ctx.createBiquadFilter(); needleFilter.type = 'bandpass'; needleFilter.frequency.value = 2700; needleFilter.Q.value = .45;
@@ -190,18 +193,20 @@ export class Soundscape {
     gain.connect(this._compressor);
     source.start();
     this._continuous.push(source, gain);
+    gain.oscillator = source;
     return gain;
   }
 
   setMuted(value) {
     this.muted = Boolean(value);
-    if(this.muted)this.stopGuideVoice();
+    if(this.muted){this.stopGuideVoice();this._stopAtmosphere();}
     this._syncMaster();
   }
 
   setVolume(value) {
     const number = Number(value);
     this.volume = Number.isFinite(number) ? clamp(number, 0, 1) : 0.45;
+    if(this.volume===0)this._stopAtmosphere();
     this._syncMaster();
   }
 
@@ -243,7 +248,7 @@ export class Soundscape {
   update({ danger = 0, moving = false, running = false, inside = false, time = 0,
     stamina = 1, pursuit = false, monsterDistance = Infinity,
     enemyMode = 'dormant', enemySpeed = 0, listener, monster, occluded = false,
-    surface = inside ? 'wood' : 'leaves', radioTuning, dialogue = false, paused = false } = {}) {
+    surface = inside ? 'wood' : 'leaves', radioTuning, dialogue = false, paused = false, roomSource = null } = {}) {
     if (listener) this._listener = listener;
     if (monster) this._monster = monster;
     this._occluded = Boolean(occluded);
@@ -261,6 +266,7 @@ export class Soundscape {
       const presence = clamp((24 - distance) / 22, 0, 1);
       // A restarted run may reset its game clock without restarting audio.
       if (t < this._lastGameTime) {
+        this._stopAtmosphere();
         this._nextStep = this._nextBeat = t;
         this._monsterStride = 0;
         this._monsterStepLength = 0.98;
@@ -268,14 +274,17 @@ export class Soundscape {
         this._nextBreath = t + 0.5;
         this._nextCreatureBreath = t + 2;
         this._nextTimber = t + 9;
+        this._nextDetail = t + 2;
       }
       this._lastGameTime = t;
+      this._paused = Boolean(paused);
       if (paused) {
         // The simulation may stop updating after this one call. Silence every
         // continuous layer now instead of leaving the previous danger mix held.
         this.setRadioTuning({ active: false, signal: 0, staticLevel: 0 });
         for (const node of [this._windGain, this._airGain, this._uneaseA, this._uneaseB, this._needleGain])
           if (node) this._smooth(node.gain, 0, .065);
+        this._stopAtmosphere();
         this._lastUpdate = -1; // The first resumed frame restores its actual mix.
         return;
       }
@@ -290,8 +299,13 @@ export class Soundscape {
         this._smooth(this._windGain.gain, (inside ? 0.013 : 0.046) * breeze * duck, 0.35);
         this._smooth(this._windFilter.frequency, inside ? 380 : 700 + Math.sin(t * 0.18) * 130, 0.4);
         this._smooth(this._airGain.gain, (inside ? 0.011 : 0.015) * duck, 0.4);
-        this._smooth(this._uneaseA.gain, (d * d * 0.022 + hunted * 0.006) * duck, 0.25);
-        this._smooth(this._uneaseB.gain, (d * d * 0.016 + hunted * 0.004) * duck, 0.25);
+        // Slow beating becomes less settled as danger rises, without turning up
+        // the entire mix or masking the attack/escape cues.
+        const unease = .72 + Math.sin(t * .17) * .16 + Math.sin(t * .071) * .12;
+        this._smooth(this._uneaseA.gain, (d * d * 0.020 + hunted * 0.005) * unease * duck, .7);
+        this._smooth(this._uneaseB.gain, (d * d * 0.014 + hunted * 0.003) * unease * duck, .9);
+        this._smooth(this._uneaseA.oscillator.frequency, 74 + d * 9, 1.4);
+        this._smooth(this._uneaseB.oscillator.frequency, 74.7 + d * 11.6, 1.7);
         this._smooth(this._needleGain.gain, inside ? 0 : (.006 + Math.max(0, Math.sin(t * .21)) * .008) * duck, .6);
       }
       if (moving && t >= this._nextStep) {
@@ -340,25 +354,24 @@ export class Soundscape {
       }
       // Dry inhalation, interrupted throat pulses, then a short falling resonance.
       // Long gaps between phrases leave the physical footsteps readable.
-      if (presence > .08 && enemyMode !== 'dormant' && t >= this._nextCreatureBreath) {
-        this._nextCreatureBreath = t + (enemyMode === 'hunt' ? 2.9 : 5.1) + Math.random() * 2;
-        this._creatureBreath(audioSpatial(this._listener, this._monster, { occluded: this._occluded }), enemyMode === 'hunt');
+      if (!dialogue && presence > .08 && enemyMode !== 'dormant' && t >= this._nextCreatureBreath && t >= this._nextDetail) {
+        this._nextCreatureBreath = t + (enemyMode === 'hunt' ? 6 : 10) + Math.random() * 5;
+        this._nextDetail = t + 4;
+        this._atmosphere(()=>this._creatureBreath(audioSpatial(this._listener, this._monster, { occluded: this._occluded }), enemyMode === 'hunt'));
       }
-      if (presence > 0.08 && enemyMode !== 'dormant' && t >= this._nextSong) {
-        this._nextSong = t + 11 + Math.random() * 8;
+      if (!dialogue && d < .7 && presence > 0.08 && enemyMode !== 'dormant' && t >= this._nextSong && t >= this._nextDetail) {
+        this._nextSong = t + 19 + Math.random() * 13;
+        this._nextDetail = t + 6;
         const spatial = audioSpatial(this._listener, this._monster, { occluded: this._occluded, range: 38 });
-        this._tone({ frequency: 186, endFrequency: 119, duration: 1.8, gain: .021, warble: 11, cutoff: 1300, spatial });
-        this._tone({ frequency: 372, endFrequency: 301, duration: 1.13, gain: .008, delay: .57, warble: 17, spatial });
-        this._noise({ duration: 1.47, gain: .014, frequency: 790, endFrequency: 410, type: 'bandpass', delay: .19, spatial });
+        this._atmosphere(()=>this._presenceTexture(spatial));
       } else if (presence <= 0.08) {
         this._nextSong = Math.max(this._nextSong, t + 2.8);
         this._nextCreatureBreath = Math.max(this._nextCreatureBreath, t + 1.2);
       }
-      if (inside && !dialogue && d < .5 && t >= this._nextTimber) {
-        this._nextTimber = t + 14 + Math.random() * 12;
-        const pan = Math.random() < .5 ? -.55 : .55;
-        this._tone({ frequency: 115, endFrequency: 67, duration: .52, gain: .013, type: 'triangle', warble: 8, pan, cutoff: 740 });
-        this._noise({ duration: .32, gain: .016, frequency: 510, endFrequency: 190, delay: .15, pan });
+      if (inside && roomSource && !dialogue && d < .5 && t >= this._nextTimber && t >= this._nextDetail) {
+        this._nextTimber = t + 21 + Math.random() * 17;
+        this._nextDetail = t + 5;
+        this.cue(Math.random()<.65?'woodCreak':'distantScrape',roomSource);
       }
       if (energy < 0.36 && (moving || hunted) && t >= this._nextBreath) {
         this._nextBreath = t + 1.55 - (running ? 0.25 : 0) + Math.random() * 0.2;
@@ -370,10 +383,14 @@ export class Soundscape {
   }
 
   _footstep(surface, running, side) {
-    const pan = side * .12, level = running ? .085 : .058;
+    const pan = side * .12, level = running ? .080 : .054;
+    const grain = .94 + Math.random() * .12;
     if (surface === 'wood' || surface === 'stairs') {
-      this._noise({ duration: .07, gain: level * .75, frequency: 430, endFrequency: 150, pan });
-      this._tone({ frequency: surface === 'stairs' ? 109 : 88, endFrequency: 47, duration: .13, gain: level * .47, pan });
+      // Heel, board resonance, then a quieter toe. The slight pitch/spacing
+      // variation avoids a perfectly repeating percussion loop.
+      this._noise({ duration: .055, gain: level * .7, frequency: 530 * grain, endFrequency: 180, pan });
+      this._tone({ frequency: (surface === 'stairs' ? 109 : 88) * grain, endFrequency: 47, duration: .15, gain: level * .44, pan });
+      this._noise({ duration: .055, gain: level * .29, frequency: 930 * grain, endFrequency: 330, type:'bandpass', delay: running ? .055 : .082, pan });
       if (surface === 'stairs' || side < 0) this._tone({ frequency: 178 + side * 13, endFrequency: 111,
         duration: surface === 'stairs' ? .30 : .16, gain: level * .16, type: 'triangle', warble: 9, delay: .035, cutoff: 670, pan });
     } else if (surface === 'gravel') {
@@ -388,31 +405,99 @@ export class Soundscape {
   }
 
   _creatureBreath(spatial, hunting = false) {
-    this._noise({ duration: .52, gain: hunting ? .053 : .035, frequency: 1350, endFrequency: 530, type: 'bandpass', spatial });
+    this._noise({ duration: .62, gain: hunting ? .043 : .031, frequency: 1350, endFrequency: 530, type: 'bandpass', attack:.14, release:.28, spatial });
     for (let i = 0; i < 3; i++) {
       this._tone({ frequency: 94 - i * 7, endFrequency: 57, duration: .16 + i * .035,
         gain: .016 - i * .002, type: 'sawtooth', delay: .35 + i * .17, cutoff: 680, warble: 8, spatial });
     }
-    this._noise({ duration: .73, gain: .029, frequency: 470, endFrequency: 180, type: 'bandpass', delay: .56, spatial });
+    this._noise({ duration: .83, gain: .024, frequency: 470, endFrequency: 180, type: 'bandpass', delay: .56, attack:.18, release:.38, spatial });
   }
 
-  cue(name, position) {
+  _atmosphere(play) {
+    const previous=this._ambientCue;this._ambientCue=true;
+    try { play(); } finally { this._ambientCue=previous; }
+  }
+
+  _stopAtmosphere() {
+    for(const voice of [...this._voices])if(voice.ambient){
+      voice.source.onended=null;
+      try{voice.source.stop();}catch{}
+      for(const node of voice.chain){try{node.disconnect();}catch{}}
+      this._voices.delete(voice);
+    }
+  }
+
+  _presenceTexture(spatial=this._cueSpatial, delay=0) {
+    this._tone({frequency:123.7,endFrequency:91,duration:2.3,gain:.016,warble:2.1,cutoff:700,attack:.42,release:.8,spatial,delay});
+    this._tone({frequency:126.1,endFrequency:93.4,duration:2.05,gain:.010,warble:1.4,cutoff:650,attack:.5,release:.8,spatial,delay:delay+.19});
+    this._noise({duration:1.7,gain:.012,frequency:860,endFrequency:310,type:'bandpass',attack:.38,release:.65,spatial,delay:delay+.44});
+  }
+
+  _door(closing) {
+    // A latch/handle, friction in the hinge and the panel meeting its frame.
+    // No slammed-door impulse: the physical operation remains quieter than danger.
+    const travel=closing?.64:.96;
+    if(!closing){
+      this._noise({duration:.045,gain:.027,frequency:1850,endFrequency:700,type:'bandpass'});
+      this._tone({frequency:1340,endFrequency:880,duration:.065,gain:.012,delay:.025});
+    }
+    this._noise({duration:travel,gain:.026,frequency:closing?1060:620,endFrequency:closing?370:1130,type:'bandpass',attack:.13,release:.26,delay:.07});
+    this._tone({frequency:closing?206:141,endFrequency:closing?117:219,duration:travel,gain:.022,type:'triangle',warble:17,cutoff:1600,attack:.08,release:.28,delay:.08});
+    this._tone({frequency:closing?443:319,endFrequency:closing?251:471,duration:travel*.75,gain:.008,type:'triangle',warble:13,cutoff:1350,attack:.12,release:.25,delay:.14});
+    this._tone({frequency:closing?103:82,endFrequency:49,duration:.19,gain:closing?.030:.016,delay:travel+.08});
+    if(closing){
+      this._noise({duration:.075,gain:.037,frequency:450,endFrequency:140,delay:travel+.08});
+      this._noise({duration:.04,gain:.021,frequency:2200,endFrequency:990,type:'bandpass',delay:travel+.18});
+      this._tone({frequency:1840,endFrequency:1170,duration:.07,gain:.009,delay:travel+.2});
+    }
+  }
+
+  cue(name, position, options={}) {
     if (!this._ready || !this.context || this.context.state !== 'running'
         || this.muted || this._hidden() || this.volume === 0) return;
     try {
+      const atmospheric=['doorKnock','woodCreak','distantScrape','presenceShift'].includes(name);
+      if(atmospheric&&this._paused)return;
       const now = this.context.currentTime;
       if (now < (this._cooldowns.get(name) || 0)) return;
       const cooldowns = { phone: 2.6, whisper: 1.8, radio: 0.65, tape: 1.3,
         knock: 1.7, bell: 1.8, windup: 0.5, attack: 0.55, hit: 0.45,
         stun: 1.2, hunt: 3, gate: 2, engine: 3, breath: 0.9,
         bellNeeded: 1.8, shutterOpen: .75, shutterClose: .75, radioTune: .08, radioLock: .6,
-        objective:1.5,found:8,keyPickup:.6,bottlePickup:.6,crankPickup:.6 };
+        objective:1.5,found:8,keyPickup:.6,bottlePickup:.6,crankPickup:.6,
+        doorOpen:.65,doorClose:.65,doorKnock:8,woodCreak:10,distantScrape:10,presenceShift:16 };
       this._cooldowns.set(name, now + (cooldowns[name] || 0.12));
       const creatureCue = ['windup', 'attack', 'stun', 'whisper'].includes(name);
       const source = position || (creatureCue ? this._monster : name === 'bell' || name === 'bellNeeded' ? { x: -12.7, z: -6, level: 0 } : null);
       this._cueSpatial = source ? audioSpatial(this._listener, source,
-        { occluded: creatureCue && this._occluded, range: name === 'bell' || name === 'bellNeeded' ? 80 : 34 }) : null;
+        { occluded: options.occluded??(creatureCue && this._occluded), range: options.range??(name === 'bell' || name === 'bellNeeded' ? 80 : 34) }) : null;
+      this._ambientCue=atmospheric||name==='doorOpen'||name==='doorClose';
+      if(this._ambientCue)this._nextDetail=Math.max(this._nextDetail,this._lastGameTime+5);
       switch (name) {
+        case 'doorOpen':this._door(false);break;
+        case 'doorClose':this._door(true);break;
+        case 'doorKnock':
+          [0,.23,.91].forEach((delay,i)=>{
+            this._noise({duration:.045,gain:[.025,.018,.021][i],frequency:630,endFrequency:240,delay});
+            this._tone({frequency:117+i*9,endFrequency:61,duration:.19,gain:[.026,.017,.022][i],delay});
+            this._tone({frequency:284,endFrequency:172,duration:.26,gain:.006,delay:delay+.018,type:'triangle',cutoff:760});
+          });
+          break;
+        case 'woodCreak':
+          this._tone({frequency:119,endFrequency:77,duration:.83,gain:.017,type:'triangle',warble:9,cutoff:880,attack:.12,release:.31});
+          this._noise({duration:.38,gain:.017,frequency:590,endFrequency:210,delay:.27,attack:.06,release:.18});
+          this._tone({frequency:296,endFrequency:143,duration:.16,gain:.007,delay:.67});
+          break;
+        case 'distantScrape':
+          this._noise({duration:1.1,gain:.027,frequency:1130,endFrequency:370,type:'bandpass',attack:.24,release:.5});
+          this._noise({duration:.35,gain:.014,frequency:610,endFrequency:230,type:'bandpass',delay:.59,attack:.08,release:.17});
+          this._tone({frequency:167,endFrequency:102,duration:.77,gain:.009,type:'triangle',warble:8,cutoff:940,attack:.13,release:.3,delay:.11});
+          break;
+        case 'presenceShift':
+          this._huntDuckedUntil=now+3;
+          for(const node of [this._windGain,this._airGain,this._uneaseA,this._uneaseB,this._needleGain])this._smooth(node.gain,0,.13);
+          this._presenceTexture(this._cueSpatial,.38);
+          break;
         case 'objective':
           this._noise({duration:.045,gain:.018,frequency:1400,type:'bandpass'});
           this._tone({frequency:620,endFrequency:740,duration:.12,gain:.01,delay:.06});
@@ -607,12 +692,12 @@ export class Soundscape {
           break;
       }
     } catch { /* An unavailable cue must not interrupt interaction. */ }
-    finally { this._cueSpatial = null; }
+    finally { this._cueSpatial = null;this._ambientCue=false; }
   }
 
   _tone({ frequency, endFrequency = frequency, duration = 0.1, gain = 0.03,
-    type = 'sine', delay = 0, pan = 0, warble = 0, cutoff = 0, spatial = this._cueSpatial }) {
-    if (this._voices.size >= 28) return;
+    type = 'sine', delay = 0, pan = 0, warble = 0, cutoff = 0, spatial = this._cueSpatial, attack, release }) {
+    if (this._voices.size >= 28 || spatial?.gain === 0) return;
     const source = this.context.createOscillator();
     source.type = type;
     const start = this.context.currentTime + delay;
@@ -636,12 +721,12 @@ export class Soundscape {
       filter.Q.value = 0.45;
       filters.push(filter);
     }
-    this._voice(source, filters, start, duration, gain, pan, undefined, spatial);
+    this._voice(source, filters, start, duration, gain, pan, undefined, spatial, {attack,release});
   }
 
   _noise({ duration = 0.1, gain = 0.03, frequency = 700,
-    endFrequency = frequency, type = 'lowpass', delay = 0, pan = 0, spatial = this._cueSpatial }) {
-    if (this._voices.size >= 28) return;
+    endFrequency = frequency, type = 'lowpass', delay = 0, pan = 0, spatial = this._cueSpatial, attack, release }) {
+    if (this._voices.size >= 28 || spatial?.gain === 0) return;
     const ctx = this.context;
     const source = ctx.createBufferSource();
     source.buffer = this._noiseBuffer;
@@ -651,10 +736,10 @@ export class Soundscape {
     const start = ctx.currentTime + delay;
     filter.frequency.setValueAtTime(frequency, start);
     filter.frequency.exponentialRampToValueAtTime(Math.max(40, endFrequency), start + duration);
-    this._voice(source, [filter], start, duration, gain, pan, Math.random() * Math.max(0, 2.9 - duration), spatial);
+    this._voice(source, [filter], start, duration, gain, pan, Math.random() * Math.max(0, 2.9 - duration), spatial, {attack,release});
   }
 
-  _voice(source, filters, start, duration, level, pan, offset, spatial = null) {
+  _voice(source, filters, start, duration, level, pan, offset, spatial = null, shape = {}) {
     const ctx = this.context;
     if (spatial) {
       level *= spatial.gain;
@@ -663,9 +748,10 @@ export class Soundscape {
       filters.push(wallFilter);
     }
     const envelope = ctx.createGain();
-    const attack = Math.min(0.025, duration * 0.16);
+    const attack = shape.attack===undefined ? Math.min(0.025,duration*.16) : clamp(shape.attack,.003,duration*.45);
     envelope.gain.setValueAtTime(0, start);
     envelope.gain.linearRampToValueAtTime(clamp(level, 0, 0.12), start + attack);
+    if(shape.release!==undefined)envelope.gain.linearRampToValueAtTime(clamp(level*.72,0,.12),start+duration-clamp(shape.release,.01,duration-attack));
     envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
     envelope.gain.setValueAtTime(0, start + duration + 0.005);
     const chain = [source, ...filters, envelope];
@@ -676,7 +762,7 @@ export class Soundscape {
     }
     for (let i = 0; i < chain.length - 1; i++) chain[i].connect(chain[i + 1]);
     chain[chain.length - 1].connect(this._effects);
-    const voice = { source, chain };
+    const voice = { source, chain, ambient:this._ambientCue };
     this._voices.add(voice);
     source.onended = () => {
       chain.forEach(node => { try { node.disconnect(); } catch {} });

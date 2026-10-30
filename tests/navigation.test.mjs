@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from '../dist/vendor/three.module.js';
 import {MountainWorld} from '../dist/world.js';
 import {SoftwareRenderer} from '../dist/software-renderer.js';
-import {WORLD_BOUNDS,SPAWN,LANDMARKS,LORE_PLACEMENTS,BUILDINGS,TRAILS,PARKING,FLOORS,STAIRS,BALCONY,REVEAL_POINT,COMPANION_START,COMPANION_EXIT,COVER_PATCHES} from '../dist/layout.js';
+import {WORLD_BOUNDS,SPAWN,LANDMARKS,LORE_PLACEMENTS,BUILDINGS,DOORS,TRAILS,PARKING,FLOORS,STAIRS,BALCONY,REVEAL_POINT,COMPANION_START,COMPANION_EXIT,COVER_PATCHES} from '../dist/layout.js';
 
 // Only browser and raster APIs are replaced. Geometry, furniture, collision,
 // dynamic gate and A* are built by the same MountainWorld used in the game.
@@ -13,6 +13,9 @@ Object.assign(globalThis,{innerWidth:1280,innerHeight:720,devicePixelRatio:1,add
 const renderer={shadowMap:{},setPixelRatio:noop,setSize:noop,render:noop,domElement:canvas()};
 const textureLoader={load(_url,onLoad){const t=new THREE.Texture({width:1024,height:1024});queueMicrotask(()=>onLoad?.(t));return t;}};
 const world=new MountainWorld({append:noop},{renderer,textureLoader});
+// Reachability below describes the traversable floor plan. Door collision,
+// operating it from both sides and closed-door planning are in buildings.test.
+world.restoreDoors(Object.fromEntries(DOORS.map(door=>[door.id,true])));
 
 function assertRoute(start,end,reason){
   const route=world.findPath(start,end);assert.ok(route.length,`${reason}: route exists`);
@@ -64,6 +67,9 @@ test('shared trails are traversable and main corridors preserve their designed w
     // Inside the parking lot the gravel continues underneath the parked car.
     // Its driver-door approach stays clear, while every corridor outside is full-width.
     if(trail.id==='road'&&a.x<=PARKING.maxX)continue;
+    // Outdoor trails stay broad; physical room doorways deliberately narrow to
+    // 1.8–2 m. Their center route is still checked immediately above.
+    if(BUILDINGS.some(building=>[a,b].some(p=>Math.abs(p.x-building.x)<=building.w/2&&Math.abs(p.z-building.z)<=building.d/2)))continue;
     const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz),offset=trail.width/2-.34;
     for(const side of [-1,1]){const ox=dz/length*offset*side,oz=-dx/length*offset*side;assert.ok(world.isSegmentFree({x:a.x+ox,z:a.z+oz},{x:b.x+ox,z:b.z+oz},.3),`${trail.id} segment ${i} loses ${trail.width} m corridor width`);}
   }
@@ -111,7 +117,7 @@ test('CPU torch highlights preserve skin hue and warm light instead of whitening
 });
 
 test('cedar needles retain transparent holes through CPU lighting, fog and projection',()=>{
-  assert.equal(world.forest.boughs.geometry.type,'PlaneGeometry','individual needle branches replace solid cloud-shaped crowns');
+  assert.equal((world.forest.boughs.geometry??world.forest.boughs.meshes[0].geometry).type,'PlaneGeometry','individual needle branches replace solid cloud-shaped crowns');
   assert.ok(world.forest.boughs.material.alphaTest>0);assert.equal(world.boughTexture.wrapS,THREE.ClampToEdgeWrapping);
   const sr=new SoftwareRenderer(),texture=new THREE.Texture({width:2,height:1});texture.userData.cutout=true;
   const pixels=new Uint8ClampedArray([200,230,210,0,40,80,30,255]);
@@ -190,14 +196,15 @@ test('floor slabs block vertical sight while the upper balcony has a real mounta
 
 test('scope uses the actual upper viewpoint and turns head, shoulders and body before restoring normal view',()=>{
   const state={pos:SPAWN,yaw:SPAWN.yaw,pitch:0,time:10,monster:REVEAL_POINT,active:false};
-  world.update({...state,scope:{phase:0,progress:1,target:REVEAL_POINT}});const back=world.creature.rotation.y;assert.equal(world.creature.visible,false,'the opening beat shows ordinary woodland first');assert.equal(world.hand.visible,false);assert.equal(world.items.telescope.mesh.visible,false,'the instrument lens cannot cover its own optical view');assert.ok(world.camera.fov<=20);assert.ok(world.camera.position.y>4.8);assert.ok(world.scene.fog.density<.02);
+  world.update({...state,scope:{phase:0,progress:1,target:REVEAL_POINT}});const back=world.creature.rotation.y;assert.equal(world.creature.visible,true,'the distant creature already exists in the opening optical view');assert.equal(world.hand.visible,false);assert.equal(world.items.telescope.mesh.visible,false,'the instrument lens cannot cover its own optical view');assert.ok(world.camera.fov<=20);assert.ok(world.camera.position.y>4.8);
+  const scopeFog=world.scene.fog.density,fogAtTarget=1-Math.exp(-Math.pow(scopeFog*46,2));assert.ok(fogAtTarget>.55&&fogAtTarget<.7,'optical fog leaves the moving silhouette readable at 46 m');
   world.update({...state,time:10.25,scope:{phase:1,progress:.5,target:REVEAL_POINT}});assert.ok(world.creature.visible,'the white back appears in the second beat');
   world.update({...state,time:10.5,scope:{phase:2,progress:.25,target:REVEAL_POINT}});assert.ok(Math.abs(world.head.rotation.y)>.2);assert.ok(Math.abs(world.creature.rotation.y-back)<.2,'head turns before hips');
   const earlierFov=world.camera.fov;world.update({...state,time:10.75,scope:{phase:2,progress:.5,target:REVEAL_POINT}});assert.ok(world.camera.fov<earlierFov&&world.camera.fov>6,'optical magnification progresses smoothly while the body turns');
   world.update({...state,time:11,scope:{phase:2,progress:.75,target:REVEAL_POINT}});assert.equal(world.camera.fov,6,'the final 1.5 seconds hold the magnified face steady');
   world.update({...state,time:11.5,scope:{phase:2,progress:1,target:REVEAL_POINT}});assert.ok(Math.abs(world.creature.rotation.y-back)>3,'body completes the turn without changing position');assert.equal(world.creature.position.x,REVEAL_POINT.x);assert.equal(world.creature.position.z,REVEAL_POINT.z);
   assert.equal(world.camera.fov,6);
-  world.update({...state,time:12,active:true,scope:null});assert.equal(world.camera.fov,68);assert.equal(world.scene.fog.density,.034);assert.equal(world.hand.visible,true);assert.equal(world.items.telescope.mesh.visible,true,'the physical telescope is restored when leaving the eyepiece');
+  world.update({...state,time:12,active:true,scope:null});assert.equal(world.camera.fov,68);assert.ok(world.scene.fog.density>scopeFog*2&&world.scene.fog.density>=.055,'ordinary woodland has substantially denser fog');assert.equal(world.hand.visible,true);assert.equal(world.items.telescope.mesh.visible,true,'the physical telescope is restored when leaving the eyepiece');
 });
 
 test('enemy pose follows measured travel and explicit gaze, including a low four-limbed approach',()=>{

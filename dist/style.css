@@ -738,3 +738,8 @@ body[data-danger="high"] .search-card img,body[data-danger="high"] #search-phase
   #search-location{font-size:10px}#search-phase{font-size:9px}.search-idle-hint{display:none}
   .hud-header .toast{top:116px;left:calc(50% + 95px);max-width:calc(100% - 240px)}
 }
+
+.evidence-action { margin: 1.5rem 0 .4rem; padding-top: 1rem; border-top: 1px solid #62684f; }
+.evidence-action p { font-size: .85rem; color: #b8bba8; }
+.evidence-action button { max-width: 100%; white-space: normal; text-align: left; line-height: 1.6; }
+.evidence-photo { margin-top: 1.2rem; }

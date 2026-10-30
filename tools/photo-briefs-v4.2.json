@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "generator": "built-in image_gen",
+  "jobs": [
+    {
+      "id": "boots-detail",
+      "status": "ready",
+      "output": "dist/assets/photos/boots-detail-v4-2.webp",
+      "prompt": "Photorealistic evidence close-up for a restrained Japanese mountain horror game, landscape 4:3. A matched pair of old black rubber forestry boots placed neatly side by side on wet rough cedar floorboards in an abandoned wooden tool shed. Both boot toes face a dark closed wooden sliding door. Tiny pale muddy bare-foot toe marks are visible on the floor immediately behind the boots, subtly too long but not a monster. Low oblique warm handheld flashlight, desaturated brown olive colors, analog DV photographic grain, physically plausible textures, claustrophobic intimate composition. No people, no gore, no letters, no logos, no captions, no UI. The boots remain the clear central subject. Photograph only, edge to edge.",
+      "record": "tools/local-media-records/boots-detail-v4-2.json"
+    },
+    {
+      "id": "ledger-detail",
+      "status": "ready",
+      "output": "dist/assets/photos/ledger-detail-v4-2.webp",
+      "prompt": "Photorealistic evidence close-up for a restrained Japanese mountain horror game, landscape 4:3. An old forestry attendance ledger open on a scarred wooden shelter desk, damp yellowed paper with faint ruled columns and small indistinct pencil tally marks, one rusty paperclip, a partial muddy thumb smear at the edge. Oblique flashlight reveals several deeply impressed vertical strokes on an otherwise blank lower page; a subtle story clue, no readable text or numbers. The edge of a small dull red tool handle is barely visible behind the book. Desaturated cedar brown olive, analog DV grain, realistic paper fibers, quiet unsettling archival still life. No people, no monster, no gore, no logos, no captions, no UI. Entire image is the photograph, edge to edge.",
+      "record": "tools/local-media-records/ledger-detail-v4-2.json"
+    },
+    {
+      "id": "mirror-detail",
+      "status": "ready",
+      "output": "dist/assets/photos/mirror-detail-v4-2.webp",
+      "prompt": "Photorealistic evidence close-up for a restrained Japanese mountain horror game, landscape 4:3. A small oval tarnished silver handheld mirror lying face down on a rough wooden bedside table in an old Japanese mountain cabin. Its scratched metal back has a small aged beige paper rectangle stuck over the center with dark tape at the corners, with a few indistinct pencil marks but no legible writing. A narrow sliver of reflected cold doorway light at the mirror rim suggests someone just outside frame, but absolutely no visible human, face or monster. Side-lit by a weak warm flashlight with deep but readable shadows, muted olive gray brown, analog DV grain, real material wear. No gore, no text overlays, no logos, no UI. Edge to edge photograph.",
+      "record": "tools/local-media-records/mirror-detail-v4-2.json"
+    }
+  ]
+}

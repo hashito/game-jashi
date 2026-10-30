@@ -1,6 +1,6 @@
 {
   "name": "jashi-mountain",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "private": true,
   "type": "module",
   "description": "投稿怪談『邪視』をもとにした一人称ホラー探索ゲーム",
@@ -14,6 +14,6 @@
     "assets:release": "node tools/check-production-assets.mjs --release",
     "sync-kit": "node ../game-kit/tools/kit-sync.js .",
     "build": "node tools/build-site.js",
-    "check": "node --check dist/main.js && node --check dist/guidance.js && node --check dist/world.js && node --check dist/audio.js && node --check dist/software-renderer.js && node --check dist/layout.js && node --check dist/narrative.js && node --check dist/survival.js && node --check dist/vhs.js && node --check dist/enemy.js && node --check dist/story.js && node --check dist/creature.js && node --check dist/dialogue.js && node --check dist/gimmicks.js"
+    "check": "node --check dist/main.js && node --check dist/guidance.js && node --check dist/world.js && node --check dist/audio.js && node --check dist/software-renderer.js && node --check dist/layout.js && node --check dist/narrative.js && node --check dist/survival.js && node --check dist/vhs.js && node --check dist/enemy.js && node --check dist/story.js && node --check dist/creature.js && node --check dist/dialogue.js && node --check dist/gimmicks.js && node --check dist/presence.js && node --check dist/evidence.js && node --check dist/streaming.js"
   }
 }

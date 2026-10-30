@@ -306,6 +306,72 @@
         "ledger"
       ],
       "timeoutMs": 60000
+    },
+    {
+      "id": "verify-boots-detail-v4-2",
+      "kind": "process",
+      "pool": "cpu",
+      "purpose": "生成済み接写のハッシュ・形式・容量検査: boots-detail",
+      "inputs": [
+        "dist/assets/photos/boots-detail-v4-2.webp",
+        "tools/local-media-records/boots-detail-v4-2.json",
+        "tools/photo-briefs-v4.2.json",
+        "tools/verify-evidence.mjs"
+      ],
+      "outputs": [
+        "tools/local-media-verification/boots-detail-v4-2.json"
+      ],
+      "command": [
+        "node",
+        "tools/verify-evidence.mjs",
+        "boots-detail"
+      ],
+      "retries": 0,
+      "timeoutMs": 60000
+    },
+    {
+      "id": "verify-ledger-detail-v4-2",
+      "kind": "process",
+      "pool": "cpu",
+      "purpose": "生成済み接写のハッシュ・形式・容量検査: ledger-detail",
+      "inputs": [
+        "dist/assets/photos/ledger-detail-v4-2.webp",
+        "tools/local-media-records/ledger-detail-v4-2.json",
+        "tools/photo-briefs-v4.2.json",
+        "tools/verify-evidence.mjs"
+      ],
+      "outputs": [
+        "tools/local-media-verification/ledger-detail-v4-2.json"
+      ],
+      "command": [
+        "node",
+        "tools/verify-evidence.mjs",
+        "ledger-detail"
+      ],
+      "retries": 0,
+      "timeoutMs": 60000
+    },
+    {
+      "id": "verify-mirror-detail-v4-2",
+      "kind": "process",
+      "pool": "cpu",
+      "purpose": "生成済み接写のハッシュ・形式・容量検査: mirror-detail",
+      "inputs": [
+        "dist/assets/photos/mirror-detail-v4-2.webp",
+        "tools/local-media-records/mirror-detail-v4-2.json",
+        "tools/photo-briefs-v4.2.json",
+        "tools/verify-evidence.mjs"
+      ],
+      "outputs": [
+        "tools/local-media-verification/mirror-detail-v4-2.json"
+      ],
+      "command": [
+        "node",
+        "tools/verify-evidence.mjs",
+        "mirror-detail"
+      ],
+      "retries": 0,
+      "timeoutMs": 60000
     }
   ]
 }

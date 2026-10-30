@@ -7,8 +7,10 @@ const root=new URL('../',import.meta.url);
 const read=file=>fs.readFileSync(new URL(file,root));
 test('all adopted photographs and voices match their recorded provenance and audio levels',()=>{
   const ledger=JSON.parse(read('assets/production.json'));
-  assert.equal(ledger.assets.length,11);
-  assert.equal(new Set(ledger.assets.map(a=>a.file)).size,11);
+  assert.equal(ledger.assets.length,14);
+  assert.equal(new Set(ledger.assets.map(a=>a.file)).size,14);
+  const briefs=JSON.parse(read('tools/photo-briefs-v4.2.json'));
+  for(const photo of briefs.jobs){assert.equal(photo.status,'ready');assert.ok(ledger.assets.some(a=>a.file===photo.output));assert.ok(photo.prompt.length>100);}
   for(const asset of ledger.assets){
     assert.equal(asset.status,'ready',asset.file);
     const bytes=read(asset.file),record=JSON.parse(read(asset.source.record));

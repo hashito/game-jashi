@@ -11,7 +11,7 @@ concurrency:
 jobs:
   game:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       BROWSER: /usr/bin/google-chrome
       GF_SOFTWARE_GL: '1'
@@ -29,6 +29,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Desktop and mobile controls, photos, voice and escape
         run: npm run smoke
+      - name: Doors, evidence close-ups and continuous telescope encounter
+        run: node tools/smoke-v42.mjs
       - name: Render and measure audio cues
         run: node tools/check-audio-render.mjs
       - uses: actions/upload-artifact@v4

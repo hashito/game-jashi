@@ -1,0 +1,18 @@
+{
+  "id": "ledger-detail",
+  "engine": "built-in image_gen",
+  "model": "not reported by tool",
+  "seed": "not reported by tool",
+  "prompt": "Photorealistic evidence close-up for a restrained Japanese mountain horror game, landscape 4:3. An old forestry attendance ledger open on a scarred wooden shelter desk, damp yellowed paper with faint ruled columns and small indistinct pencil tally marks, one rusty paperclip, a partial muddy thumb smear at the edge. Oblique flashlight reveals several deeply impressed vertical strokes on an otherwise blank lower page; a subtle story clue, no readable text or numbers. The edge of a small dull red tool handle is barely visible behind the book. Desaturated cedar brown olive, analog DV grain, realistic paper fibers, quiet unsettling archival still life. No people, no monster, no gore, no logos, no captions, no UI. Entire image is the photograph, edge to edge.",
+  "sourceFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-1c7d0f54-b08d-49ad-b911-1226eb29ea32.png",
+  "sourceSha256": "82345ec1bf82c32608fdc44fe7cce566cc58f116ba7aed51ff4867625095d9d9",
+  "output": "dist/assets/photos/ledger-detail-v4-2.webp",
+  "sha256": "a56c291ac4cde3747979a50a2c26958f54c5ba23e3f01444265ce291918f1c31",
+  "dimensions": [
+    960,
+    720
+  ],
+  "bytes": 97622,
+  "processing": "RGB, bounded 960x720 Lanczos resize, WebP quality83 method6; no retouching",
+  "review": "Generated fictional evidence close-up; visually inspected. The 3D model thumbnail remains the authoritative object recognition guide. Fine writing is provided as readable HTML, not generated lettering."
+}

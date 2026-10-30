@@ -161,3 +161,11 @@ built-in image_genで各素材を別々に生成しました。Pillowによる�
 配信WebPを開いて検収した。導入は二階の戸口、三脚の望遠鏡、片付け箱が読み取れる。帰路は森林・車内を暗めに保ちつつ路面、ガードレール、DVカメラの輪郭が残る。古写真は右側の幹の背後の小さな白い頭と、反対側の鎌状の曲線が文章と一致し、顔や目は見えない。実在事件を撮影した写真ではない。探索の形状見本は場面写真と混同せず、ゲームの3Dモデルから撮った小物画像を使う。
 
 全3写真の配信サイズは621,414 bytes（606.85 KiB）。音声8本は既存の合成結果をSHA-256・台詞・設定・波形の一致で検証し直し、再合成していない。共有JSONキューの12ジョブ（音声8検証・写真3変換・台帳）が完了し、`assets/production.json` に全11素材を ready と記録した。台帳の source.kind は写真の generated-builtin / edited-builtin、音声の generated-local を区別する。
+# v4.2 小物の接写
+
+長靴・日誌・手鏡の接写3点を組み込みimage_genで生成し、960×720 WebPへ圧縮して記録画面へ追加。合計280,896バイト。架空の記録写真であり、ゲーム内の対象認識用には従来の3Dモデル見本も併記する。
+
+プロンプト・制作方式・用途は `tools/photo-briefs-v4.2.json`、元ファイルと出力のSHA-256・寸法・検収記録は `tools/local-media-records/{boots,ledger,mirror}-detail-v4-2.json`、配信ファイルは `dist/assets/photos/*-detail-v4-2.webp`。`tools/prepare-evidence.py` は選定済み原画の圧縮のみを行う。共通キューの検証ジョブは `tools/verify-evidence.mjs` で出力ハッシュ・WebP形式・容量を確認する。
+
+新しい戸・木・息の効果音は `dist/audio.js` のWeb Audio合成。外部録音や生成音声は追加していない。既存のVOICEVOX案内のクレジットは継続する。
+
