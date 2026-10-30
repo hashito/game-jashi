@@ -10,6 +10,8 @@ import { createStoryState, advanceStory, getStoryDocument, canCompleteStoryChain
 import { speakerProfile, dialogueDuration, createDialogueView, speechKind, tagSpeech, pruneSpeechQueue, enqueueSpeechLines, speechDuration } from './dialogue.js';
 import { RADIO, createMechanisms, adjustDial, radioSignal, advanceTuning, ringBell, createShelterState, updateShelter, shelterLeash } from './gimmicks.js';
 import { objectiveFor, SearchGuidance } from './guidance.js';
+import { distantPresence, advanceDoorPressure } from './presence.js';
+import { EVIDENCE, restoreEvidence } from './evidence.js';
 
 const $=id=>document.getElementById(id), SAVE_KEY='jashi-mountain-checkpoint-v4', LEGACY_SAVE_KEY='jashi-mountain-checkpoint-v3', OPTIONS_KEY='jashi-mountain-options-v1', END_KEY='jashi-mountain-endings-v2';
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
@@ -39,6 +41,7 @@ let story=createStoryState(),scope=null,noiseEvent=null,noiseSerial=0,mapFloor='
 const HOLD_HINT_KEY='jashi-mountain-hold-hint-v1';
 let shelter=createShelterState(),dragHints=0,lastDragHint=-999,holdHintShown=!!read(HOLD_HINT_KEY,false);
 let searchGuidance=new SearchGuidance(),lastObjectiveId=null;
+let examined=new Set(),doorPressure=null;
 const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false,leashUntil:0});
 const textHTML=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
 const paragraphs=arr=>(arr||[]).map(t=>`<p>${textHTML(t)}</p>`).join('');
@@ -52,7 +55,7 @@ const yawToward=(from,to)=>Math.atan2(-(to.x-from.x),-(to.z-from.z));
 // The HUD bearing follows the A* route: it points at the furthest route point
 // that can be walked to in a straight line, and reports the route's length.
 function routeGuide(from,target){
-  let route=[];try{route=world.findPath(from,target)||[];}catch{route=[];}
+  let route=[];try{route=world.findPathThroughDoors?.(from,target)||world.findPath(from,target)||[];}catch{route=[];}
   if(!route.length)return {point:target,length:distance(from,target)};
   let length=0,prev=from,pick=route[0];for(const p of route){length+=Math.hypot(p.x-prev.x,p.z-prev.z);prev=p;}
   for(let i=0;i<route.length&&i<16;i++){const p=route[i];if(!world.isSegmentFree(from,p,.3))break;pick=p;}
@@ -189,6 +192,7 @@ function title(){
   quietSound();$('continue-button').hidden=!validSave(loadSavedGame());
 }
 function newGame(){
+  examined=new Set();doorPressure=null;world.restoreDoors?.(null);
   searchGuidance=new SearchGuidance();lastObjectiveId=null;
   sound.start();flags=freshFlags();collected=new Set();completed=new Set();scares=new Set();stats={repels:0,escapes:0};survival=createSurvival();story=createStoryState();
   player={x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};yaw=SPAWN.yaw;pitch=-.02;enemy=createEnemyState(REVEAL_POINT);monster=enemy.position;time=0;charges=0;lamp=true;glassesOn=false;
@@ -254,7 +258,7 @@ function updateInventory(){
   $('inventory-glasses').title=flags.glasses?(glassesOn?'装着中 · Qで外す':'Qでかける'):'別荘の机にある';$('inventory-bottle').title=`ボトル：残り ${charges} 回 / 8.5m以内でR`;
   $('charge-count').textContent=charges?`×${charges}`:'—';$('mute-button').textContent=options.muted?'音：切':'音：入';document.body.classList.toggle('wearing-glasses',glassesOn);
 }
-function serialize(){return {v:4,flags:{...flags},collected:[...collected],completed:[...completed],scares:[...scares],stats:{...stats},player:{...player},enemy:JSON.parse(JSON.stringify(enemy)),story:JSON.parse(JSON.stringify(story)),yaw,pitch,time,survival:{...survival},charges,lamp,glassesOn,conversation:conversation.slice(-60),speechQueue:speechQueue.map(l=>({...l})),activeSpeech:activeSpeech?{...activeSpeech}:null,speechTime,speechTotal,lastStoryAdvance,noiseSerial,mechanisms:{dial:mechanisms.dial,bellReadyAt:mechanisms.bellReadyAt}};}
+function serialize(){return {v:4,doors:world.snapshotDoors?.()||{},examined:[...examined],flags:{...flags},collected:[...collected],completed:[...completed],scares:[...scares],stats:{...stats},player:{...player},enemy:JSON.parse(JSON.stringify(enemy)),story:JSON.parse(JSON.stringify(story)),yaw,pitch,time,survival:{...survival},charges,lamp,glassesOn,conversation:conversation.slice(-60),speechQueue:speechQueue.map(l=>({...l})),activeSpeech:activeSpeech?{...activeSpeech}:null,speechTime,speechTotal,lastStoryAdvance,noiseSerial,mechanisms:{dial:mechanisms.dial,bellReadyAt:mechanisms.bellReadyAt}};}
 function validSave(s){return !!(s&&[3,4].includes(s.v)&&s.flags&&s.player&&s.survival&&s.enemy&&s.story&&Number.isFinite(s.player.x)&&Number.isFinite(s.player.z)&&[0,1].includes(s.player.level)&&s.player.x>=WORLD_BOUNDS.minX&&s.player.x<=WORLD_BOUNDS.maxX&&s.player.z>=WORLD_BOUNDS.minZ&&s.player.z<=WORLD_BOUNDS.maxZ&&Number.isFinite(s.time)&&s.survival.health>0);}
 function saveCheckpoint(){
   if(!started||survival.dead||mode==='title'||mode==='dying'||mode==='scope')return;
@@ -264,14 +268,17 @@ function saveCheckpoint(){
 function restore(s){
   if(!validSave(s)){toast('再開できる記録がありません');return;}
   searchGuidance=new SearchGuidance();lastObjectiveId=null;
+  examined=restoreEvidence(s.examined);doorPressure=null;
   sound.start();flags={...freshFlags(),...s.flags};collected=new Set(s.collected||[]);completed=new Set(s.completed||[]);scares=new Set(s.scares||[]);stats={repels:0,escapes:0,...s.stats};
   if(s.v===3&&s.story.stage>=3)flags.radioTuned=true;
   mechanisms=createMechanisms(s.mechanisms);companionState=flags.seen?'away':'present';radioActive=false;dialoguePaused=false;
   player={...s.player};enemy=createEnemyState(REVEAL_POINT,s.enemy);monster=enemy.position;story=createStoryState(s.story);yaw=s.yaw||0;pitch=clamp(s.pitch||0,-1.2,1.2);time=s.time;
+  world.restoreDoors?.(s.doors,[player]);
   survival={...createSurvival(),...s.survival,phase:'idle',phaseTime:0,stun:0,dead:false,hit:0,cooldown:2};
   shelter=createShelterState();charges=clamp(s.charges||0,0,2);lamp=s.lamp!==false;glassesOn=!!s.glassesOn;conversation=s.conversation||[];speechQueue=Array.isArray(s.speechQueue)?s.speechQueue.map(l=>({...l})):[];activeSpeech=s.activeSpeech?{...s.activeSpeech}:null;speechTime=activeSpeech?Math.max(0,s.speechTime||0):0;lastStoryAdvance=Number.isFinite(s.lastStoryAdvance)?s.lastStoryAdvance:time;action=null;scope=null;noiseEvent=null;noiseSerial=s.noiseSerial||0;
   throwTime=0;lastSave=time;lastPhone=time;ambientTime=12;mapFloor='auto';speechTotal=activeSpeech?Math.max(speechTime,dialogueDuration(activeSpeech)):0;freezeInput();
-  world.setGateOpen(!!flags.gate);world.setShutterClosed?.(!!flags.shutterClosed);if(!world.isFreeAt(player))player={x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};
+  world.setGateOpen(!!flags.gate);world.setShutterClosed?.(!!flags.shutterClosed);
+  if(!world.isFreeAt(player)){player=safeRespawnSpot(player);if(!world.isFreeAt(player))player=player.level===0?{...STAIRS.bottom}:{x:SPAWN.x,z:SPAWN.z,level:SPAWN.level};}
   if(!world.isFreeAt(monster,.3)){enemy=createEnemyState(REVEAL_POINT);monster=enemy.position;}
   // v4.0.1 respawn safety: an open spot facing the route, the creature out of
   // sight and away, a short grace without gaze drain or strikes.
@@ -286,7 +293,7 @@ function restore(s){
 }
 function startTelescope(){
   if(flags.seen||mode!=='play')return;
-  freezeInput();scope={phase:0,elapsed:0,total:0,entered:-1};mode='scope';document.body.dataset.scene='scope';$('panel').hidden=true;$('scope-sequence').hidden=false;$('subtitle').hidden=true;$('interaction').hidden=true;
+  freezeInput();scope={phase:0,elapsed:0,total:0,entered:-1,startedAt:time};mode='scope';document.body.dataset.scene='scope';$('panel').hidden=true;$('scope-sequence').hidden=false;$('subtitle').hidden=true;$('interaction').hidden=true;
   dialoguePaused=false;companionState='leaving';
   document.exitPointerLock?.();
   for(const line of speechQueue.filter(l=>l.beat==='opening'))conversation.push({...line,time:Math.floor(time)});
@@ -318,7 +325,8 @@ function stepScope(dt){
 function encounter(){
   if(flags.seen)return;
   flags.seen=true;collected.add('telescope');survival.sanity=83;companionState='away';
-  enemy=createEnemyState({...REVEAL_POINT,heading:Math.atan2(-REVEAL_POINT.x,18.3-REVEAL_POINT.z)});monster=enemy.position;scope=null;flags.leashUntil=time+EARLY.balconySeconds;mode='play';$('panel').hidden=true;$('scope-sequence').hidden=true;document.body.dataset.scene='explore';
+  const finalPresence=distantPresence(time,scope);
+  enemy=createEnemyState({...finalPresence,heading:Math.atan2(player.x-finalPresence.x,player.z-finalPresence.z)});enemy.gait=finalPresence.gait;monster=enemy.position;scope=null;flags.leashUntil=time+EARLY.balconySeconds;mode='play';$('panel').hidden=true;$('scope-sequence').hidden=true;document.body.dataset.scene='explore';
   tape.trigger('encounter');cue('whisper',player);storyBeat('sighting');syncWorld();lockPointer();saveCheckpoint();
 }
 function maybeHunt(){
@@ -326,13 +334,16 @@ function maybeHunt(){
 }
 // v4.0.2: pictures of the in-game item models (tools/make-item-images.mjs).
 const ITEM_IMAGES=new Set(['glasses','note','bottle','crank','photo','phone','radio','bell','telescope','boots','ledger','cassette','mirror','ribbon','toy','tag']);
-const itemImage=(id,cls='item-figure')=>ITEM_IMAGES.has(id)?`<img class="${cls}" src="assets/items/${id}.png" alt="" width="320" height="240" decoding="async">`:'';
+const itemImage=(id,cls='item-figure')=>ITEM_IMAGES.has(id)?`<img class="${cls}" src="assets/items/${id}.webp" alt="" width="320" height="240" decoding="async">`:'';
 function docHTML(d,id=''){
   let body=!d.image&&ITEM_IMAGES.has(id)?`<figure class="item-shot">${itemImage(id)}<figcaption>DVで撮った ${textHTML(d.title)}</figcaption></figure>`:'';
   body+=d.image?'<figure class="photo-frame"><img src="'+d.image+'" alt="'+textHTML(d.title)+'"><figcaption>'+textHTML(d.caption||'撮影した記録。')+'</figcaption></figure>':'';
+  const detail=EVIDENCE[id];
+  if(detail?.image)body+=`<figure class="photo-frame evidence-photo"><img src="${detail.image}" alt="${textHTML(detail.alt)}" width="960" height="720" loading="lazy" decoding="async"><figcaption>${textHTML(detail.caption)} ／ 記録の細部</figcaption></figure>`;
   if(d.unread)body+='<p class="record-revision">撮影した面を見返して、分かったことがある。</p>';
   body+='<div class="document-card">'+paragraphs(d.paragraphs)+'</div>';
   if(d.pending)body+='<p class="small-note record-pending">裏面や細かい字も撮影してある。ほかの記録と照合できそうだ。</p>';
+  if(detail)body+=examined.has(id)?`<section class="linked-story"><small>細部の記録</small><p>${textHTML(detail.result)}</p></section>`:`<div class="evidence-action"><p>記録を止めて、細部を確かめられます（任意）。</p>${button('examine-'+id,detail.action,true)}</div>`;
   return body;
 }
 function checkChains(){
@@ -375,12 +386,32 @@ function findTarget(){
     // Keep the actual usable range/occlusion; gently prefer the sought item
     // when two neighbouring objects are both under the player's view.
     const value=d+(1-dot)*1.4-(item.id===getObjective().id ? .3 : 0);if(value<score){best=item;score=value;}
-  }return best;
+  }
+  const door=world.getDoorTarget?.(player,yaw);
+  if(door&&(!best||door.distance+.35<score)){best=door;score=door.distance+.35;}
+  const art=world.getArtTarget?.(player,yaw);
+  if(art&&(!best||art.distance+.65<score))return art;
+  return best;
+}
+
+function readSceneArt(item){
+  cue('page',item);
+  panel('scene-art','山に残された掲示 / 写真',item.title,
+    `<figure class="photo-frame scene-art-photo"><img src="${textHTML(item.image)}" alt="${textHTML(item.alt||item.title)}" width="512" height="512" decoding="async"><figcaption>${textHTML(item.caption||item.label)}</figcaption></figure>${paragraphs(item.text.split('\n'))}`,
+    button('close-panel','探索に戻る'));
 }
 
 function interact(){
   if(mode!=='play'||survival.dead||dialoguePaused)return;if(action){action=null;toast('手を止めた');return;}
   const item=findTarget();if(!item){toast('調べるものに近づき、そちらを向いてください',2000);return;}const id=item.id;cue('interact');
+  if(item.kind==='sceneArt'){readSceneArt(item);return;}
+  if(item.kind==='door'){
+    const actors=[player,monster];if(companionState!=='away'&&world.companionPos)actors.push(world.companionPos);
+    const result=world.toggleDoor(id,actors);
+    if(result.blocked){toast('戸口から一歩離れてから閉めてください。',2400);return;}
+    if(result.changed){cue(result.open?'doorOpen':'doorClose',item);emitNoise(result.open?10:15,'door',item);guide.at=-99;approaches.clear();saveCheckpoint();toast(result.open?'戸を開けた。':'戸を閉めた。視線は切れるが、長くは持たない。',3000);}
+    return;
+  }
   if(id==='telescope'){
     if(flags.seen){say('私','レンズには、もう触らない。');return;}
     startTelescope();return;
@@ -543,7 +574,8 @@ function pause(){if(mode!=='play'&&mode!=='scope')return;const scoped=mode==='sc
 
 function updateEnemyMotion(dt,moving=false,running=false,closed=false){
   const looking=gazeAtMonster(closed);
-  const events=stepEnemy(enemy,{player,active:flags.seen,hunt:flags.hunt,playerMoving:moving,playerRunning:running,playerLooking:looking,closedEyes:closed,playerPitch:pitch,lamp,attackPhase:survival.phase,stun:survival.stun,dead:survival.dead,noiseEvent,leash:earlyLeash()||currentShelterLeash()},dt,world);
+  const nav=Object.create(world);nav.findPath=(world.findEnemyPath||world.findPath).bind(world);
+  const events=stepEnemy(enemy,{player,active:flags.seen,hunt:flags.hunt,playerMoving:moving,playerRunning:running,playerLooking:looking,closedEyes:closed,playerPitch:pitch,lamp,attackPhase:survival.phase,stun:survival.stun,dead:survival.dead,noiseEvent,leash:earlyLeash()||currentShelterLeash()},dt,nav);
   for(const event of events){
     if(event==='search'&&actorDistance(player,monster)<26)storyBeat('enemySearch');
     if(event==='heard'&&actorDistance(player,monster)<22)storyBeat('enemyListen');
@@ -552,6 +584,21 @@ function updateEnemyMotion(dt,moving=false,running=false,closed=false){
     if(event==='watching'&&enemy.playerVisible&&actorDistance(player,monster)<24)cue('knock');
   }
   if(enemy.crouch>.45&&!scares.has('crawling')){scares.add('crawling');storyBeat('enemyCrawl');cue('tape');}
+}
+
+function updateDoorPressure(dt){
+  // Only a remembered/actually planned destination can lead it to a door.
+  const target=enemy.route?.[0]||enemy.lastKnown;
+  const door=flags.seen&&survival.stun<=0&&!survival.dead&&target?world.getBlockingDoor?.(monster,target,2.3):null;
+  const result=advanceDoorPressure(doorPressure,door?.id,dt);doorPressure=result.state;
+  for(const event of result.events){
+    if(event==='knock'){cue('doorKnock',door);if(actorDistance(player,door)<9)toast('戸の向こうで、木が鳴った。戸口から離れる。',2600);}
+    if(event==='open'){
+      const opened=world.setDoor(door.id,true,{actors:[player,monster]});
+      if(opened.changed){cue('doorOpen',door);enemy.routeAge=0;guide.at=-99;approaches.clear();}
+      doorPressure=null;
+    }
+  }
 }
 
 function gazeAtMonster(closed){
@@ -626,6 +673,7 @@ function stepGame(dt){
   world.move(player,(-Math.sin(yaw)*forward+Math.cos(yaw)*side)*speed*dt,(-Math.cos(yaw)*forward-Math.sin(yaw)*side)*speed*dt);
   const moving=actorDistance(before,player)>.0005;
   updateEnemyMotion(dt,moving,moving&&speed>RULES.walk,closed);
+  updateDoorPressure(dt);
   if(throwTime>0){throwTime-=dt;if(throwTime<=0&&!survival.dead){stunEnemy(survival);cue('stun');storyBeat('repel');tape.trigger('repel');toast('ひるんでいる。今のうちに離れる。',2500);}}
   const blocked=world.isBlocked(player,monster),gaze=gazeAtMonster(closed),d=actorDistance(player,monster);
   // A strike may start only from in front of or beside the camera (about +-105 deg).
@@ -666,9 +714,9 @@ function stepGame(dt){
   const danger=threatLevel(gaze,d);$('danger-vignette').style.opacity=String(clamp(danger*.65+survival.hit*.2,0,.85));
   // v4.0.2: in danger the subtitle card shrinks out of the way.
   const tense=survival.phase==='windup'||survival.phase==='strike'||danger>.55||enemy.mode==='hunt'&&d<10;if(tense)document.body.dataset.danger='high';else delete document.body.dataset.danger;
-  const inside=BUILDINGS.some(b=>Math.abs(player.x-b.x)<b.w/2&&Math.abs(player.z-b.z)<b.d/2);
+  const room=BUILDINGS.find(b=>Math.abs(player.x-b.x)<b.w/2&&Math.abs(player.z-b.z)<b.d/2),inside=!!room;
   const surface=climbing?'stairs':inside?'wood':player.z>16||player.x<-21?'gravel':'leaves';
-  sound.update({danger,moving,running:moving&&speed>RULES.walk,inside,time,stamina:survival.stamina,pursuit:enemy.mode==='hunt',monsterDistance:flags.seen?d:999,enemyMode:enemy.mode,enemySpeed:enemy.speed,listener:{...player,yaw},monster,occluded:blocked,surface,dialogue:!!activeSpeech,paused:false,radioTuning:{active:false}});
+  sound.update({danger,moving,running:moving&&speed>RULES.walk,inside,roomSource:room?{...room.entrance,level:player.level}:null,time,stamina:survival.stamina,pursuit:enemy.mode==='hunt',monsterDistance:flags.seen?d:999,enemyMode:enemy.mode,enemySpeed:enemy.speed,listener:{...player,yaw},monster,occluded:blocked,surface,dialogue:!!activeSpeech,paused:false,radioTuning:{active:false}});
   updateSpeech(dt);environmentalEvents(dt);
   if(time-lastSave>18){lastSave=time;saveCheckpoint();}
 }
@@ -680,9 +728,10 @@ function renderFrame(dt){
   const moving=mode==='play'&&!dialoguePaused&&!!(autoWalk||keys.KeyW||keys.KeyS||keys.KeyA||keys.KeyD||keys.ArrowUp||keys.ArrowDown||Math.hypot(joystick.x,joystick.y)>.05);
   const progress=survival.phaseLength?clamp(1-survival.phaseTime/survival.phaseLength,0,1):0;
   const falling=mode==='dying'&&options.motion?clamp(deathTime/1.7,0,1):0;
-  const scoped=scope&&(mode==='scope'||mode==='panel'&&previousMode==='scope')?{phase:scope.phase,progress:scope.elapsed/TELESCOPE_SCENES[scope.phase].duration,target:REVEAL_POINT}:null;
+  const presence=!flags.seen?distantPresence(time,scope):null;
+  const scoped=scope&&(mode==='scope'||mode==='panel'&&previousMode==='scope')?{phase:scope.phase,progress:scope.elapsed/TELESCOPE_SCENES[scope.phase].duration,target:presence,heading:presence.heading,gait:presence.gait,speed:presence.speed}:null;
   const profile=activeSpeech?speakerProfile(activeSpeech):null;
-  world.update({pos:player,yaw:yaw+falling*.16,pitch:pitch+(-1.35-pitch)*falling,time,moving,running,lamp,monster,enemyVisual:enemy,scope:scoped,active:!!flags.seen||!!scoped&&scoped.phase>=1,repelled:survival.stun>0,closing:closed,brightness:options.brightness,motion:options.motion,attackPhase:survival.phase,attackProgress:progress,hit:survival.hit,escape:!!flags.hunt,gateOpen:!!flags.gate,companionState,companionSpeaking:profile?.id==='shuji'&&profile.channel==='対面'&&!dialoguePaused});
+  world.update({pos:player,yaw:yaw+falling*.16,pitch:pitch+(-1.35-pitch)*falling,time,moving,running,lamp,monster:presence||monster,enemyVisual:presence||enemy,scope:scoped,active:true,repelled:survival.stun>0,closing:closed,brightness:options.brightness,motion:options.motion,attackPhase:survival.phase,attackProgress:progress,hit:survival.hit,escape:!!flags.hunt,gateOpen:!!flags.gate,companionState,companionSpeaking:profile?.id==='shuji'&&profile.channel==='対面'&&!dialoguePaused});
   const danger=mode==='dying'?1:scoped?scoped.phase===2?scoped.progress*.9:0:threatLevel(gazeAtMonster(closed));
   tape.update({dt,time,danger,source:world.canvas,enabled:options.tape>0,intensity:options.tape,reduced:reduced||!options.motion,playing:['play','scope','dying'].includes(mode)&&!dialoguePaused,health:survival.health});
 }
@@ -751,6 +800,10 @@ function dispatch(actionName){
   else if(actionName==='repel')throwBottle();
   else if(actionName==='answer-phone')answerPhone();
   else if(actionName==='ignore-phone'){resume();talk('phoneIgnore');}
+  else if(actionName.startsWith('examine-')){
+    const id=actionName.slice(8);if(panelKind!=='document'||!collected.has(id)||!EVIDENCE[id]||examined.has(id))return;
+    examined.add(id);readObject(id,false);cue(EVIDENCE[id].cue,world.items[id]);saveCheckpoint();
+  }
   else if(actionName.startsWith('read-')){const id=actionName.slice(5);if(collected.has(id))readObject(id,false);}
 }
 document.addEventListener('click',event=>{const target=event.target.closest('[data-action]');if(target&&!target.disabled)dispatch(target.dataset.action);});

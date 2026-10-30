@@ -1,7 +1,9 @@
 import * as THREE from './vendor/three.module.js';
 import { SoftwareRenderer } from './software-renderer.js';
+import {SpatialChunkManager,STREAMING_RULES,instanceRecord,addInstancedLayer,addTerrainChunks,streamingViewpoints} from './streaming.js';
 import {buildCreature,updateCreatureDetails} from './creature.js';
-import {WORLD_BOUNDS,SPAWN,LANDMARKS,TRAILS,BUILDINGS,PARKING,BRIDGE,FLOORS,STAIRS,BALCONY,CABIN_WINDOW,REVEAL_POINT,LORE_PLACEMENTS,MAP_ZONES,COVER_PATCHES,COMPANION_START,COMPANION_EXIT,distanceToTrail,distanceToSegment} from './layout.js';
+import {SCENE_ART,SCENE_ART_RULES} from './scene-art.js';
+import {WORLD_BOUNDS,SPAWN,LANDMARKS,TRAILS,BUILDINGS,DOORS,ROOMS,PARKING,BRIDGE,FLOORS,STAIRS,BALCONY,CABIN_WINDOW,REVEAL_POINT,LORE_PLACEMENTS,MAP_ZONES,COVER_PATCHES,COMPANION_START,COMPANION_EXIT,distanceToTrail,distanceToSegment} from './layout.js';
 export {LANDMARKS} from './layout.js';
 let seed=82471;
 const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
@@ -39,9 +41,10 @@ function segmentHitsVolume(a,b,c,margin=0){
 
 export class MountainWorld {
   constructor(container,options={}) {
-    seed=82471;this.options=options;this.colliders=[];this.slabs=[];this.items={};this.flickers=[];this._time=0;this._scares={};this.gateOpen=false;
+    seed=82471;this.options=options;this.colliders=[];this.slabs=[];this.items={};this.doors={};this.rooms=ROOMS;this.signs=[];this.flickers=[];this._time=0;this._scares={};this.gateOpen=false;
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#263039');
-    this.scene.fog=new THREE.FogExp2('#29363c',.034);
+    this.scene.fog=new THREE.FogExp2('#29363c',STREAMING_RULES.fogDensity);
+    this.streaming=new SpatialChunkManager(this.scene);
     this.camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.08,155);
     this.camera.rotation.order='YXZ';
     try{this.renderer=options.renderer||new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}
@@ -56,11 +59,12 @@ export class MountainWorld {
     const moon=new THREE.DirectionalLight('#b7c5d1',1.0);moon.position.set(-22,36,-30);moon.castShadow=true;
     moon.shadow.mapSize.set(1024,1024);Object.assign(moon.shadow.camera,{left:-35,right:35,top:35,bottom:-35,near:1,far:100});
     moon.shadow.bias=-.001;this.scene.add(moon);
-    this.loadMaterials();this.createTerrain();this.createPaths();this.createForest();this.createRocks();this.createCabin();this.createShed();this.createShelter();this.createCar();this.createParking();this.createObjects();this.createLore();this.createZoneLandmarks();this.createGimmicks();this.createCompanion();this.createDust();this.createCreature();this.createScares();
+    this.loadMaterials();this.createTerrain();this.createPaths();this.createForest();this.createRocks();this.createCabin();this.createShed();this.createShelter();this.createDoors();this.createCar();this.createParking();this.createObjects();this.createLore();this.createZoneLandmarks();this.createGimmicks();this.createCompanion();this.createDust();this.createCreature();this.createScares();this.createSceneArt();
     this.flashlight=new THREE.SpotLight('#fff2cf',32,28,.49,.67,1.25);this.flashlightTarget=new THREE.Object3D();this.flashlight.target=this.flashlightTarget;
     this.scene.add(this.flashlight,this.flashlightTarget);
     this.handlight=new THREE.PointLight('#efd9aa',.5,3);this.scene.add(this.handlight);
     this.createHand();this.scene.add(this.camera);
+    this.streaming.update(streamingViewpoints(SPAWN),{flush:true});
     this.resize=()=>{this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight);};
     addEventListener('resize',this.resize);
   }
@@ -73,9 +77,9 @@ export class MountainWorld {
   upstairsContains(x,z,r=0){const b=FLOORS[1].bounds;return (x>=b.minX+r&&x<=b.maxX-r&&z>=b.minZ&&z<=b.maxZ-r)||(x>=BALCONY.minX+r&&x<=BALCONY.maxX-r&&z>=BALCONY.minZ+r&&z<=BALCONY.maxZ);}
   loadMaterials(){
     const loader=this.options.textureLoader||new THREE.TextureLoader();this.textureStatus={};
-    const load=(name,repeat=[1,1])=>{const texture=loader.load(`./assets/textures/${name}.webp`,()=>{this.textureStatus[name]='ready';},undefined,()=>{this.textureStatus[name]='failed';});texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(...repeat);texture.anisotropy=4;this.textureStatus[name]='loading';return texture;};
+    const load=(name,repeat=[1,1])=>{const texture=loader.load(`./assets/textures/${name}-v4-2.webp`,()=>{this.textureStatus[name]='ready';},undefined,()=>{this.textureStatus[name]='failed';});texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(...repeat);texture.anisotropy=4;this.textureStatus[name]='loading';return texture;};
     this.floorTexture=load('forest-floor');this.woodTexture=load('weathered-wood');this.barkTexture=load('cedar-bark',[1,9]);
-    this.boughTexture=loader.load('./assets/textures/cedar-bough-v4.png',()=>{this.textureStatus['cedar-bough-v4']='ready';},undefined,()=>{this.textureStatus['cedar-bough-v4']='failed';});
+    this.boughTexture=loader.load('./assets/textures/cedar-bough-v4-2.webp',()=>{this.textureStatus['cedar-bough-v4']='ready';},undefined,()=>{this.textureStatus['cedar-bough-v4']='failed';});
     this.boughTexture.colorSpace=THREE.SRGBColorSpace;this.boughTexture.wrapS=this.boughTexture.wrapT=THREE.ClampToEdgeWrapping;this.boughTexture.userData.cutout=true;this.textureStatus['cedar-bough-v4']='loading';
     this.boughMaterial=mat('#d7dfd2',{map:this.boughTexture,side:THREE.DoubleSide,alphaTest:.18,roughness:1});
     wood.map=this.woodTexture;wood.bumpMap=this.woodTexture;wood.bumpScale=.025;wood.needsUpdate=true;
@@ -85,9 +89,10 @@ export class MountainWorld {
     this.trailMaterials={road:mat('#b9b7a8',{map:this.floorTexture}),timber:mat('#c7ad88',{map:this.floorTexture}),creek:mat('#a9b8ae',{map:this.floorTexture})};
   }
   createTerrain(){
-    const geo=new THREE.PlaneGeometry(180,180,112,112);geo.rotateX(-Math.PI/2);const p=geo.attributes.position,c=[];
-    const color=new THREE.Color();for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,terrainY(x,z));geo.attributes.uv.setXY(i,x/4,z/4);const n=.85+rand()*.15;color.setRGB(n*.94,n,n*.91);c.push(color.r,color.g,color.b);}
-    geo.setAttribute('color',new THREE.Float32BufferAttribute(c,3));geo.computeVertexNormals();const floor=this.mesh(geo,this.floorMaterial,0,0,0);floor.userData.ground=true;
+    addTerrainChunks(this.streaming,{heightAt:terrainY,material:this.floorMaterial,segments:this.renderer.isSoftware?3:8});
+    // Consume the historic terrain tint seed sequence so trees/collisions keep
+    // their positions and pre-existing checkpoints stay valid after this update.
+    for(let i=0;i<113*113;i++)rand();
     for(let i=0;i<16;i++){const a=i/16*Math.PI*2,r=78+rand()*18;const hill=this.mesh(new THREE.ConeGeometry(22+rand()*15,25+rand()*23,7),mat('#334644'),Math.cos(a)*r,-1,Math.sin(a)*r);hill.rotation.y=rand()*6;hill.userData.skyline=true;}
   }
   createPaths(){
@@ -98,8 +103,8 @@ export class MountainWorld {
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.setIndex(indices);g.computeVertexNormals();const material=trail.id.includes('road')?this.trailMaterials.road:trail.id==='shed'||trail.id==='west-loop'?this.trailMaterials.timber:trail.id.includes('east')?this.trailMaterials.creek:this.pathMaterial;const m=this.mesh(g,material,0,0,0);m.userData.ground=true;m.userData.path=true;
     }
     // Dappled leaf litter and stones break up the clean path edges.
-    const litter=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),mat('#6c6d57'),600);litter.userData.smallDetail=true;const dummy=new THREE.Object3D();
-    for(let i=0;i<600;i++){const x=(rand()-.5)*64,z=(rand()-.5)*64;dummy.position.set(x,terrainY(x,z)+.035,z);dummy.scale.set(.04+rand()*.14,.025,.06+rand()*.16);dummy.rotation.set(0,rand()*6,0);dummy.updateMatrix();litter.setMatrixAt(i,dummy.matrix);}this.scene.add(litter);
+    const litterRecords=[],dummy=new THREE.Object3D();
+    for(let i=0;i<600;i++){const x=(rand()-.5)*64,z=(rand()-.5)*64;dummy.position.set(x,terrainY(x,z)+.035,z);dummy.scale.set(.04+rand()*.14,.025,.06+rand()*.16);dummy.rotation.set(0,rand()*6,0);dummy.updateMatrix();litterRecords.push(instanceRecord(dummy.matrix));}addInstancedLayer(this.streaming,{id:'litter',instances:litterRecords,geometryFactory:()=>new THREE.DodecahedronGeometry(1,0),material:mat('#6c6d57'),userData:{smallDetail:true}});
     this.sign(-2.5,5,'← 物置　沢沿い →');this.sign(3,-18.8,'← 伐採跡　避難小屋 →');this.sign(-7.8,18.4,'← 駐車場　別荘 →');
     this.sign(-10.8,-10.5,'← 呼び鐘　沢 →',-.3);this.sign(10.4,-7.3,'← 別荘　避難小屋 →',.3);this.sign(-18,10.7,'林道工事中・徐行',.13);
   }
@@ -110,25 +115,29 @@ export class MountainWorld {
       if(distanceToSegment(x,z,[LANDMARKS.telescope.x,LANDMARKS.telescope.z],[REVEAL_POINT.x,REVEAL_POINT.z])<2.5||distanceToTrail(x,z)<.95||nearBuilding||x>-34&&x<-15&&z>15.5&&z<30.5||LORE_PLACEMENTS.some(p=>Math.hypot(x-p.x,z-p.z)<1.5)||COVER_PATCHES.some(p=>Math.abs(x-p.x)<p.w/2+1&&Math.abs(z-p.z)<p.d/2+1))continue;
       if(trees.some(t=>Math.hypot(x-t.x,z-t.z)<1.7))continue;trees.push({x,z,h:10+rand()*13,r:.2+rand()*.24,angle:rand()*Math.PI*2});
     }
-    const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.38,1,1,this.renderer.isSoftware?6:9),bark,trees.length);trunks.castShadow=true;trunks.receiveShadow=true;trunks.userData.trunks=true;
+    const trunkRecords=[],boughRecords=[],branchRecords=[];
     // Each cedar has fifteen tapered, radial boughs. The transparent needle
     // texture is attached to individual vertical branches, never a solid crown.
-    const boughGeometry=new THREE.PlaneGeometry(1,1);boughGeometry.translate(.5,-.5,0);
-    const boughs=new THREE.InstancedMesh(boughGeometry,this.boughMaterial,trees.length*15);boughs.userData.foliage=true;boughs.userData.cedarBoughs=true;boughs.castShadow=true;
-    const branches=new THREE.InstancedMesh(new THREE.CylinderGeometry(.025,.085,1,5),bark,trees.length*6);branches.userData.branches=true;
+    const boughGeometry=()=>new THREE.PlaneGeometry(1,1).translate(.5,-.5,0);
+    // Branch records are grouped by their tree root; only nearby GPU meshes exist.
+
     const dummy=new THREE.Object3D(),axis=new THREE.Vector3(0,1,0),direction=new THREE.Vector3();
-    trees.forEach((t,i)=>{const y=terrainY(t.x,t.z);dummy.position.set(t.x,y+t.h/2,t.z);dummy.scale.set(t.r,t.h,t.r);dummy.rotation.set((rand()-.5)*.012,t.angle,(rand()-.5)*.012);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);
+    trees.forEach((t,i)=>{const y=terrainY(t.x,t.z);dummy.position.set(t.x,y+t.h/2,t.z);dummy.scale.set(t.r,t.h,t.r);dummy.rotation.set((rand()-.5)*.012,t.angle,(rand()-.5)*.012);dummy.updateMatrix();trunkRecords.push(instanceRecord(dummy.matrix,t));
       for(let tier=0;tier<5;tier++)for(let side=0;side<3;side++){
         const a=t.angle+side*Math.PI*2/3+tier*.71,length=(2.6-tier*.39)*(.86+rand()*.25),height=t.h*(.38+tier*.125),droop=.35+rand()*.25;
         dummy.position.set(t.x,y+height,t.z);
-        dummy.scale.set(length*1.35,1.52-tier*.16,1);dummy.rotation.set(.05,-a,-.16-tier*.025);dummy.updateMatrix();boughs.setMatrixAt(i*15+tier*3+side,dummy.matrix);
-        if(tier<2){direction.set(Math.cos(a)*length,-droop*1.5,Math.sin(a)*length);dummy.position.set(t.x+direction.x*.45,y+height+direction.y*.45,t.z+direction.z*.45);dummy.quaternion.setFromUnitVectors(axis,direction.clone().normalize());dummy.scale.set(1,direction.length(),1);dummy.updateMatrix();branches.setMatrixAt(i*6+tier*3+side,dummy.matrix);}
+        dummy.scale.set(length*1.35,1.52-tier*.16,1);dummy.rotation.set(.05,-a,-.16-tier*.025);dummy.updateMatrix();boughRecords.push(instanceRecord(dummy.matrix,t));
+        if(tier<2){direction.set(Math.cos(a)*length,-droop*1.5,Math.sin(a)*length);dummy.position.set(t.x+direction.x*.45,y+height+direction.y*.45,t.z+direction.z*.45);dummy.quaternion.setFromUnitVectors(axis,direction.clone().normalize());dummy.scale.set(1,direction.length(),1);dummy.updateMatrix();branchRecords.push(instanceRecord(dummy.matrix,t));}
       }
       if(Math.abs(t.x)<36&&t.z>-38&&t.z<34)this.obstacle(t.x,t.z,t.r*2,t.r*2,t.h);
-    });this.scene.add(trunks,boughs,branches);this.forest={trees,trunks,boughs,branches};
-    const grassGeo=new THREE.BufferGeometry();grassGeo.setAttribute('position',new THREE.Float32BufferAttribute([-.15,0,0,0,.46,0,.04,0,0,-.04,0,-.1,.12,.38,.12,.13,0,.1],3));grassGeo.computeVertexNormals();
-    const grass=new THREE.InstancedMesh(grassGeo,mat('#535f46',{side:THREE.DoubleSide}),600);grass.userData.smallDetail=true;
-    for(let i=0;i<600;i++){const x=(rand()-.5)*78,z=(rand()-.5)*78;dummy.position.set(x,terrainY(x,z),z);dummy.scale.set(1,.5+rand(),1);dummy.rotation.set(0,rand()*6,0);dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix);}this.scene.add(grass);
+    });
+    const trunks=addInstancedLayer(this.streaming,{id:'forest-trunks',instances:trunkRecords,geometryFactory:()=>new THREE.CylinderGeometry(.38,1,1,this.renderer.isSoftware?6:9),material:bark,userData:{trunks:true},castShadow:true});
+    const boughs=addInstancedLayer(this.streaming,{id:'forest-boughs',instances:boughRecords,geometryFactory:boughGeometry,material:this.boughMaterial,userData:{foliage:true,cedarBoughs:true},castShadow:true});
+    const branches=addInstancedLayer(this.streaming,{id:'forest-branches',instances:branchRecords,geometryFactory:()=>new THREE.CylinderGeometry(.025,.085,1,5),material:bark,userData:{branches:true}});
+    this.forest={trees,trunks,boughs,branches};
+    const grassGeometry=()=>{const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute([-.15,0,0,0,.46,0,.04,0,0,-.04,0,-.1,.12,.38,.12,.13,0,.1],3));geometry.computeVertexNormals();return geometry;};
+    const grassRecords=[];
+    for(let i=0;i<600;i++){const x=(rand()-.5)*78,z=(rand()-.5)*78;dummy.position.set(x,terrainY(x,z),z);dummy.scale.set(1,.5+rand(),1);dummy.rotation.set(0,rand()*6,0);dummy.updateMatrix();grassRecords.push(instanceRecord(dummy.matrix));}addInstancedLayer(this.streaming,{id:'grass',instances:grassRecords,geometryFactory:grassGeometry,material:mat('#535f46',{side:THREE.DoubleSide}),userData:{smallDetail:true}});
   }
   createRocks(){
     const rocks=[[-6,-4,1.8],[7,1,2.1],[-7,-21,2.2],[9,-24,1.9],[-12,10,1.5],[25.4,-8.5,2],[-26,5,2.2],[9,13,1.7],[-6,-30,2],[27,10,2.5]];
@@ -186,8 +195,18 @@ export class MountainWorld {
     this.box(2,.45,2.8,mat('#525b4c'),4,.45,3,g);this.obstacle(4,27,2,2.8,.9,'bed',base);this.box(.7,.22,1,mat('#aca998'),4,.82,3.65,g);
     this.box(1.4,2.2,.5,darkwood,-1.2,1.2,4.5,g);this.obstacle(-1.2,28.5,1.4,.6,2.2,'shelf',base);
     for(let y=.3;y<2.5;y+=.55)this.box(1.45,.09,.7,planks,-1.2,y,4.5,g);
+    // The ground-floor bedroom is separated from the entry/radio desk. The
+    // stair enclosure remains a separate circulation route, with real openings.
+    wall(-2.175,2,2.55,.15,rise,0,'bedroom-partition');
+    wall(3.45,2,5.1,.15,rise,0,'bedroom-partition');
+    wall(0,2,1.8,.15,rise-2.55,2.55,'bedroom-header');
+    // Upstairs, a small enclosed storeroom sits beside the open stair landing.
+    wall(2.5,3.55,.15,2.9,wallHeight-rise,rise,'store-side');
+    wall(2.95,2.1,.9,.15,wallHeight-rise,rise,'store-front');
+    wall(5.6,2.1,.8,.15,wallHeight-rise,rise,'store-front');
+    wall(4.3,2.1,1.8,.15,wallHeight-rise-2.5,rise+2.5,'store-header');
     // Packed belongings upstairs establish the camera inventory task.
-    for(const [x,z]of [[3.8,26.6],[4.6,27.4],[3.4,27.8]]){this.box(.8,.75,.7,mat('#84755a'),x,rise+.38,z-24,g);this.obstacle(x,z,.8,.7,.75,'upper-box',base+rise);}
+    for(const [x,z]of [[3.2,28.4],[4.7,27.5],[4.6,28.5]]){this.box(.8,.75,.7,mat('#84755a'),x,rise+.38,z-24,g);this.obstacle(x,z,.8,.7,.75,'upper-box',base+rise);}
     this.box(.75,.9,.65,planks,2.8,rise+.45,-2,g);this.obstacle(2.8,22,.75,.65,.9,'upper-cabinet',base+rise);
     const windowMat=new THREE.MeshBasicMaterial({color:'#c89b5f'});this.box(1.7,1.2,.04,windowMat,3.7,2.15,-5.16,g);this.box(.06,1.3,.07,darkwood,3.7,2.15,-5.2,g);this.box(1.8,.06,.07,darkwood,3.7,2.15,-5.2,g);
     this.lantern(-2,base+2.65,18.6,1.4);this.lantern(0,base+2.6,25,1.3);this.lantern(4.4,base+rise+2.55,23.8,.85,.62);this.lantern(STAIRS.x+.85,base+rise+2.4,28.6,.7,.62);
@@ -203,17 +222,27 @@ export class MountainWorld {
     const b=BUILDINGS.find(b=>b.id==='shed'),{x,z,w,d}=b,y=terrainY(x,z);this.box(w,.15,d,wood,x,y,z);
     for(const sx of [-w/2+.05,w/2-.05]){this.box(.19,2.8,d,wood,x+sx,y+1.4,z);this.obstacle(x+sx,z,.25,d,2.8);}
     this.box(w,2.8,.2,wood,x,y+1.4,z-d/2);this.obstacle(x,z-d/2,w,.25,2.8);
+    const opening=2,panel=(w-opening)/2;
+    for(const side of [-1,1]){const xx=x+side*(opening/2+panel/2);this.box(panel,2.8,.2,wood,xx,y+1.4,z+d/2);this.obstacle(xx,z+d/2,panel,.2,2.8,'shed-front',y);}
+    this.box(opening,.35,.2,wood,x,y+2.625,z+d/2);this.obstacle(x,z+d/2,opening,.2,.35,'shed-header',y+2.45);
     const roof=this.box(w+.5,.18,d+.7,mat('#858a7b',{map:this.woodTexture}),x,y+2.9,z);roof.rotation.z=.08;
     this.box(2.8,.12,.9,wood,x,y+.8,z-1.3);this.obstacle(x,z-1.3,2.8,.9,1);
     this.lantern(x+1.7,y+1.9,z+1.4,.6);this.sign(-16,0,'物置',-.3);
     for(let i=0;i<3;i++){const log=this.mesh(new THREE.CylinderGeometry(.25,.27,1.2,8),wood,x-1.5,y+.28+i*.3,z-.8);log.rotation.z=Math.PI/2;}
+    for(const yy of [.45,1.1,1.75])this.box(.48,.09,1.5,wood,x+w/2-.4,y+yy,z-.5);
+    this.obstacle(x+w/2-.4,z-.5,.48,1.5,1.8,'shed-shelf',y);
   }
   createShelter(){
     const b=BUILDINGS.find(b=>b.id==='shelter'),{x,z,w,d}=b,y=terrainY(x,z);this.box(w,.15,d,wood,x,y,z);
     for(const xx of [-w/2+.1,w/2-.1]){this.box(.25,3.1,d,wood,x+xx,y+1.55,z);this.obstacle(x+xx,z,.3,d,3);}
     this.box(w,3.1,.22,wood,x,y+1.55,z-d/2);this.obstacle(x,z-d/2,w,.3,3);
+    const opening=2,panel=(w-opening)/2;
+    for(const side of [-1,1]){const xx=x+side*(opening/2+panel/2);this.box(panel,3.1,.22,wood,xx,y+1.55,z+d/2);this.obstacle(xx,z+d/2,panel,.22,3.1,'shelter-front',y);}
+    this.box(opening,.5,.22,wood,x,y+2.85,z+d/2);this.obstacle(x,z+d/2,opening,.22,.5,'shelter-header',y+2.6);
     const roof=this.mesh(new THREE.ConeGeometry((w+.5)/Math.SQRT2,1.9,4),mat('#85897d',{map:this.woodTexture}),x,y+3.4,z);roof.rotation.y=Math.PI/4;roof.scale.z=(d+.8)/(w+.5);
     this.box(3.2,.16,.7,wood,x,y+.8,z-1.8);this.obstacle(x,z-1.8,3.2,.8,1);
+    this.box(.62,.14,1.6,wood,x+2.3,y+.5,z+.2);this.obstacle(x+2.3,z+.2,.62,1.6,.57,'shelter-bench',y);
+    for(const zz of [z-.35,z+.75])this.box(.45,.46,.1,wood,x+2.3,y+.23,zz);
     this.lantern(x-2,y+2.3,z+1.7,.65);this.sign(12,-12,'避難小屋',-.6);
     // Raised bridge over a shallow, dark stream.
     const water=this.box(35,.06,1.4,mat('#233e40',{metalness:.4,roughness:.22}),BRIDGE.x-3.8,terrainY(BRIDGE.x-3.8,BRIDGE.z)-.04,BRIDGE.z);
@@ -292,6 +321,75 @@ export class MountainWorld {
       this.makeItem(p.id,p.label,p.x,p.z,g,height);this.items[p.id].persistent=true;
     }
   }
+  createSceneArt(){
+    this.artPanels=new Map(SCENE_ART.map(art=>[art.id,{art,group:null,status:'idle',generation:0}]));
+    this.updateSceneArt(SPAWN);
+  }
+  _paintArtPanel(panel,image=null){
+    const {art,canvas}=panel,ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+    ctx.fillStyle=art.type==='notice'?'#c4baa0':'#cfc6ae';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#302f28';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold 38px "Yu Gothic", "Hiragino Sans", sans-serif';ctx.fillText(art.title,w/2,48,w-56);
+    ctx.fillStyle='#4d5147';ctx.fillRect(36,92,440,440);
+    if(image){const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height,side=Math.min(iw,ih);if(side>0)ctx.drawImage(image,(iw-side)/2,(ih-side)/2,side,side,40,96,432,432);}
+    ctx.strokeStyle='#736c59';ctx.lineWidth=2;ctx.strokeRect(34,90,444,444);
+    ctx.font='22px "Yu Gothic", "Hiragino Sans", sans-serif';ctx.fillStyle='#403c32';ctx.fillText(art.caption,w/2,570,w-58);
+    ctx.font='18px "Yu Gothic", "Hiragino Sans", sans-serif';ctx.fillStyle='#706751';ctx.fillText(art.type==='notice'?'山林管理記録 / 掲示写し':'山林管理記録 / 写真資料',w/2,609,w-58);
+    panel.texture.needsUpdate=true;
+  }
+  _loadArtPanel(panel){
+    const {art}=panel,generation=++panel.generation,group=new THREE.Group();group.name=art.label;group.userData.sceneArt=art.id;
+    group.position.set(art.x,this.ground(art.x,art.z,art.level)+art.y,art.z);group.rotation.y=art.rotation;this.scene.add(group);panel.group=group;
+    const canvas=document.createElement('canvas');canvas.width=SCENE_ART_RULES.textureWidth;canvas.height=SCENE_ART_RULES.textureHeight;panel.canvas=canvas;
+    panel.texture=new THREE.CanvasTexture(canvas);panel.texture.colorSpace=THREE.SRGBColorSpace;panel.texture.anisotropy=2;
+    const frame=mat('#625947'),paper=mat('#ffffff',{map:panel.texture,roughness:1});
+    this.box(art.width+.028,art.height+.028,.018,frame,0,0,0,group);
+    panel.surface=this.mesh(new THREE.PlaneGeometry(art.width,art.height),paper,0,0,.011,group);
+    for(const x of [-art.width*.4,art.width*.4])this.mesh(new THREE.SphereGeometry(.009,5,3),frame,x,art.height*.45,.017,group);
+    this._paintArtPanel(panel);panel.status='loading';let settled=false;
+    const loader=this.options.textureLoader||new THREE.TextureLoader();
+    const source=loader.load(art.image,texture=>{
+      settled=true;
+      // A request may complete after walking away or after a new panel loaded.
+      // It must never resurrect a released material or overwrite the new one.
+      if(panel.generation===generation&&panel.group){this._paintArtPanel(panel,texture.image);panel.status='ready';panel.sourceTexture=null;}
+      texture.dispose();
+    },undefined,()=>{settled=true;if(panel.generation===generation&&panel.group){panel.status='failed';panel.sourceTexture?.dispose();panel.sourceTexture=null;}});
+    panel.sourceTexture=settled?null:source;
+  }
+  _releaseArtPanel(panel){
+    if(!panel.group)return;
+    panel.generation++;const geometries=new Set(),materials=new Set();
+    panel.group.traverse(part=>{if(part.geometry)geometries.add(part.geometry);if(part.material)materials.add(part.material);});
+    panel.group.removeFromParent();for(const geometry of geometries)geometry.dispose();for(const material of materials)material.dispose();
+    panel.texture.dispose();panel.sourceTexture?.dispose();
+    panel.group=null;panel.surface=null;panel.texture=null;panel.sourceTexture=null;panel.canvas=null;panel.status='idle';
+  }
+  updateSceneArt(pos){
+    if(!this.artPanels)return;
+    const nearby=[];
+    for(const panel of this.artPanels.values()){
+      const distance=Math.hypot(panel.art.x-pos.x,panel.art.z-pos.z);
+      if(panel.group&&distance>SCENE_ART_RULES.unloadRadius)this._releaseArtPanel(panel);
+      if(!panel.group&&distance<=SCENE_ART_RULES.loadRadius)nearby.push({panel,distance});
+    }
+    nearby.sort((a,b)=>a.distance-b.distance);
+    for(const {panel}of nearby.slice(0,SCENE_ART_RULES.maxLoadsPerUpdate))this._loadArtPanel(panel);
+  }
+  disposeSceneArt(){for(const panel of this.artPanels?.values()||[])this._releaseArtPanel(panel);}
+  getArtTarget(player,yaw=0,maxDistance=2.8){
+    let best=null;
+    for(const art of SCENE_ART){
+      if((player.level??0)!==art.level)continue;
+      const dx=art.x-player.x,dz=art.z-player.z,distance=Math.hypot(dx,dz),nx=Math.sin(art.rotation),nz=Math.cos(art.rotation);
+      if(distance<.05||distance>maxDistance||(-Math.sin(yaw)*dx-Math.cos(yaw)*dz)/distance<.72)continue;
+      if((-dx*nx-dz*nz)/distance<.2)continue;
+      const a={x:player.x,z:player.z,y:this.actorHeight(player)+1.65},b={x:art.x+nx*.025,z:art.z+nz*.025,y:this.ground(art.x,art.z,art.level)+art.y};
+      if(this.colliders.some(c=>c.enabled!==false&&segmentHitsVolume(a,b,c,.01))||this.slabs.some(c=>segmentHitsVolume(a,b,c,.01)))continue;
+      if(!best||distance<best.distance)best={...art,kind:'sceneArt',distance};
+    }
+    return best;
+  }
   createZoneLandmarks(){
     this.mapZones=MAP_ZONES;
     // Timber and stone stacks have the same solid footprint used by sight and
@@ -349,6 +447,74 @@ export class MountainWorld {
   }
   setShutterClosed(closed){this.shutterClosed=!!closed;if(this.shutterCollider)this.shutterCollider.enabled=this.shutterClosed;if(this.items.shutter)this.items.shutter.label=`二階の雨戸を${this.shutterClosed?'開く':'閉める'}`;}
   ringBell(time=this._time){this._bellTime=time;}
+  createDoors(){
+    const panelWood=mat('#727064',{map:this.woodTexture}),trim=mat('#4f554b',{map:this.woodTexture});
+    for(const spec of DOORS){
+      const bottom=spec.building==='cabin'?terrainY(0,24)+FLOORS[spec.level].height:terrainY(...[BUILDINGS.find(b=>b.id===spec.building).x,BUILDINGS.find(b=>b.id===spec.building).z]);
+      const group=new THREE.Group();group.name=spec.label;group.position.set(spec.x,bottom,spec.z);group.userData.doorId=spec.id;this.scene.add(group);
+      const door={...spec,bottom,group,slide:spec.open?1:0,leaves:[],colliders:[]};this.doors[spec.id]=door;
+      for(const side of [-1,1]){
+        this.box(.085,spec.height+.1,.18,trim,side*(spec.width/2+.055),spec.height/2,0,group);
+        const leaf=new THREE.Group();group.add(leaf);leaf.userData.side=side;
+        this.box(spec.width/2-.025,spec.height-.035,.095,panelWood,0,spec.height/2,0,leaf);
+        for(const yy of [.2,spec.height*.5,spec.height-.18])this.box(spec.width/2-.035,.055,.12,trim,0,yy,0,leaf);
+        for(const zz of [-.085,.085])this.box(.045,.22,.035,iron,-side*(spec.width/4-.14),1.12,zz,leaf);
+        door.leaves.push(leaf);door.colliders.push(this.obstacle(spec.x,spec.z,spec.width/2-.025,.105,spec.height,spec.id,bottom));
+      }
+      this.box(spec.width*2+.2,.095,.19,iron,0,spec.height+.075,0,group);
+      this._placeDoor(door);
+    }
+  }
+  _placeDoor(door){
+    door.leaves.forEach((leaf,i)=>{const x=leaf.userData.side*(door.width/4+door.slide*(door.width/2+.035));leaf.position.x=x;door.colliders[i].x=door.x+x;});
+  }
+  _doorOverlaps(door,actor,slide=0){
+    if(!actor||!Number.isFinite(actor.x)||!Number.isFinite(actor.z))return false;
+    const feet=this.actorHeight(actor);if(feet+.08>=door.bottom+door.height||feet+1.72<=door.bottom+.02)return false;
+    return [-1,1].some(side=>Math.abs(actor.x-(door.x+side*(door.width/4+slide*(door.width/2+.035))))<door.width/4+.36&&Math.abs(actor.z-door.z)<.43);
+  }
+  setDoor(id,open,{actors=[],immediate=false}={}){
+    const door=this.doors[id];if(!door)return {id,changed:false,blocked:false,open:false};
+    const desired=!!open,people=actors.filter(Boolean);
+    if(!desired&&people.some(actor=>this._doorOverlaps(door,actor)))return {id,changed:false,blocked:true,open:door.open};
+    const changed=door.open!==desired;door.open=desired;
+    if(immediate){door.slide=desired?1:0;this._placeDoor(door);}
+    return {id,changed,blocked:false,open:door.open};
+  }
+  toggleDoor(id,actors=[]){return this.setDoor(id,!this.doors[id]?.open,{actors});}
+  snapshotDoors(){return Object.fromEntries(Object.values(this.doors).map(door=>[door.id,door.open]));}
+  restoreDoors(saved,actors=[]){for(const spec of DOORS){const result=this.setDoor(spec.id,typeof saved?.[spec.id]==='boolean'?saved[spec.id]:spec.open,{actors,immediate:true});if(result.blocked)this.setDoor(spec.id,true,{immediate:true});}}
+  updateDoors(dt,actors=[]){
+    for(const door of Object.values(this.doors)){
+      const next=THREE.MathUtils.damp(door.slide,door.open?1:0,7,dt);
+      if(!door.open&&door.slide>0&&next<door.slide&&actors.some(actor=>this._doorOverlaps(door,actor,next))){door.open=true;continue;}
+      door.slide=Math.abs(next-(door.open?1:0))<.001?(door.open?1:0):next;this._placeDoor(door);
+    }
+  }
+  getDoorTarget(player,yaw=0,maxDistance=2.3){
+    let best=null;
+    for(const door of Object.values(this.doors)){
+      if((player.level??0)!==door.level)continue;
+      // Select the doorway/handle from either side; the open leaf stays off-path.
+      const dx=door.x-player.x,dz=door.z-player.z,distance=Math.hypot(dx,dz);
+      if(distance>maxDistance||distance>.45&&(-Math.sin(yaw)*dx-Math.cos(yaw)*dz)/distance<.35)continue;
+      const a={...player,y:this.actorHeight(player)+1.15},b={x:door.x,z:door.z,y:door.bottom+1.15};
+      if(this.colliders.some(c=>c.enabled!==false&&c.id!==door.id&&segmentHitsVolume(a,b,c,.015)))continue;
+      if(!best||distance<best.distance)best={id:door.id,label:`${door.label}を${door.open?'閉める':'開く'}`,name:door.label,x:door.x,z:door.z,level:door.level,open:door.open,distance,kind:'door'};
+    }
+    return best;
+  }
+  getBlockingDoor(from,to,maxDistance=2.8){
+    return Object.values(this.doors).filter(door=>!door.open&&(from.level??0)===door.level&&Math.hypot(from.x-door.x,from.z-door.z)<=maxDistance&&segmentHitsBox(from,to,{x:door.x,z:door.z,w:door.width,d:.2},.3)).sort((a,b)=>Math.hypot(from.x-a.x,from.z-a.z)-Math.hypot(from.x-b.x,from.z-b.z))[0]||null;
+  }
+  getDoorApproach(id,from){const d=this.doors[id];return d?{x:d.x,z:d.z+(from.z<d.z?-1.05:1.05),level:d.level}:null;}
+  // Planning may include a closed leaf, but physical movement still collides
+  // until the actor reaches it and the game explicitly opens it.
+  findEnemyPath(a,b){
+    const leaves=Object.values(this.doors).filter(door=>!door.open||door.slide<.999).flatMap(door=>door.colliders),enabled=leaves.map(c=>c.enabled);
+    try{leaves.forEach(c=>c.enabled=false);return this.findPath(a,b);}finally{leaves.forEach((c,i)=>c.enabled=enabled[i]);}
+  }
+  findPathThroughDoors(a,b){return this.findEnemyPath(a,b);}
   createCompanion(){
     const g=new THREE.Group(),jacket=mat('#4e5648'),seam=mat('#2e3930'),pants=mat('#333d38'),skin=mat('#b9aa8e'),hair=mat('#252a25');this.scene.add(g);g.name='叔父・修司';this.companion=g;
     this.companionPos={...COMPANION_START};this.companionState='present';this._companionCommand='present';this._companionRoute=[];this._companionStep=0;
@@ -376,6 +542,7 @@ export class MountainWorld {
       this.companionPos={...COMPANION_START};this.companionState='present';this._companionRoute=[];this._companionStep=0;this.companion.visible=true;
     }
     if(command==='leaving'&&this.companionState==='present'){
+      this.setDoor('cabin-entry',true,{immediate:true});
       this.companionState='leaving';let from={...this.companionPos};this._companionRoute=[];
       for(const target of COMPANION_EXIT){const segment=this.findPath(from,target);if(!segment.length)break;this._companionRoute.push(...segment);from=target;}this._companionStep=0;
     }
@@ -385,7 +552,7 @@ export class MountainWorld {
     if(this.companionState==='leaving'){
       const target=this._companionRoute[this._companionStep];
       if(target){const dx=target.x-this.companionPos.x,dz=target.z-this.companionPos.z,d=Math.hypot(dx,dz);if(d<.035)this._companionStep++;
-        else{const step=Math.min(d,dt*1.65),before={...this.companionPos};this.move(this.companionPos,dx/d*step,dz/d*step,.3);walking=Math.hypot(before.x-this.companionPos.x,before.z-this.companionPos.z)>.0001;this.companion.rotation.y=Math.atan2(dx,dz);}}
+        else{const door=this.getBlockingDoor(this.companionPos,target,2.1);if(door)this.setDoor(door.id,true);const step=Math.min(d,dt*1.65),before={...this.companionPos};this.move(this.companionPos,dx/d*step,dz/d*step,.3);walking=Math.hypot(before.x-this.companionPos.x,before.z-this.companionPos.z)>.0001;this.companion.rotation.y=Math.atan2(dx,dz);}}
       else{const d=Math.hypot(pos.x-this.companionPos.x,pos.z-this.companionPos.z),direction=new THREE.Vector3();this.camera.getWorldDirection(direction);const behind=(this.companionPos.x-pos.x)*direction.x+(this.companionPos.z-pos.z)*direction.z<0;if(d>24||d>8&&behind||this.isBlocked(pos,this.companionPos)){this.companionState='away';this.companion.visible=false;}}
     }
     if(!this.companion.visible)return;
@@ -399,8 +566,10 @@ export class MountainWorld {
     const warm=new THREE.MeshBasicMaterial({color:'#e4b66c'});this.mesh(new THREE.CylinderGeometry(.12*size,.12*size,.27*size,6),warm,x,y,z);this.mesh(new THREE.ConeGeometry(.22*size,.14*size,6),iron,x,y+.2*size,z);const light=new THREE.PointLight('#ffd38e',intensity*9,9,1.5);light.position.set(x,y,z);this.scene.add(light);this.flickers.push({light,intensity:intensity*9});
   }
   sign(x,z,text,rotation=0){
-    const c=document.createElement('canvas');c.width=512;c.height=160;const ctx=c.getContext('2d');ctx.fillStyle='#373b2d';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#9b9a76';ctx.strokeRect(9,9,494,142);ctx.font='500 40px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#e0ddbd';ctx.fillText(text,256,80);
-    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const y=terrainY(x,z);this.box(.1,1.8,.1,wood,x,y+.9,z);const board=this.mesh(new THREE.BoxGeometry(2.5,.78,.09),[wood,wood,wood,wood,new THREE.MeshStandardMaterial({map:t,roughness:1}),wood],x,y+1.5,z);board.rotation.y=rotation;
+    const c=document.createElement('canvas');c.width=512;c.height=160;const ctx=c.getContext('2d');ctx.fillStyle='#373b2d';ctx.fillRect(0,0,512,160);ctx.strokeStyle='#9b9a76';ctx.strokeRect(9,9,494,142);ctx.font='500 43px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#e0ddbd';ctx.fillText(text,256,80,475);
+    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const y=terrainY(x,z),width=text.length<7?.8:1.35;
+    const post=this.box(.065,1.28,.065,wood,x,y+.64,z),face=new THREE.MeshStandardMaterial({map:t,roughness:1});
+    const board=this.mesh(new THREE.BoxGeometry(width,.34,.055),[wood,wood,wood,wood,face,face],x,y+1.06,z);board.rotation.y=rotation;board.userData.sign=true;this.signs.push({text,x,z,width,height:.34,board,post});
   }
   createDust(){
     const positions=[];for(let i=0;i<240;i++)positions.push((rand()-.5)*70,.5+rand()*7,(rand()-.5)*70);
@@ -498,13 +667,14 @@ export class MountainWorld {
   update({pos,yaw,pitch,time,moving=false,running=false,lamp=true,monster,active=false,repelled=false,closing=false,brightness=1,motion=true,attackPhase='idle',attackProgress=0,hit=0,escape=false,gateOpen,enemyVisual=null,scope=null,companionState='present',companionSpeaking=false}){
     if(time<this._time){this._scares={};this._throw=null;this.projectile.visible=false;this.splash.visible=false;this.windowFigure.visible=false;this.gateLift=(gateOpen??this.gateOpen)?2.8:0;this._bellTime=-100;if(companionState==='present')this._companionCommand='away';}
     const dt=Math.min(.1,Math.max(0,time-this._time));this._time=time;if(gateOpen!==undefined)this.setGateOpen(gateOpen);
+    this.updateDoors(dt,[pos,monster,this.companion?.visible?this.companionPos:null].filter(Boolean));
     const bob=motion&&moving?Math.sin(time*(running?13:8))*(running?.045:.025):0;
     this.camera.position.set(pos.x,this.actorHeight(pos)+1.65+bob,pos.z);this.camera.rotation.set(pitch,yaw,motion?Math.sin(time*48)*hit*.035:0);
     // Finish magnifying before the last beat, leaving 1.5 seconds to read the
     // turned face at a steady optical scale instead of zooming through it.
     const faceZoomProgress=scope?.phase===2?THREE.MathUtils.clamp(scope.progress/.75,0,1):0,faceZoomEase=faceZoomProgress*faceZoomProgress*(3-2*faceZoomProgress);
     const zoom=scope?scope.phase===0?20-2*scope.progress:scope.phase===1?18-3*scope.progress:15-9*faceZoomEase:68;
-    if(Math.abs(this.camera.fov-zoom)>.01){this.camera.fov=zoom;this.camera.updateProjectionMatrix();}this.scene.fog.density=scope?.014:.034;
+    if(Math.abs(this.camera.fov-zoom)>.01){this.camera.fov=zoom;this.camera.updateProjectionMatrix();}this.scene.fog.density=scope?STREAMING_RULES.scopeFogDensity:STREAMING_RULES.fogDensity;
     if(scope){const origin={x:LANDMARKS.telescope.x,z:LANDMARKS.telescope.z+.5,level:1},target=scope.target||REVEAL_POINT;this.camera.position.set(origin.x,this.actorHeight(origin)+1.65,origin.z);this.camera.lookAt(target.x,this.actorHeight(target)+1.7+(scope.phase===2?scope.progress*.55:0),target.z);}
     // The optical view starts inside the instrument. Its physical blue objective
     // lens otherwise fills the magnified foreground one metre from the camera.
@@ -531,7 +701,7 @@ export class MountainWorld {
     for(const chain of this.gateChains){const bottom=this.gateBaseY+this.gateLift+2.15,top=this.gateBaseY+4.95;chain.scale.y=Math.max(.035,top-bottom);chain.position.y=(top+bottom)/2;}this.gateWheel.rotation.x=this.gateLift*5;
     if(this._throw){const flight=this._throw,age=time-flight.start,t=Math.min(1,age/.55);this.projectile.visible=t<1;this.projectile.position.lerpVectors(flight.from,flight.to,t);this.projectile.position.y+=Math.sin(t*Math.PI)*1.05;this.projectile.rotation.set(age*11,age*7,age*5);
       this.splash.visible=age>=.55&&age<1.25;if(this.splash.visible){const s=age-.55;for(let i=0;i<18;i++){const a=i*2.39996,r=s*(1+(i%4)*.24),d=this._splashDummy;d.position.set(flight.to.x+Math.cos(a)*r,flight.to.y+Math.sin(i*1.7)*s*1.8-s*s*3,flight.to.z+Math.sin(a)*r);d.scale.setScalar(Math.max(.2,1-s));d.updateMatrix();this.splash.setMatrixAt(i,d.matrix);}this.splash.instanceMatrix.needsUpdate=true;this.splash.material.opacity=Math.max(0,.75*(1-(age-.55)/.7));}if(age>1.3){this._throw=null;this.projectile.visible=false;this.splash.visible=false;}}
-    this.creature.visible=active||!!scope&&scope.phase>=1;
+    this.creature.visible=active||!!scope;
     if(active||scope){
       const creaturePos=scope?(scope.target||REVEAL_POINT):monster,visual=enemyVisual||{},c=THREE.MathUtils.clamp(visual.crouch||0,0,1);
       this.creature.position.set(creaturePos.x,this.actorHeight(creaturePos),creaturePos.z);
@@ -557,11 +727,14 @@ export class MountainWorld {
       if(scope){
         const facing=Math.atan2(this.camera.position.x-creaturePos.x,this.camera.position.z-creaturePos.z),progress=scope.phase===2?THREE.MathUtils.clamp(scope.progress,0,1):0;
         const ease=v=>{const n=THREE.MathUtils.clamp(v,0,1);return n*n*(3-2*n);},headTurn=ease(progress/.46),shoulderTurn=ease((progress-.16)/.69),hipTurn=ease((progress-.32)/.68);
-        this.creature.rotation.y=facing+Math.PI-Math.PI*hipTurn;
-        this.torso.position.set(0,Math.sin(time*1.9)*.022,0);this.torso.rotation.set(.08,-Math.min(.55,Math.PI*(shoulderTurn-hipTurn)),Math.sin(time*1.2)*.075);
-        this.head.rotation.set(-.07,-Math.min(.98,Math.PI*(headTurn-shoulderTurn)),Math.sin(time*.65)*.09-.1);
-        this.arms[0].rotation.set(Math.sin(time*.7)*.05,0,-.18);this.arms[1].rotation.set(Math.cos(time*.8)*.04,0,.14);
-        this.legs.forEach(leg=>{leg.rotation.set(0,0,0);leg.position.y=.98;leg.scale.y=1;});
+        const walkingHeading=Number.isFinite(scope.heading)?scope.heading:facing+Math.PI;
+        const turn=Math.atan2(Math.sin(facing-walkingHeading),Math.cos(facing-walkingHeading));
+        this.creature.rotation.y=walkingHeading+turn*hipTurn;
+        this.torso.position.set(0,Math.sin(time*1.9)*.022,0);this.torso.rotation.set(.08,THREE.MathUtils.clamp(turn*(shoulderTurn-hipTurn),-.55,.55),Math.sin(time*1.2)*.055);
+        this.head.rotation.set(-.07,THREE.MathUtils.clamp(turn*(headTurn-shoulderTurn),-.98,.98),Math.sin(time*.65)*.06-.1);
+        // Preserve the same walking cycle through all three shots. It slows
+        // while the head turns; no cut swaps a still figure into the forest.
+        this.legs.forEach((leg,i)=>{leg.rotation.x=Math.sin(gait+i*Math.PI)*.23*walk;});
       }
     }
     updateCreatureDetails(this,{time,dt,scope,attackPhase,attackProgress,repelled,enemyVisual:enemyVisual||{},active});
@@ -570,6 +743,13 @@ export class MountainWorld {
     this.shutterSlide=THREE.MathUtils.damp(this.shutterSlide,this.shutterClosed?0:1,9,dt);
     this.shutterPanels.forEach(panel=>{panel.position.x=panel.userData.side*(.65+this.shutterSlide*1.3);});
     const bellAge=time-this._bellTime;this.bellProp.rotation.z=bellAge>=0&&bellAge<5?Math.sin(bellAge*13)*Math.exp(-bellAge*.9)*.55:Math.sin(time*.3)*.006;
+    const opticalTarget=scope?(scope.target||REVEAL_POINT):null;
+    const visualOrigin=scope?{x:LANDMARKS.telescope.x,z:LANDMARKS.telescope.z+.5}:pos;
+    const jumped=!this._streamingOrigin||Math.hypot(visualOrigin.x-this._streamingOrigin.x,visualOrigin.z-this._streamingOrigin.z)>8;
+    this.streaming.update(streamingViewpoints(visualOrigin,opticalTarget),{flush:jumped||!!scope&&!this._streamingScope});
+    this.updateSceneArt(visualOrigin);
+    this._streamingOrigin={x:visualOrigin.x,z:visualOrigin.z};
+    this._streamingScope=!!scope;
     this.renderer.render(this.scene,this.camera);
   }
   eyePosition(){return this.eye.getWorldPosition(new THREE.Vector3());}

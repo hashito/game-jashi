@@ -10,6 +10,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+sys.stdout.reconfigure(encoding='utf-8')
+
 root = Path(__file__).resolve().parent.parent
 job = next(j for j in json.loads((root / 'tools/photo-prompts.json').read_text(encoding='utf-8'))['jobs'] if j['id'] == sys.argv[1])
 source = root / 'assets/sources' / (job['id'] + '.png')
@@ -19,15 +21,15 @@ if not origin or not origin.get('engine') or not origin.get('originalFile'):
 if origin.get('kind') not in ('generated-builtin', 'edited-builtin'):
     raise ValueError('An explicit builtin generation/edit source kind is required')
 target = root / job['output']
+worker = runpy.run_path(str(root / 'tools/local-media-worker.py'))
+if worker['sha'](source) != origin['sourceSha256']:
+    raise ValueError('Selected original differs from its recorded SHA-256')
 target.parent.mkdir(parents=True, exist_ok=True)
 with Image.open(source) as original:
     source_size = original.size
     photo = original.convert('RGB')
-    photo.thumbnail((1400, 1050), Image.Resampling.LANCZOS)
-    photo.save(target, format='WEBP', quality=88, method=6)
-worker = runpy.run_path(str(root / 'tools/local-media-worker.py'))
-if worker['sha'](source) != origin['sourceSha256']:
-    raise ValueError('Selected original differs from its recorded SHA-256')
+    photo.thumbnail((1280, 960), Image.Resampling.LANCZOS)
+    photo.save(target, format='WEBP', quality=76, method=6)
 with Image.open(target) as packaged:
     luma = np.asarray(packaged.convert('RGB'), dtype=np.float64) @ np.array([.2126, .7152, .0722])
 worker['save_record']('image-' + job['id'], {
@@ -38,6 +40,7 @@ worker['save_record']('image-' + job['id'], {
     'darkFractionBelow16': round(float(np.mean(luma < 16)), 4),
     'qa': job['qa'],
     'sourceSha256': worker['sha'](source), 'purpose': job['purpose'],
-    'processing': 'RGB WebP quality88 and fit within 1400x1050 only; no crop, content edits, or compositing.',
+    'encoding': {'format': 'WEBP', 'quality': 76, 'method': 6, 'maxWidth': 1280, 'maxHeight': 960},
+    'processing': 'Original PNG to RGB WebP quality76, Lanczos fit within 1280x960; no upscaling, crop, content edits, compositing or lossy recompression.',
     'credit': 'AI-generated scene photograph; source method explicitly recorded; not a real-event photograph.'
 }, target)

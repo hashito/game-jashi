@@ -1,0 +1,34 @@
+{
+  "id": "mirror-detail",
+  "engine": "built-in image_gen",
+  "model": "not reported by tool",
+  "seed": "not reported by tool",
+  "prompt": "Photorealistic evidence close-up for a restrained Japanese mountain horror game, landscape 4:3. A small oval tarnished silver handheld mirror lying face down on a rough wooden bedside table in an old Japanese mountain cabin. Its scratched metal back has a small aged beige paper rectangle stuck over the center with dark tape at the corners, with a few indistinct pencil marks but no legible writing. A narrow sliver of reflected cold doorway light at the mirror rim suggests someone just outside frame, but absolutely no visible human, face or monster. Side-lit by a weak warm flashlight with deep but readable shadows, muted olive gray brown, analog DV grain, real material wear. No gore, no text overlays, no logos, no UI. Edge to edge photograph.",
+  "sourceFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-52a91ee4-972b-4232-9e66-dd6d160cedbc.png",
+  "sourceSha256": "49cc330c4ffec7ac65da777c7c8b9d45c3ad649150d4637b35564535b947df6f",
+  "output": "dist/assets/photos/mirror-detail-v4-2.webp",
+  "sha256": "770b632068a158859ba925424581d60397dc59c9adf09314cf5ac5977b150fa7",
+  "dimensions": [
+    768,
+    576
+  ],
+  "bytes": 37244,
+  "encoding": {
+    "format": "WEBP",
+    "quality": 76,
+    "method": 6,
+    "maxWidth": 768,
+    "maxHeight": 576
+  },
+  "processing": "Original PNG to RGB, bounded 768x576 Lanczos resize, WebP quality76 method6; no upscaling, retouching or lossy recompression",
+  "review": "Generated fictional evidence close-up; visually inspected. The 3D model thumbnail remains the authoritative object recognition guide. Fine writing is provided as readable HTML, not generated lettering.",
+  "file": "dist/assets/photos/mirror-detail-v4-2.webp",
+  "purpose": "小物の任意調査に使う接写写真",
+  "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+  "source": {
+    "kind": "generated-builtin",
+    "engine": "image_gen",
+    "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-52a91ee4-972b-4232-9e66-dd6d160cedbc.png",
+    "sourceSha256": "49cc330c4ffec7ac65da777c7c8b9d45c3ad649150d4637b35564535b947df6f"
+  }
+}

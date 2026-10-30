@@ -150,3 +150,82 @@ test('a late voice download cannot restart sound after leaving the help screen',
   s.stopGuideVoice();release({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)});
   assert.equal(await pending,'cancelled');assert.equal(s.guidePlaying,false);s.dispose();
 });
+
+test('door and small horror cues stay positional, attenuate through walls and clean up',()=>{
+  const s=create();s._listener={x:0,z:0,level:0,yaw:0};
+  const source={x:4,z:-1,level:0};
+  for(const name of ['doorOpen','doorClose','doorKnock','woodCreak','distantScrape','presenceShift']){
+    const before=s.context.nodes.length;s.cue(name,source,{occluded:true});
+    const nodes=s.context.nodes.slice(before);
+    assert.ok(nodes.some(n=>n.kind==='panner'&&n.pan.value>.8),`${name} comes from the actual source`);
+    assert.ok(nodes.some(n=>n.kind==='filter'&&n.frequency.value===460),`${name} is muffled by a wall`);
+    assert.ok(s._voices.size>0);assert.ok(s._voices.size<12,'one detail cannot fill the voice budget');
+    const count=s.context.nodes.length;s.cue(name,source);assert.equal(s.context.nodes.length,count,'cooldown prevents repeated impacts');
+    for(const voice of [...s._voices])voice.source.onended();
+    assert.equal(s._voices.size,0);assert.ok(nodes.every(n=>n.disconnected));
+  }
+  s.context.currentTime=50;const count=s.context.nodes.length;
+  s.cue('doorKnock',{x:100,z:0});assert.equal(s.context.nodes.length,count,'an inaudible distant source allocates no voices');
+  s.setMuted(true);s.cue('doorOpen',source);assert.equal(s.context.nodes.length,count);
+  s.dispose();
+});
+
+test('opening, closing and knocks have different bounded material signatures',()=>{
+  const s=create(),calls=[];s._tone=p=>calls.push(['tone',p]);s._noise=p=>calls.push(['noise',p]);
+  const signatures=new Set();
+  for(const name of ['doorOpen','doorClose','doorKnock','woodCreak','distantScrape','presenceShift']){
+    calls.length=0;s.cue(name);signatures.add(JSON.stringify(calls));
+    assert.ok(calls.every(([,p])=>p.gain<=.04),'details do not compete with an attack warning');
+  }
+  assert.equal(signatures.size,6);
+  s.dispose();
+});
+
+test('ambient details need a real room source, leave gaps and respect conversation',()=>{
+  const s=create(),calls=[];s._tone=p=>calls.push({...p,spatial:p.spatial??s._cueSpatial});s._noise=p=>calls.push({...p,spatial:p.spatial??s._cueSpatial});
+  const room={x:4,z:-2,level:0},base={inside:true,listener:{x:0,z:0,level:0,yaw:0},enemyMode:'dormant'};
+  s.context.currentTime=10;s.update({...base,time:10});assert.equal(calls.length,0,'no invented source position');
+  s.update({...base,time:10,roomSource:room});assert.ok(calls.length>0);assert.ok(calls.every(p=>p.spatial?.pan>0));
+  const first=calls.length;s._nextTimber=0;s.context.currentTime=11;s.update({...base,time:11,roomSource:room});
+  assert.equal(calls.length,first,'the shared quiet gap prevents layered environmental events');
+  s.context.currentTime=30;s.update({...base,time:30,roomSource:room,dialogue:true,enemyMode:'watch',monsterDistance:3,monster:room});
+  assert.equal(calls.length,first,'new breaths, presence phrases and timber wait during dialogue');
+  s.context.currentTime=31;s.update({...base,time:31,roomSource:room,monster:room,monsterDistance:3,enemyMode:'watch'});
+  assert.ok(calls.length>first,'details can return after speech');
+  assert.ok(s._nextDetail>=35,'a phrase reserves a quiet gap before the next detail');
+  s.dispose();
+});
+
+test('pause, mute, hidden page and zero volume cancel atmosphere; help narration can still play while paused',async t=>{
+  const originalDocument=globalThis.document;t.after(()=>{if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;});
+  globalThis.document={hidden:false,addEventListener(){},removeEventListener(){}};
+  const s=create();
+  for(const stop of [()=>s.update({time:1,paused:true}),()=>s.setMuted(true),()=>s.setVolume(0),()=>{document.hidden=true;s._onVisibility();}]){
+    s._paused=false;s.setMuted(false);s.setVolume(1);document.hidden=false;s.context.currentTime+=20;
+    s.cue('presenceShift',{x:1,z:-1});const voices=[...s._voices];assert.ok(voices.length);
+    stop();assert.equal(s._voices.size,0);assert.ok(voices.every(v=>v.source.stopped&&v.chain.every(n=>n.disconnected)));
+  }
+  document.hidden=false;s.setMuted(false);s.setVolume(1);
+  s.cue('doorOpen');const doorVoices=[...s._voices];assert.ok(doorVoices.length);
+  s.update({time:1,paused:true});const before=s.context.nodes.length;s.cue('woodCreak');
+  assert.equal(s._voices.size,0);assert.ok(doorVoices.every(v=>v.chain.every(n=>n.disconnected)),'the hinge and delayed latch cannot leak out of a paused scene');
+  assert.equal(s.context.nodes.length,before,'optional scares cannot start while paused');
+  // Help-panel narration is intentionally permitted while the simulation is paused.
+  const fetchBefore=globalThis.fetch;t.after(()=>globalThis.fetch=fetchBefore);
+  globalThis.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)});s.context.decodeAudioData=async()=>({duration:3});
+  assert.equal(await s.playGuideVoice('guide.wav'),'playing');
+  s.update({time:1,paused:true});assert.equal(s.guidePlaying,true);
+  s.dispose();assert.equal(s.guidePlaying,false);
+});
+
+test('danger changes slow detuning while dialogue and pause lower the continuous mix',()=>{
+  const s=create();s.context.currentTime=1;s.update({time:1,danger:0});
+  const calmSpread=s._uneaseB.oscillator.frequency.value-s._uneaseA.oscillator.frequency.value;
+  s.context.currentTime=2;s.update({time:2,danger:1,pursuit:true});
+  const dangerSpread=s._uneaseB.oscillator.frequency.value-s._uneaseA.oscillator.frequency.value;
+  assert.ok(dangerSpread>calmSpread);const gain=s._uneaseA.gain.value;assert.ok(gain>0&&gain<=.025);
+  s.context.currentTime=2.1;s.update({time:2,danger:1,pursuit:true,dialogue:true});assert.ok(s._uneaseA.gain.value<gain*.5);
+  s.update({time:2,paused:true});assert.equal(s._uneaseA.gain.value,0);assert.equal(s._uneaseB.gain.value,0);
+  s.context.currentTime=2.11;s.update({time:2,danger:.5});assert.ok(s._uneaseA.gain.value>0);
+  s.dispose();
+});

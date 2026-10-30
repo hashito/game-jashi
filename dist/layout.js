@@ -19,6 +19,23 @@ export const BUILDINGS=[
   {id:'shed',label:'物置',x:-19,z:-3,w:4.7,d:4,entrance:{x:-19,z:-1}},
   {id:'shelter',label:'避難小屋',x:16,z:-15,w:6,d:5,entrance:{x:16,z:-12.5}},
 ];
+// Openings and rooms are shared by geometry, interaction and the floor map.
+// Sliding leaves fit along the wall, so no hinge sweep traps a retreating player.
+export const DOORS=[
+  {id:'cabin-entry',building:'cabin',label:'別荘の玄関戸',x:0,z:18.82,width:3.2,height:2.85,level:0,open:true},
+  {id:'shed-entry',building:'shed',label:'物置の引戸',x:-19,z:-.82,width:2,height:2.45,level:0,open:false},
+  {id:'shelter-entry',building:'shelter',label:'避難小屋の引戸',x:16,z:-12.32,width:2,height:2.6,level:0,open:false},
+  {id:'cabin-bedroom',building:'cabin',label:'寝室の引戸',x:0,z:26.02,width:1.8,height:2.55,level:0,open:true},
+  {id:'cabin-store',building:'cabin',label:'二階の納戸の引戸',x:4.3,z:25.92,width:1.8,height:2.5,level:1,open:true},
+];
+export const ROOMS=[
+  {id:'cabin-hall',building:'cabin',label:'玄関・無線机',level:0,minX:-3.4,maxX:6,minZ:19,maxZ:25.85},
+  {id:'cabin-bedroom',building:'cabin',label:'寝室',level:0,minX:-3.4,maxX:6,minZ:26.15,maxZ:29},
+  {id:'cabin-upper',building:'cabin',label:'二階・作業室',level:1,minX:-3.4,maxX:6,minZ:19,maxZ:25.8},
+  {id:'cabin-store',building:'cabin',label:'二階・納戸',level:1,minX:2.5,maxX:6,minZ:26.05,maxZ:29},
+  {id:'shed-tools',building:'shed',label:'工具・保管棚',level:0,minX:-21.35,maxX:-16.65,minZ:-5,maxZ:-1},
+  {id:'shelter-room',building:'shelter',label:'避難室・記録机',level:0,minX:13,maxX:19,minZ:-17.5,maxZ:-12.5},
+];
 export const PARKING={minX:-33,maxX:-17,minZ:17,maxZ:29,entrance:{x:-17,z:22},gateWidth:4};
 export const BRIDGE={x:.8,z:-10,width:3.5,length:4};
 export const LANDMARKS={

@@ -1,0 +1,29 @@
+{
+  "id": "parking-memory",
+  "sheetId": "mountain-photographs",
+  "file": "dist/assets/photos/parking-memory-v4-2.webp",
+  "record": "tools/local-media-records/parking-memory-v4-2.json",
+  "sha256": "8a5adad983684af0ca7e7ea2cb4dc78dbba61df5fc394aa9b3ff735c01f57535",
+  "status": "verified-existing",
+  "dimensions": [
+    512,
+    512
+  ],
+  "encoding": {
+    "format": "WEBP",
+    "quality": 68,
+    "method": 6,
+    "maxDimension": 512
+  },
+  "cropRect": [
+    627,
+    627,
+    1254,
+    1254
+  ],
+  "sourceFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+  "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+  "sourceVerified": true,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-30T05:33:13.557Z"
+}

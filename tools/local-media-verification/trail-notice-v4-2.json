@@ -1,0 +1,29 @@
+{
+  "id": "trail-notice",
+  "sheetId": "mountain-posters",
+  "file": "dist/assets/photos/trail-notice-v4-2.webp",
+  "record": "tools/local-media-records/trail-notice-v4-2.json",
+  "sha256": "dbca02cfe848d5fcb3ee26924e24686701c749d073c6c47a4f9f17f9815559e4",
+  "status": "verified-existing",
+  "dimensions": [
+    512,
+    512
+  ],
+  "encoding": {
+    "format": "WEBP",
+    "quality": 68,
+    "method": 6,
+    "maxDimension": 512
+  },
+  "cropRect": [
+    0,
+    0,
+    627,
+    627
+  ],
+  "sourceFile": "assets/sources/batch-v4.2/mountain-posters.png",
+  "sourceSha256": "e254b2c62d7511d9edfa3a063b2f309687afe0e8f3c7d0f3701d5ef6aef7dc92",
+  "sourceVerified": true,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-30T05:33:13.557Z"
+}

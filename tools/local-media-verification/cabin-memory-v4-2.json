@@ -1,0 +1,29 @@
+{
+  "id": "cabin-memory",
+  "sheetId": "mountain-photographs",
+  "file": "dist/assets/photos/cabin-memory-v4-2.webp",
+  "record": "tools/local-media-records/cabin-memory-v4-2.json",
+  "sha256": "f6f22246e985ffb1baf37656a7788f4e8794f116c3dfbcc9eea1effcc525a201",
+  "status": "verified-existing",
+  "dimensions": [
+    512,
+    512
+  ],
+  "encoding": {
+    "format": "WEBP",
+    "quality": 68,
+    "method": 6,
+    "maxDimension": 512
+  },
+  "cropRect": [
+    0,
+    0,
+    627,
+    627
+  ],
+  "sourceFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+  "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+  "sourceVerified": true,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-30T05:33:13.557Z"
+}

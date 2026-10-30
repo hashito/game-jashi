@@ -18,16 +18,45 @@ export function buildCreature(world) {
   const tube = (name, points, radius, skin, parent, closed = false) => mesh(name,
     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)), closed), points.length * 2, radius, 5, closed), skin, parent);
   const loader = world.options?.textureLoader || new THREE.TextureLoader();
-  const skinMap = loader.load('assets/textures/monster-skin-v4.webp');
-  skinMap.colorSpace = THREE.SRGBColorSpace;
-  skinMap.wrapS = skinMap.wrapT = THREE.RepeatWrapping;
-  const skin = material('#d3d1bd', { map: skinMap });
-  const tendon = material('#b5b7a3', { map: skinMap });
-  const fold = material('#6b7264', { map: skinMap });
+  // Four small shared tiles cover the whole creature. Reusing their luminance
+  // for shallow relief adds no normal/bump downloads, including on mobile.
+  const textureStatus = {}, textureUsers = new Map(), maps = {};
+  const loadMap = (name, repeat) => {
+    textureStatus[name] = 'loading'; textureUsers.set(name, []); let texture;
+    texture = loader.load(`assets/textures/creature-${name}-v4-2.webp`,
+      () => { if (textureStatus[name] !== 'failed') textureStatus[name] = 'ready'; }, undefined, () => {
+        textureStatus[name] = 'failed';
+        for (const surface of textureUsers.get(name)) {
+          surface.map = null; surface.bumpMap = null; surface.needsUpdate = true;
+        }
+        texture?.dispose();
+      });
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(...repeat); texture.anisotropy = 2;
+    texture.userData.creatureMaterial = name;
+    if (textureStatus[name] === 'failed') texture.dispose();
+    maps[name] = texture;
+  };
+  loadMap('skin', [1.6, 1.6]); loadMap('cloth', [3, 2]);
+  loadMap('iron', [1.5, 1.5]); loadMap('wood', [1, 2]);
+  const textured = (color, name, extra = {}) => {
+    const map = textureStatus[name] === 'failed' ? null : maps[name];
+    const surface = material(color, { map, ...extra, bumpMap: extra.bumpScale ? map : null });
+    textureUsers.get(name).push(surface); return surface;
+  };
+  const skinMap = maps.skin;
+  const skin = textured('#d3d1bd', 'skin', { bumpScale: .005 });
+  const tendon = textured('#b5b7a3', 'skin', { bumpScale: .004 });
+  const fold = textured('#6b7264', 'skin', { bumpScale: .003 });
   const cavity = material('#100f12', { roughness: .99 });
   const tooth = material('#b8b196', { roughness: .73 });
   const nail = material('#665f4b', { roughness: .86 });
-  const shroud = material('#676e61', { roughness: 1, map: skinMap });
+  const shroud = textured('#929688', 'cloth', { roughness: 1, bumpScale: .009 });
+  const binding = textured('#555548', 'cloth', { roughness: 1 });
+  const handleMaterial = textured('#a08a6c', 'wood', { roughness: .91, bumpScale: .006 });
+  const bladeMaterial = textured('#aaa38e', 'iron', { metalness: .62, roughness: .78, bumpScale: .003, side: THREE.DoubleSide });
+  const edgeMaterial = textured('#cccbbb', 'iron', { metalness: .78, roughness: .52 });
 
   world.creature = group('jashi', world.scene);
   world.creature.userData.anatomy = 'one vertical eye; asymmetric articulated jaw; covered emaciated body';
@@ -137,20 +166,20 @@ export function buildCreature(world) {
   }
 
   world.sickle = group('sickle', world.arms[1], .1, -1.2, .16);
-  const handle = mesh('worn-wood-handle', new THREE.CylinderGeometry(.023, .031, .8, 8), material('#65513b'), world.sickle, 0, .10, 0);
+  const handle = mesh('worn-wood-handle', new THREE.CylinderGeometry(.023, .031, .8, 8), handleMaterial, world.sickle, 0, .10, 0);
   handle.rotation.z = -.18;
-  for (let i = 0; i < 3; i++) mesh(`sickle-binding-${i}`, new THREE.CylinderGeometry(.033, .033, .022, 7), material('#35352b'), world.sickle, -.045 + i * .004, .34 + i * .035, 0);
+  for (let i = 0; i < 3; i++) mesh(`sickle-binding-${i}`, new THREE.CylinderGeometry(.033, .033, .022, 7), binding, world.sickle, -.045 + i * .004, .34 + i * .035, 0);
   const bladeShape = new THREE.Shape();
   bladeShape.moveTo(-.07, .47);
   bladeShape.bezierCurveTo(.28, .69, .80, .65, .72, -.17);
   bladeShape.bezierCurveTo(.65, .22, .41, .42, -.07, .38);
   const blade = mesh('curved-rusted-blade', new THREE.ExtrudeGeometry(bladeShape, { depth: .018, bevelEnabled: false, curveSegments: 10 }),
-    material('#766b50', { metalness: .62, roughness: .78, side: THREE.DoubleSide }), world.sickle, 0, 0, -.009);
+    bladeMaterial, world.sickle, 0, 0, -.009);
   blade.userData.weapon = true;
   tube('chipped-cutting-edge', [[-.055, .395, .012], [.30, .40, .012], [.57, .265, .012], [.72, -.17, .012]], .008,
-    material('#a1a092', { metalness: .78, roughness: .52 }), world.sickle);
+    edgeMaterial, world.sickle);
 
-  world.creatureDetails = { skin, skinMap, ocular, iris, pupil, jaw, upperLid, lowerLid, throat, fingers };
+  world.creatureDetails = { skin, skinMap, maps, textureStatus, materials: { skin, tendon, fold, shroud, binding, handle: handleMaterial, blade: bladeMaterial, edge: edgeMaterial }, ocular, iris, pupil, jaw, upperLid, lowerLid, throat, fingers };
   return world.creature;
 }
 

@@ -1,7 +1,7 @@
 // The speaker card does not own a speech queue or advance the simulation. The
 // controller supplies the remaining time, and explicitly pauses while reading.
 // Keeping identity separate from prose also makes old saved dialogue readable.
-const SHUJI_PORTRAIT = 'assets/portraits/shuji-v4.webp';
+const SHUJI_PORTRAIT = 'assets/portraits/shuji-v4-2.webp';
 
 export function speakerProfile(line = {}) {
   const speaker = typeof line.speaker === 'string' ? line.speaker : '記録';

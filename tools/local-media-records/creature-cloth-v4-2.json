@@ -1,0 +1,53 @@
+{
+  "id": "creature-cloth",
+  "sheetId": "creature-materials",
+  "kind": "image",
+  "engine": "built-in image_gen",
+  "model": "not reported by tool",
+  "seed": "not reported by tool",
+  "prompt": "Generate ONE square production material atlas divided into an exact 2 by 2 grid of FOUR equal square texture swatches, no gutters, no grid lines, no borders, hard horizontal/vertical split exactly at50%. Each quadrant is a separate seamlessly repeatable albedo texture for a restrained Japanese mountain horror creature, all lit flat and evenly, no cast shadows, no perspective, no objects, no text, no body parts, no face, no eyes, no gore, no watermarks. TOP LEFT: pale grey ivory papery uncanny skin surface, subtle mottled olive grey discolouration, fine leathery wrinkles, scattered faint capillary threads, desaturated, light enough for pale creature silhouette, calm broad tonal range and delicate close detail, no wounds. TOP RIGHT: old grey-green linen shroud fabric, visible tiny woven fibers running vertically, faint uneven dirt and water staining, frayed but opaque surface, flat tile without large holes, avoid high contrast. BOTTOM LEFT: oxidized sickle iron material surface, cold slate steel with fine directional polishing scratches, patchy thin muted umber rust and tiny pits, no actual blade outline, no bright specular highlights baked in. BOTTOM RIGHT: worn ash wood handle material, lengthwise vertical grain in desaturated warm taupe brown, polished dull hand wear, tiny dry cracks, no nails or object shape. Keep every tile coherent right to its edges; do not mix the four materials. Medium-frequency detail suited for compression to512pixels per tile.",
+  "file": "dist/assets/textures/creature-cloth-v4-2.webp",
+  "output": "dist/assets/textures/creature-cloth-v4-2.webp",
+  "sha256": "2cd1c7a29a391566f22acafce32548475bb2c6e8720e0b41be35a8b5f9b8224b",
+  "bytes": 51676,
+  "preparedAt": "2026-10-30T05:32:57.925768+00:00",
+  "sourceFile": "assets/sources/batch-v4.2/creature-materials.png",
+  "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+  "sourceDimensions": [
+    1254,
+    1254
+  ],
+  "quadrant": "top-right",
+  "cropRect": [
+    627,
+    0,
+    1254,
+    627
+  ],
+  "seamTrimPixels": 0,
+  "dimensions": [
+    384,
+    384
+  ],
+  "width": 384,
+  "height": 384,
+  "encoding": {
+    "format": "WEBP",
+    "quality": 72,
+    "method": 6,
+    "maxDimension": 384
+  },
+  "processing": "User-requested exact 2x2 quadrant crop; optional internal seam trim; RGB Lanczos thumbnail bounded to 384px without upscaling or stretching; WebP quality72 method6. No content retouching.",
+  "purpose": "山中の掲示物・探索地点に残された記録画像 / creature-cloth",
+  "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+  "license": "Generated output; the generating service's applicable terms govern use. No third-party stock license is asserted.",
+  "licenseUrl": "https://openai.com/policies/terms-of-use/",
+  "source": {
+    "kind": "generated-builtin",
+    "engine": "image_gen",
+    "originalFile": "assets/sources/batch-v4.2/creature-materials.png",
+    "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+    "sheetId": "creature-materials",
+    "quadrant": "top-right"
+  }
+}

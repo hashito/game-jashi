@@ -14,13 +14,13 @@
   },
   "brief": "Create an old documentary photograph for a Japanese mountain horror game's collectible evidence. A quiet cedar woodland setting, aged desaturated green-gray amateur film appearance, concealed tiny pale bald head and one shoulder behind a broad trunk in the right third, and a barely visible rusty curved agricultural sickle on the other side of that trunk. The head must remain tiny, under three percent of image height, with its face hidden. Improve readable natural separation between foreground bark, midground branches and distant mist, maintain ominous ambiguity, slightly faded old color print with very fine grain, no excessive blur or digital artifacts. No full body, no extra figure, no visible face or eye, no gore, no writing or border or watermark. Landscape 4:3.",
   "promptStatus": "Production brief only; exact image_gen invocation prompt was not archived. Local ComfyUI recipe is stored separately and was not used for these outputs.",
-  "width": 1400,
-  "height": 1050,
+  "width": 1280,
+  "height": 960,
   "sourceWidth": 1448,
   "sourceHeight": 1086,
-  "meanLuminance": 72.7,
-  "luminanceStdDev": 33.63,
-  "darkFractionBelow16": 0.0,
+  "meanLuminance": 72.73,
+  "luminanceStdDev": 33.52,
+  "darkFractionBelow16": 0.0002,
   "qa": {
     "visualReview": "accepted",
     "content": "右側の太い幹の背後に小さな白い頭、幹の反対側に鎌状の細い曲線がある。顔や目は見えず、古写真の本文に一致。前景の幹・中景の枝・奥の霧の分離を確認。",
@@ -29,10 +29,17 @@
   },
   "sourceSha256": "be70ae0265f9fbcbb9380e7dc3e4db31e98ee8f145170e540819b70fc1660179",
   "purpose": "古写真。手前の森と奥の白い頭を読み分けられる資料。",
-  "processing": "RGB WebP quality88 and fit within 1400x1050 only; no crop, content edits, or compositing.",
+  "encoding": {
+    "format": "WEBP",
+    "quality": 76,
+    "method": 6,
+    "maxWidth": 1280,
+    "maxHeight": 960
+  },
+  "processing": "Original PNG to RGB WebP quality76, Lanczos fit within 1280x960; no upscaling, crop, content edits, compositing or lossy recompression.",
   "credit": "AI-generated scene photograph; source method explicitly recorded; not a real-event photograph.",
   "file": "dist/assets/photos/mountain-v4-1.webp",
-  "generatedAt": "2026-10-29T22:51:34.451310+00:00",
-  "sha256": "8918af349fd71add007194c57e88135c688ed9a3055634a0b93e421c14cb9fb8",
-  "bytes": 330382
+  "generatedAt": "2026-10-30T05:30:09.701091+00:00",
+  "sha256": "2b29a3eacc598f00839e65d76b64f6873a110e42c64d93884c54ee6cfcde109c",
+  "bytes": 171392
 }

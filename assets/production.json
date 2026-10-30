@@ -2,6 +2,148 @@
   "version": 1,
   "assets": [
     {
+      "file": "dist/assets/photos/boots-detail-v4-2.webp",
+      "purpose": "小物の任意調査に使う接写写真",
+      "status": "ready",
+      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-89150f7c-6203-478f-982b-502bcbde652e.png",
+        "sourceSha256": "15fe07111c3d6b5d7bc920ac521217420a8fb5807033fc8632444e49c13264c3",
+        "sha256": "82272b5b8734ac8cfd95ca492161a2392862f884903d1280615f20ec7c6e8e84",
+        "record": "tools/local-media-records/boots-detail-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/bridge-notice-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / bridge-notice",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-posters.png",
+        "sourceSha256": "e254b2c62d7511d9edfa3a063b2f309687afe0e8f3c7d0f3701d5ef6aef7dc92",
+        "sheetId": "mountain-posters",
+        "quadrant": "bottom-right",
+        "sha256": "ef6c5a4bc1cc8e61f4f58a9db0383b263282a62393183ab1805c2fcced68773f",
+        "record": "tools/local-media-records/bridge-notice-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/cabin-memory-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / cabin-memory",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+        "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+        "sheetId": "mountain-photographs",
+        "quadrant": "top-left",
+        "sha256": "f6f22246e985ffb1baf37656a7788f4e8794f116c3dfbcc9eea1effcc525a201",
+        "record": "tools/local-media-records/cabin-memory-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/textures/creature-cloth-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / creature-cloth",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/creature-materials.png",
+        "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+        "sheetId": "creature-materials",
+        "quadrant": "top-right",
+        "sha256": "2cd1c7a29a391566f22acafce32548475bb2c6e8720e0b41be35a8b5f9b8224b",
+        "record": "tools/local-media-records/creature-cloth-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/textures/creature-iron-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / creature-iron",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/creature-materials.png",
+        "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+        "sheetId": "creature-materials",
+        "quadrant": "bottom-left",
+        "sha256": "45ad2b388726524c93b73a73abf8c329b977c06f90caf26f199525c2a3102064",
+        "record": "tools/local-media-records/creature-iron-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/textures/creature-skin-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / creature-skin",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/creature-materials.png",
+        "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+        "sheetId": "creature-materials",
+        "quadrant": "top-left",
+        "sha256": "644c24d7b7862fcc496de7d2f6002fc7a019592255659975e1b0484b40ad570b",
+        "record": "tools/local-media-records/creature-skin-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/textures/creature-wood-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / creature-wood",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/creature-materials.png",
+        "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+        "sheetId": "creature-materials",
+        "quadrant": "bottom-right",
+        "sha256": "2b20a27a385c764a65c3f22981b00202d26e4d0f97e771c9a4011ce9e36e98a4",
+        "record": "tools/local-media-records/creature-wood-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/creek-memory-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / creek-memory",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+        "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+        "sheetId": "mountain-photographs",
+        "quadrant": "bottom-left",
+        "sha256": "b23e5a98086715c423c2899ea9581df45447b8495634b655dfd86d3a870d510c",
+        "record": "tools/local-media-records/creek-memory-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/forestry-notice-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / forestry-notice",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-posters.png",
+        "sourceSha256": "e254b2c62d7511d9edfa3a063b2f309687afe0e8f3c7d0f3701d5ef6aef7dc92",
+        "sheetId": "mountain-posters",
+        "quadrant": "top-right",
+        "sha256": "766a577637c6edd4a8c57abeafae19986f9f96960b3762d0115ddef7820bba15",
+        "record": "tools/local-media-records/forestry-notice-v4-2.json"
+      }
+    },
+    {
       "file": "dist/assets/photos/arrival-v4-1.webp",
       "purpose": "導入。片付けのために来た、昼の別荘の記録。",
       "status": "ready",
@@ -14,7 +156,7 @@
         "sourceSha256": "a30ffbf4329c7161df511d791a50c3573d10342251a0cf674cdb6c9dcf968433",
         "model": "not reported by tool",
         "seed": "not reported by tool",
-        "sha256": "402b735e942d529244195cbd3b8c02a5688551f06acb7589cd53fb6e09f2bdc2",
+        "sha256": "541efd4e993ba86719532b8f98f3b21c7ccae8870bd711a14f9f99b0dcd74e6b",
         "record": "tools/local-media-records/image-arrival.json"
       }
     },
@@ -33,7 +175,7 @@
         "seed": "not reported by tool",
         "referenceFile": "dist/assets/mountain-photo.webp",
         "referenceSha256": "58f7ab12fdb506703334ef98a7d24f8b5f83670c2e21d954bfe6a5ee4dc0d080",
-        "sha256": "8918af349fd71add007194c57e88135c688ed9a3055634a0b93e421c14cb9fb8",
+        "sha256": "2b29a3eacc598f00839e65d76b64f6873a110e42c64d93884c54ee6cfcde109c",
         "record": "tools/local-media-records/image-evidence.json"
       }
     },
@@ -50,8 +192,100 @@
         "sourceSha256": "4a397f520c6550ac91d40b74add2ce74092b20e759914529b5a7b5da20ddc05b",
         "model": "not reported by tool",
         "seed": "not reported by tool",
-        "sha256": "5685cde2a116e53b3edae8bdf6bad6091fa22f9a599249ba71fc6256827839c5",
+        "sha256": "f2ef99e9524019e496113d5599f749445fa1cf3fb37a894726aa57e7e6edfd4f",
         "record": "tools/local-media-records/image-return.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/ledger-detail-v4-2.webp",
+      "purpose": "小物の任意調査に使う接写写真",
+      "status": "ready",
+      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-1c7d0f54-b08d-49ad-b911-1226eb29ea32.png",
+        "sourceSha256": "82345ec1bf82c32608fdc44fe7cce566cc58f116ba7aed51ff4867625095d9d9",
+        "sha256": "825eec9fec442ed6780091e554f238b52e99fb052e732ac2fe7d1bda802ac9de",
+        "record": "tools/local-media-records/ledger-detail-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/logging-memory-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / logging-memory",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+        "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+        "sheetId": "mountain-photographs",
+        "quadrant": "top-right",
+        "sha256": "a5601bf702b8d4ab29a0b8de7d4e32c38bcc6cde2d78a384494c1d5054debda2",
+        "record": "tools/local-media-records/logging-memory-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/mirror-detail-v4-2.webp",
+      "purpose": "小物の任意調査に使う接写写真",
+      "status": "ready",
+      "credit": "AI-generated fictional evidence photograph, built-in image_gen.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-52a91ee4-972b-4232-9e66-dd6d160cedbc.png",
+        "sourceSha256": "49cc330c4ffec7ac65da777c7c8b9d45c3ad649150d4637b35564535b947df6f",
+        "sha256": "770b632068a158859ba925424581d60397dc59c9adf09314cf5ac5977b150fa7",
+        "record": "tools/local-media-records/mirror-detail-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/parking-memory-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / parking-memory",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+        "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+        "sheetId": "mountain-photographs",
+        "quadrant": "bottom-right",
+        "sha256": "8a5adad983684af0ca7e7ea2cb4dc78dbba61df5fc394aa9b3ff735c01f57535",
+        "record": "tools/local-media-records/parking-memory-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/shelter-notice-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / shelter-notice",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-posters.png",
+        "sourceSha256": "e254b2c62d7511d9edfa3a063b2f309687afe0e8f3c7d0f3701d5ef6aef7dc92",
+        "sheetId": "mountain-posters",
+        "quadrant": "bottom-left",
+        "sha256": "cb09c7e50aed98c014b6e1d7e9871a225b538aef667010aa37cf50ece2107835",
+        "record": "tools/local-media-records/shelter-notice-v4-2.json"
+      }
+    },
+    {
+      "file": "dist/assets/photos/trail-notice-v4-2.webp",
+      "purpose": "山中の掲示物・探索地点に残された記録画像 / trail-notice",
+      "status": "ready",
+      "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+      "source": {
+        "kind": "generated-builtin",
+        "engine": "built-in image_gen",
+        "originalFile": "assets/sources/batch-v4.2/mountain-posters.png",
+        "sourceSha256": "e254b2c62d7511d9edfa3a063b2f309687afe0e8f3c7d0f3701d5ef6aef7dc92",
+        "sheetId": "mountain-posters",
+        "quadrant": "top-left",
+        "sha256": "dbca02cfe848d5fcb3ee26924e24686701c749d073c6c47a4f9f17f9815559e4",
+        "record": "tools/local-media-records/trail-notice-v4-2.json"
       }
     },
     {

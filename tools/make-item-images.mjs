@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// Renders the game's own 3D item models to PNG (no external service): node tools/make-item-images.mjs
+// Renders the game's own 3D item models, then packages lossless WebP (no external service).
 // Builds the real MountainWorld in headless Edge, clones each item model into an empty
 // studio scene (dark backdrop, warm key light like the in-game lamp) and writes
-// dist/assets/items/<id>.png plus dist/assets/items/manifest.json. Rerun after changing an item model.
+// Retains PNG sources; the manifest and game use WebP. Rerun after changing an item model.
+// Pillow is required; GF_PYTHON may select the Python executable without shell interpolation.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 import { launch } from './cdp.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -67,8 +69,12 @@ try {
   for (const [id, label] of Object.entries(ITEMS)) {
     if (!images[id]) { console.warn('no model for', id); continue; }
     fs.writeFileSync(path.join(OUT, `${id}.png`), Buffer.from(images[id].split(',')[1], 'base64'));
-    manifest.push({ id, label, file: `assets/items/${id}.png`, width: 320, height: 240, source: 'in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs' });
+    manifest.push({ id, label, file: `assets/items/${id}.webp`, width: 320, height: 240, source: 'in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs; retained PNG packaged as pixel-identical lossless WebP' });
   }
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify({ generated: new Date().toISOString().slice(0, 10), items: manifest }, null, 2) + '\n');
-  console.log(`wrote ${manifest.length} images`, page.errors.length ? page.errors : '');
+  console.log(`rendered ${manifest.length} retained PNG sources; packaging lossless WebP next`, page.errors.length ? page.errors : '');
 } finally { await page.close(); srv.close(); }
+const python=process.env.GF_PYTHON||(process.platform==='win32'?'python':'python3');
+const packaged=spawnSync(python,[path.join(ROOT,'tools/optimize-runtime-images.py'),'--items-only'],{cwd:ROOT,stdio:'inherit',shell:false,windowsHide:true,env:{...process.env,PYTHONUTF8:'1'}});
+if(packaged.error)throw packaged.error;
+if(packaged.status!==0)throw new Error(`Item WebP packaging failed (${packaged.signal||packaged.status}); check GF_PYTHON and Pillow`);

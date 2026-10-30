@@ -4,7 +4,7 @@
     {
       "id": "glasses",
       "label": "サングラスと鍵束",
-      "file": "assets/items/glasses.png",
+      "file": "assets/items/glasses.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -12,7 +12,7 @@
     {
       "id": "note",
       "label": "叔父の書き置き",
-      "file": "assets/items/note.png",
+      "file": "assets/items/note.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -20,7 +20,7 @@
     {
       "id": "bottle",
       "label": "蓋つきの容器 二本",
-      "file": "assets/items/bottle.png",
+      "file": "assets/items/bottle.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -28,7 +28,7 @@
     {
       "id": "crank",
       "label": "巻上げハンドル",
-      "file": "assets/items/crank.png",
+      "file": "assets/items/crank.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -36,7 +36,7 @@
     {
       "id": "photo",
       "label": "古い写真の封筒",
-      "file": "assets/items/photo.png",
+      "file": "assets/items/photo.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -44,7 +44,7 @@
     {
       "id": "phone",
       "label": "古い携帯電話",
-      "file": "assets/items/phone.png",
+      "file": "assets/items/phone.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -52,7 +52,7 @@
     {
       "id": "radio",
       "label": "携帯無線機",
-      "file": "assets/items/radio.png",
+      "file": "assets/items/radio.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -60,7 +60,7 @@
     {
       "id": "bell",
       "label": "林業用の呼び鐘",
-      "file": "assets/items/bell.png",
+      "file": "assets/items/bell.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -68,7 +68,7 @@
     {
       "id": "telescope",
       "label": "望遠鏡",
-      "file": "assets/items/telescope.png",
+      "file": "assets/items/telescope.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -76,7 +76,7 @@
     {
       "id": "boots",
       "label": "揃えられた長靴",
-      "file": "assets/items/boots.png",
+      "file": "assets/items/boots.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -84,7 +84,7 @@
     {
       "id": "ledger",
       "label": "作業日誌",
-      "file": "assets/items/ledger.png",
+      "file": "assets/items/ledger.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -92,7 +92,7 @@
     {
       "id": "cassette",
       "label": "カセットケース",
-      "file": "assets/items/cassette.png",
+      "file": "assets/items/cassette.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -100,7 +100,7 @@
     {
       "id": "mirror",
       "label": "手鏡",
-      "file": "assets/items/mirror.png",
+      "file": "assets/items/mirror.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -108,7 +108,7 @@
     {
       "id": "ribbon",
       "label": "橋の赤い紐",
-      "file": "assets/items/ribbon.png",
+      "file": "assets/items/ribbon.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -116,7 +116,7 @@
     {
       "id": "toy",
       "label": "布袋の鈴",
-      "file": "assets/items/toy.png",
+      "file": "assets/items/toy.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"
@@ -124,7 +124,7 @@
     {
       "id": "tag",
       "label": "作業札",
-      "file": "assets/items/tag.png",
+      "file": "assets/items/tag.webp",
       "width": 320,
       "height": 240,
       "source": "in-game 3D model (dist/world.js), rendered by tools/make-item-images.mjs"

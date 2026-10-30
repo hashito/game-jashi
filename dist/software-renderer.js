@@ -78,7 +78,7 @@ export class SoftwareRenderer {
       }
       tints[i*3]=cr/3;tints[i*3+1]=cg/3;tints[i*3+2]=cb/3;
     }
-    cached={vertices,texcoords,tints,materials,count:n,terrain,colors:!!colors,sphere:geo.boundingSphere.clone()};
+    cached={vertices,texcoords,tints,materials,count:n,terrain:terrain||geo.userData.terrainTile===true,colors:!!colors,sphere:geo.boundingSphere.clone()};
     this._geometries.set(geo,cached);this.info.memory.geometries++;
     return cached;
   }

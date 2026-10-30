@@ -11,6 +11,8 @@ import * as storyRules from '../dist/story.js';
 import * as dialogueRules from '../dist/dialogue.js';
 import * as gimmickRules from '../dist/gimmicks.js';
 import * as guidanceRules from '../dist/guidance.js';
+import * as presenceRules from '../dist/presence.js';
+import * as evidenceRules from '../dist/evidence.js';
 
 // Execute the shipped controller and its real rule/story modules. Only browser,
 // audio and rendering boundaries are replaced; progress is earned by interact().
@@ -102,6 +104,11 @@ async function harness({ boot = true, storage = new Map(), failWorld = false } =
     }
     setGateOpen(open) { this.gateOpen = open; }
     setShutterClosed(closed) { this.shutterClosed = closed; }
+    restoreDoors(saved={},actors=[]) { this.savedDoors={...(saved||{})};this.restoredDoorActors=actors.map(p=>({...p})); }
+    snapshotDoors() { return {...this.savedDoors}; }
+    getDoorTarget() { return this.doorTarget||null; }
+    getArtTarget() { return this.artTarget||null; }
+    toggleDoor(id) { const open=!this.savedDoors[id];this.savedDoors[id]=open;return {id,open,changed:true,blocked:false}; }
     ringBell(time) { calls.bellTime = time; }
     setItemCollected(id, value) { this.items[id].marker.visible = !value; this.items[id].mesh.visible = !value; }
     ground(x, z, level = 0) {
@@ -134,7 +141,7 @@ async function harness({ boot = true, storage = new Map(), failWorld = false } =
     resize() {}
   }
   const context = vm.createContext({
-    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, ...guidanceRules, MountainWorld, Soundscape, TapeEffects,
+    THREE, ...layout, ...survivalRules, ...narrative, ...enemyRules, ...storyRules, ...dialogueRules, ...gimmickRules, ...guidanceRules, ...presenceRules, ...evidenceRules, MountainWorld, Soundscape, TapeEffects,
     document: doc, localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     matchMedia: () => ({ matches: false }), performance: { now: () => now }, devicePixelRatio: 1,
     requestAnimationFrame: callback => { const id = ++nextFrame; raf.set(id, callback); return id; },
@@ -235,7 +242,7 @@ test('boot waits for the world, binds real HTML controls, and handles failed ini
 test('search help pauses the real game and shows a matching prop, place, purpose and action',async()=>{
   const h=await harness();h.fresh();
   assert.equal(h.nodes.get('objective').textContent,'三脚の望遠鏡');
-  assert.equal(h.nodes.get('search-thumb').src,'assets/items/telescope.png');
+  assert.equal(h.nodes.get('search-thumb').src,'assets/items/telescope.webp');
   h.press('KeyH');assert.equal(h.run('panelKind'),'search-help');
   const time=h.run('time');h.advance(25);assert.equal(h.run('time'),time);
   const body=h.nodes.get('panel-body').innerHTML;
@@ -243,7 +250,7 @@ test('search help pauses the real game and shows a matching prop, place, purpose
   h.click('close-panel');assert.equal(h.run('mode'),'play');
   h.run('Object.assign(flags,{seen:true,downstairs:true,radioTuned:true,glasses:true,note:true});story.stage=4;updateObjective();');
   assert.equal(h.nodes.get('objective').textContent,'蓋つきのボトル2本');
-  assert.equal(h.nodes.get('search-thumb').src,'assets/items/bottle.png');
+  assert.equal(h.nodes.get('search-thumb').src,'assets/items/bottle.webp');
   h.click('journal');assert.match(h.nodes.get('panel-body').innerHTML,/蓋つきのボトル2本/);
   assert.match(h.nodes.get('panel-body').innerHTML,/西の物置・中の床/);
 });
@@ -513,7 +520,9 @@ test('safe checkpoints restore inventory, story and preferences; danger cannot o
   assert.equal(h.run('time'), saved.time);
   assert.ok(h.run('survival.phase==="idle"&&!survival.dead&&action===null'));
   h.run('world.invalidPosition={...player};'); h.click('title'); h.click('continue');
-  assert.deepEqual(h.state('player'), { x: layout.SPAWN.x, z: layout.SPAWN.z, level: layout.SPAWN.level });
+  assert.equal(h.run('player.level'),saved.player.level);
+  assert.ok(h.run('world.isFreeAt(player)'));
+  assert.ok(Math.hypot(h.run('player.x')-saved.player.x,h.run('player.z')-saved.player.z)<2,'new geometry moves an old checkpoint nearby, preserving its floor');
 });
 
 test('missing, legacy and out-of-map saves fall back to a fresh intro instead of broken play', async () => {
@@ -611,4 +620,37 @@ test('restoring an older checkpoint resets idle and discovery hints for the same
   assert.equal(h.run('searchGuidance.update(getObjective(),{level:1,distance:12,blocked:false},10).hint'),'');
   assert.ok(h.run('searchGuidance.update(getObjective(),{level:1,distance:12,blocked:false},30).hint'));
   assert.equal(h.run('searchGuidance.update(getObjective(),{level:1,distance:1,blocked:false,targetId:"telescope"},31).cue'),true);
+});
+
+test('door interactions use the actual control and checkpoint state; close inspection is optional, paused and retained',async()=>{
+  const h=await harness();h.fresh();
+  h.run('world.doorTarget={id:"shed-entry",kind:"door",x:player.x,z:player.z,level:player.level,distance:.2,label:"戸を開ける"};');
+  h.press('KeyE');h.release('KeyE');assert.equal(h.run('serialize().doors["shed-entry"]'),true);assert.ok(h.calls.cues.includes('doorOpen'));
+  h.run('world.doorTarget=null');h.use('boots');const clock=h.run('time');
+  assert.match(h.nodes.get('panel-body').innerHTML,/boots-detail-v4-2.webp/);
+  h.click('examine-boots');h.advance(2);assert.equal(h.run('time'),clock);assert.equal(h.run('examined.has("boots")'),true);
+  assert.match(h.nodes.get('panel-body').innerHTML,/裸足/);assert.equal(h.run('flags.bottle'),false);
+  const saved=h.state('serialize()');h.run('examined.clear()');h.run(`restore(${JSON.stringify(saved)})`);assert.equal(h.run('examined.has("boots")'),true);
+  h.click('examine-unknown');assert.equal(h.run('examined.size'),1);
+});
+
+test('a legacy checkpoint inside a new partition moves nearby on its floor and keeps progress',async()=>{
+  const h=await harness();h.fresh();
+  h.run('globalThis.legacyRoom=serialize();legacyRoom.player={x:3,z:26,level:0};legacyRoom.flags.note=true;world.invalidPosition={x:3,z:26};delete legacyRoom.doors;delete legacyRoom.examined;restore(legacyRoom);');
+  assert.equal(h.run('player.level'),0);assert.equal(h.run('flags.note'),true);
+  assert.ok(h.run('Math.hypot(player.x-3,player.z-26)<2'));assert.ok(h.run('world.isFreeAt(player)'));
+});
+
+test('reading a nearby poster pauses exploration and adds no mandatory collection',async()=>{
+  const h=await harness();h.fresh();
+  const before=h.state('serialize()');
+  h.run('world.artTarget={id:"trail-notice",kind:"sceneArt",x:player.x,z:player.z,level:player.level,distance:.1,label:"山道の掲示を読む",title:"日没後の入山",image:"assets/photos/trail-notice-v4-2.webp",text:"道の外の白いものを、道標だと思わないこと。"};world.items={};');
+  h.press('KeyE');h.release('KeyE');
+  assert.equal(h.run('panelKind'),'scene-art');
+  assert.match(h.nodes.get('panel-body').innerHTML,/scene-art-photo/);
+  assert.match(h.nodes.get('panel-body').innerHTML,/trail-notice-v4-2.webp/);
+  const clock=h.run('time');h.advance(4);assert.equal(h.run('time'),clock);
+  assert.deepEqual(h.state('serialize().flags'),before.flags);
+  assert.deepEqual(h.state('serialize().collected'),before.collected);
+  h.click('close-panel');assert.equal(h.run('mode'),'play');
 });
