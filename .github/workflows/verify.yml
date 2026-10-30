@@ -11,7 +11,7 @@ concurrency:
 jobs:
   game:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       BROWSER: /usr/bin/google-chrome
       GF_SOFTWARE_GL: '1'
@@ -27,12 +27,12 @@ jobs:
       - run: npm run build
       - name: Japanese fonts for readable screenshots
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
-      - name: Desktop and mobile controls, photos, voice and escape
-        run: npm run smoke
-      - name: Doors, evidence close-ups and continuous telescope encounter
-        run: node tools/smoke-v42.mjs
       - name: Render and measure audio cues
         run: node tools/check-audio-render.mjs
+      - name: Doors, evidence close-ups and continuous telescope encounter
+        run: node tools/smoke-v42.mjs
+      - name: Desktop and mobile controls, photos, voice and escape
+        run: npm run smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:

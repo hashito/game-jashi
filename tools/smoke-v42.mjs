@@ -29,7 +29,10 @@ try{
       else await p.click(rect.x,rect.y);
     };
     const interact=async()=>profile.mobile?tap('[data-action="interact"]'):p.key('KeyE');
-    const closePanel=async()=>{await tap('#panel-close');await gameplay();await p.sleep(150);};
+    // Closing with a mouse click can move Chromium's pointer as pointer-lock is
+    // reacquired, rotating the view AFTER the map pose was read. P is the real
+    // resume control and leaves the mouse coordinates alone. Touch uses its UI.
+    const closePanel=async()=>{if(profile.mobile)await tap('#panel-close');else await p.key('KeyP');await gameplay();await p.sleep(150);};
     const openMap=async()=>{if(profile.mobile)await tap('.hud-icon-button[data-action="journal"]');else await p.key('KeyJ');await p.waitFor("!!document.querySelector('.trail-map')&&!document.getElementById('panel').hidden");};
     const pose=async()=>{
       await openMap();
@@ -45,11 +48,13 @@ try{
       // compass after every turn, so CPU-only frame rates cannot skew the aim.
       // A seven-degree aim still faces the center of a real doorway; very short
       // key pulses can fall between frames on the software-rendered CI runner.
+      const turns=[];
       for(let i=0;i<24;i++){
         const desired=Math.atan2(-(target.x-at.x),-(target.z-at.z)),delta=wrap(desired-at.yaw);if(Math.abs(delta)<.12)return at;
+        turns.push({yaw:at.yaw,desired,delta});
         await hold(delta>0?'ArrowLeft':'ArrowRight',Math.max(120,Math.min(800,Math.abs(delta)*520)));at=await pose();
       }
-      throw Error(`could not face ${JSON.stringify(target)} from ${JSON.stringify(at)}`);
+      throw Error(`could not face ${JSON.stringify(target)} from ${JSON.stringify(at)}; turns=${JSON.stringify(turns)}`);
     };
     const forward=async seconds=>{
       await gameplay();const before=await uiState(),start=clockSeconds(before.clock);assert.ok(Number.isFinite(start),'game clock is readable');
@@ -95,7 +100,7 @@ try{
       }
       for(const [id,start]of [['cabin-entry',{x:0,z:20.6,level:0}],['shed-entry',{x:-19,z:.6,level:0}]]){
         stage=id;console.log(`${name}: ${id}`);
-        const d=DOORS.find(d=>d.id===id),c=checkpoint(start);c.doors[id]=false;await load(c);await turnToward(d);
+        const d=DOORS.find(d=>d.id===id),c=checkpoint(start,{yaw:0,pitch:0});c.doors[id]=false;await load(c);await turnToward(d);
         await p.waitFor(`!document.getElementById('interaction').hidden&&document.getElementById('interaction-text').textContent.includes(${JSON.stringify(d.label)})`);
         await p.shot(path.join(out,`${name}-${id}-closed.png`));
         const approach=await pose();await forward(2);const blocked=await pose();await traceState(`${id}: closed movement`);
@@ -117,7 +122,7 @@ try{
       for(const [id,position]of [['trail-notice',{x:-4.25,z:17.3,level:0}],['cabin-memory',{x:4.5,z:23.15,level:0}]]){
         stage=`scene art ${id}`;console.log(`${name}: ${stage}`);
         const art=SCENE_ART.find(entry=>entry.id===id);assert.ok(art,`${id}: authored scene panel exists`);
-        await load(checkpoint(position));await turnToward(art);
+        await load(checkpoint(position,{yaw:Math.atan2(-(art.x-position.x),-(art.z-position.z)),pitch:0}));await turnToward(art);
         await p.waitFor(`!document.getElementById('interaction').hidden&&document.getElementById('interaction-text').textContent.includes(${JSON.stringify(art.label)})`);
         await p.shot(path.join(out,`${name}-${id}-world.png`));await interact();
         await p.waitFor("!document.getElementById('panel').hidden&&document.querySelector('.scene-art-photo img')?.complete&&document.querySelector('.scene-art-photo img')?.naturalWidth>0",30000);
@@ -145,7 +150,7 @@ try{
       }
       const persisted=await p.eval(`JSON.parse(localStorage.getItem('${saveKey}'))`);await load(persisted);await openMap();await tap('[data-action="journal-records"]');await tap('[data-action="read-boots"]');
       assert.equal(await p.eval(`!!document.querySelector('[data-action="examine-boots"]')`),false,'inspection persists after actual reload');await closePanel();
-      stage='telescope';const telescope=structuredClone(initial);telescope.player={x:0,z:18.4,level:1};telescope.time=5;telescope.speechQueue=[];telescope.activeSpeech=null;telescope.speechTime=0;telescope.doors=Object.fromEntries(DOORS.map(d=>[d.id,true]));
+      stage='telescope';const telescope=structuredClone(initial);telescope.player={x:0,z:18.4,level:1};telescope.yaw=0;telescope.pitch=0;telescope.time=5;telescope.speechQueue=[];telescope.activeSpeech=null;telescope.speechTime=0;telescope.doors=Object.fromEntries(DOORS.map(d=>[d.id,true]));
       await load(telescope);await turnToward({x:0,z:17.8});await interact();
       for(let phase=0;phase<3;phase++){
         await p.waitFor(`!document.getElementById('scope-sequence').hidden&&document.getElementById('scope-title').textContent===${JSON.stringify(TELESCOPE_SCENES[phase].title)}`,90000);await p.sleep(phase===2?1000:250);await bounds(`scope ${phase}`);await p.shot(path.join(out,`${name}-scope-${phase}.png`));
