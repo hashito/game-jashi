@@ -1,0 +1,562 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "source": "dist/assets/textures/forest-floor.webp",
+      "output": "dist/assets/textures/forest-floor-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440,
+      "sourceSha256": "d99c060d4f94ad33f5401e48074286e560eb7ab9a34baeec32c3aa346947b5e9",
+      "sourceBytes": 298330,
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "sha256": "8f8fbc3c64bc26e474662e6fb76e9abb38577dd0f51b9416dcc7dd4bfea06877",
+      "bytes": 47016,
+      "size": [
+        409,
+        409
+      ],
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/textures/cedar-bark.webp",
+      "output": "dist/assets/textures/cedar-bark-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 62,
+      "maxBytes": 61440,
+      "sourceSha256": "7607d28467aea40ee572abfb14eedf05a40603b26f030b6a9a21e1efbcdc7ccf",
+      "sourceBytes": 256280,
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "sha256": "e99673d182b15280599bf6380dc2764380c7f2e43ea59d218382c80f9b78fb28",
+      "bytes": 60328,
+      "size": [
+        512,
+        512
+      ],
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/textures/weathered-wood.webp",
+      "output": "dist/assets/textures/weathered-wood-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440,
+      "sourceSha256": "ffbf8fb936cc4cc912d8866ef35663999773df878a694aa212865df714773507",
+      "sourceBytes": 233612,
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "sha256": "3098f5e2179854d455a6aca813746ba358688434140b2dd64d5ea54453933ab2",
+      "bytes": 47822,
+      "size": [
+        512,
+        512
+      ],
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/textures/cedar-bough-v4.png",
+      "output": "dist/assets/textures/cedar-bough-v4-2.webp",
+      "maxDimension": 384,
+      "quality": 74,
+      "maxBytes": 61440,
+      "sourceSha256": "e60a661d9262d8305ba4d1e98615f5336a370e8ae0e1a77f44ba1edf14837019",
+      "sourceBytes": 907216,
+      "sourceSize": [
+        768,
+        768
+      ],
+      "sha256": "7c08c91dc61efb33bbcd2e1dd6a56b763b4b36c67c4465d905627b19b235ff72",
+      "bytes": 52166,
+      "size": [
+        307,
+        307
+      ],
+      "alpha": true,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": true
+    },
+    {
+      "source": "dist/assets/title-forest.webp",
+      "output": "dist/assets/title-forest-v4-2.webp",
+      "maxDimension": 1280,
+      "quality": 74,
+      "maxBytes": 153600,
+      "sourceSha256": "d157e675ac68bae508ea713eed2d98d45f156d99358463cee9304b1f013724b5",
+      "sourceBytes": 249344,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "sha256": "f335448c96e8360ec3e808e27dccafde791dc78811621c660d4df8b582eac3c6",
+      "bytes": 79512,
+      "size": [
+        1280,
+        720
+      ],
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/portraits/shuji-v4.webp",
+      "output": "dist/assets/portraits/shuji-v4-2.webp",
+      "maxDimension": 256,
+      "quality": 76,
+      "maxBytes": 24576,
+      "sourceSha256": "768e013181ae21699f2eb36b70f1891de142920f1ade3ccb17b611d955c2b7f8",
+      "sourceBytes": 64070,
+      "sourceSize": [
+        640,
+        640
+      ],
+      "sha256": "163f37dbbd3c1dd4ac1ffa9a7e788d32a0c6b3b017142a7fb8037ec171bde28f",
+      "bytes": 8864,
+      "size": [
+        256,
+        256
+      ],
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/textures/monster-face-v4.webp",
+      "output": "dist/assets/textures/monster-face-v4-2.webp",
+      "maxDimension": 640,
+      "quality": 78,
+      "maxBytes": 61440,
+      "sourceSha256": "aeadb7e9f6cf2d07cae3d4e9355ac8bd1841933f44a1c9f9d968efc84ed86f48",
+      "sourceBytes": 73474,
+      "sourceSize": [
+        900,
+        900
+      ],
+      "sha256": "3b99b04f9313318c8ccba74b809689f46d5a3d85248418a5a55281615a93c73a",
+      "bytes": 23118,
+      "size": [
+        640,
+        640
+      ],
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/glasses.png",
+      "output": "dist/assets/items/glasses.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "e36b438589e3b0e95028b93de3ecb1fe36b8f66b8a93b7bfdbc6ae24cc2fb110",
+      "sourceBytes": 11045,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "d8cef23617f2d486982a68cd67fea5c8c499239f10931258b946cedc3a1e62c8",
+      "bytes": 3872,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/note.png",
+      "output": "dist/assets/items/note.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "0a2384e9eb98fb41483e8c434b6352c12b4c2b4bd7289f3111843cfc2bc4bc4b",
+      "sourceBytes": 7519,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "b802d9b1b9d7f4430947053671bfec58c53fbc73c08092f03e7220c3b9f43a12",
+      "bytes": 1468,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/bottle.png",
+      "output": "dist/assets/items/bottle.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "8b7df2c79613e3eed1b3fd9b84adc6cf2cf4e1701201b3667b41368b69b73fcd",
+      "sourceBytes": 12427,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "07df33acf42c7874741da6f0952744e8d1209a0a7a036880fdcec93b2bb80827",
+      "bytes": 5172,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/crank.png",
+      "output": "dist/assets/items/crank.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "bdff5cfa28b6672169d35353de1c740593b81127735f6db0ff24ab791eeca9d1",
+      "sourceBytes": 8226,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "4d69408311eb04ede6b7d8d3f1b251e489281ac97b757ada5416d1837e74ddd6",
+      "bytes": 2626,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/photo.png",
+      "output": "dist/assets/items/photo.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "6713a1a1c3a7f899a4d0a12ab8b09c2ebc9170a578fb9ee61072c29d4cc34a98",
+      "sourceBytes": 16466,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "7c0c92acb0ac15600afe8a8b92c92ea5d83321d74ae2d3cf03b73cc202ee3330",
+      "bytes": 6292,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/phone.png",
+      "output": "dist/assets/items/phone.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "c2b397ceda4febe1e1ef69bf3a3ca65b8c448a50e5df4258e56d54b60db648be",
+      "sourceBytes": 10834,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "04baf85ddc29be8fe9859fb4291b862882b7723647e0115eea6b4a099ee02427",
+      "bytes": 2570,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/radio.png",
+      "output": "dist/assets/items/radio.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "adb58255fb66f6b9b2dd177555224019d40eb4dd923961da6203c4d9cc5ece97",
+      "sourceBytes": 7491,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "e3e6aab7ab336e5c781e4a7f79033619765a51c4be8ea76acba6df353eec3399",
+      "bytes": 2044,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/bell.png",
+      "output": "dist/assets/items/bell.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "644d6764e8ef9a464cd001c92318f9b9ab9978b07f49b2f6f354080e2a6d2ed5",
+      "sourceBytes": 8889,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "efb98514021f4f9d8ab88a76e6b26f49444aa8fc1cde0bca13ebed6bee7dff51",
+      "bytes": 2816,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/telescope.png",
+      "output": "dist/assets/items/telescope.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "1f5726119e2f66587d6f7e3324a8079dc86227d10a0c22c0fa250d3dc7ef1cfa",
+      "sourceBytes": 13421,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "a3b31ddc67c8b5e44378fd58c2cafa5aca9d4e034b9d524ee6c459621ef4cc8a",
+      "bytes": 5192,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/boots.png",
+      "output": "dist/assets/items/boots.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "0eec8f729ef6dc215d5f1a3f89983aeb4a43fca92b3a33b65011420279f54a00",
+      "sourceBytes": 10438,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "c3c42fc1a7286097bd51485b0a959ce603b8605219df7ca778a5032db5814b16",
+      "bytes": 3890,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/ledger.png",
+      "output": "dist/assets/items/ledger.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "12f4738de4b6206497c8b9beb79f4ef88e29e518cacd3ac0387d6f94374a747c",
+      "sourceBytes": 8761,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "2845f9685f4965898c2a03052c97e235a16c48f1df389a8dd0f824c2957bcd4f",
+      "bytes": 2104,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/cassette.png",
+      "output": "dist/assets/items/cassette.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "0e71f146a6266d813259aa7a4e29d89efeb1321e7a6b25dfbf8873f2d0925870",
+      "sourceBytes": 13040,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "48201e2f9da1db0f58404c6edbbc18495d21d9b57b39a93b851fed8c3600a137",
+      "bytes": 4554,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/mirror.png",
+      "output": "dist/assets/items/mirror.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "f146c289b1e389c7f16b823071bfff680ce2772ff1b13066ea62e20f5c2ac725",
+      "sourceBytes": 11471,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "0d7c152e97f7329e57f260a6a0dad380d5cdbb7b80fde82dc6424d35bed8621b",
+      "bytes": 4468,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/ribbon.png",
+      "output": "dist/assets/items/ribbon.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "5a06ef2e1e4f355be7f17b547d0dd410ab032346ba20d25e4600d62a297e083f",
+      "sourceBytes": 5361,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "0425ab9133cc60db0b82da35f0f6c01117ccb1d4abf0af2520813534f520a84d",
+      "bytes": 1058,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/toy.png",
+      "output": "dist/assets/items/toy.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "260d0565de5ab197cf668481000da11aa4505ecb7f8551127b0f11e9553e009d",
+      "sourceBytes": 12155,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "a4a9ea8da78a7250eb8b832e8717dc4a3f55f6f5c3929343083936ea938190eb",
+      "bytes": 4708,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    },
+    {
+      "source": "dist/assets/items/tag.png",
+      "output": "dist/assets/items/tag.webp",
+      "lossless": true,
+      "maxBytes": 24576,
+      "sourceSha256": "f88aca054dc0ce209a972fb34655aaa8e3e533183e32f772a4c94f900dde646a",
+      "sourceBytes": 25816,
+      "sourceSize": [
+        320,
+        240
+      ],
+      "sha256": "e75e77d748f104ea88d5672fd47ff5dd63c3987d2390c52eb56775c424943165",
+      "bytes": 11626,
+      "size": [
+        320,
+        240
+      ],
+      "quality": 100,
+      "alpha": false,
+      "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
+      "sourceAlpha": false
+    }
+  ],
+  "excludedFromBuild": [
+    "assets/textures/forest-floor.webp",
+    "assets/textures/cedar-bark.webp",
+    "assets/textures/weathered-wood.webp",
+    "assets/textures/cedar-bough-v4.png",
+    "assets/title-forest.webp",
+    "assets/portraits/shuji-v4.webp",
+    "assets/textures/monster-face-v4.webp",
+    "assets/items/glasses.png",
+    "assets/items/note.png",
+    "assets/items/bottle.png",
+    "assets/items/crank.png",
+    "assets/items/photo.png",
+    "assets/items/phone.png",
+    "assets/items/radio.png",
+    "assets/items/bell.png",
+    "assets/items/telescope.png",
+    "assets/items/boots.png",
+    "assets/items/ledger.png",
+    "assets/items/cassette.png",
+    "assets/items/mirror.png",
+    "assets/items/ribbon.png",
+    "assets/items/toy.png",
+    "assets/items/tag.png",
+    "assets/mountain-photo.webp",
+    "assets/textures/monster-face.webp",
+    "assets/textures/monster-skin-v4.webp"
+  ]
+}

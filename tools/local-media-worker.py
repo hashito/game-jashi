@@ -168,15 +168,16 @@ def photo(key):
                     picture = original.convert("RGB")
                     if picture.width != width or picture.height != height:
                         raise ValueError(f"Unexpected generated dimensions {picture.size}")
-                    picture.thumbnail((1400, 1050), Image.Resampling.LANCZOS)
-                    picture.save(target, "WEBP", quality=88, method=6)
+                    picture.thumbnail((1280, 960), Image.Resampling.LANCZOS)
+                    picture.save(target, "WEBP", quality=76, method=6)
                     pixels = np.asarray(picture, dtype=np.float64)
                     luminance = pixels @ np.array([.2126, .7152, .0722])
                 save_record("image-" + key, {"kind": "image", "engine": "ComfyUI", "model": model,
                     "seed": seed, "steps": workflow["3"]["inputs"]["steps"], "promptId": pid, "prompt": job["prompt"],
                     "width": picture.width, "height": picture.height, "sourceSha256": hashlib.sha256(data).hexdigest(),
                     "meanLuminance": round(float(luminance.mean()), 2), "luminanceStdDev": round(float(luminance.std()), 2),
-                    "processing": "RGB WebP encoding only; no content edits or compositing.", "purpose": job["purpose"],
+                    "encoding": {"format": "WEBP", "quality": 76, "method": 6, "maxWidth": 1280, "maxHeight": 960},
+                    "processing": "Original generated image to RGB WebP quality76, Lanczos fit within 1280x960; no upscaling, content edits, compositing or lossy recompression.", "purpose": job["purpose"],
                     "credit": "Local AI-generated scene photograph; not a photograph of a real event."}, target,
                     ROOT / cfg.get("recordDirectory", "tools/local-media-records"))
                 return
@@ -231,10 +232,25 @@ def ledger():
                        "status": "ready", "credit": r["credit"],
                        "source": source})
     details = read_json(ROOT / "tools/photo-briefs-v4.2.json")["jobs"]
-    expected = 11 + len(details)
+    scene_brief = read_json(ROOT / "tools/scene-art-briefs-v4.2.json")
+    if scene_brief.get("version") != 1 or not scene_brief.get("sheets"):
+        raise ValueError("Expected version 1 scene-art brief with sheets")
+    scene_art = []
+    for sheet in scene_brief["sheets"]:
+        if sheet.get("status") != "ready" or len(sheet.get("jobs", [])) != 4:
+            raise ValueError(f"Scene-art sheet is not finished: {sheet.get('id')}")
+        scene_art.extend(sheet["jobs"])
+    adopted_jobs = details + scene_art
+    expected = 11 + len(adopted_jobs)
     files = {asset["file"] for asset in assets}
-    if len(assets) != expected or len(files) != expected or any(job["output"] not in files for job in details):
-        raise ValueError(f"Expected 3 scene photographs, 8 voices and {len(details)} detail photographs; got {len(assets)}")
+    if len({job["output"] for job in adopted_jobs}) != len(adopted_jobs):
+        raise ValueError("Duplicate output in detail/scene-art briefs")
+    for job in adopted_jobs:
+        asset = next((asset for asset in assets if asset["file"] == job["output"]), None)
+        if job.get("status") != "ready" or asset is None or asset["source"]["record"] != job["record"]:
+            raise ValueError(f"Missing or unfinished adopted artwork: {job['id']}")
+    if len(assets) != expected or len(files) != expected:
+        raise ValueError(f"Expected 3 scene photographs, 8 voices, {len(details)} detail photographs and {len(scene_art)} scene artworks; got {len(assets)}")
     write_json(ROOT / "assets/production.json", {"version": 1, "assets": assets})
     print(f"Verified ledger: {len(assets)} assets", flush=True)
 

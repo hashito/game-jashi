@@ -3,7 +3,7 @@ export class TapeEffects {
   constructor(){
     this.canvas=document.createElement('canvas');this.canvas.id='tape-effects';this.canvas.setAttribute('aria-hidden','true');document.body.append(this.canvas);this.ctx=this.canvas.getContext('2d');
     this.grain=document.createElement('canvas');this.grain.width=160;this.grain.height=90;this.gctx=this.grain.getContext('2d');this.pixels=this.gctx.createImageData(160,90);
-    this.face=new Image();this.face.src='assets/textures/monster-face-v4.webp';this.pulse=0;this.kind='';this.elapsed=0;this.grainTimer=0;this.tearTimer=0;this.tear=null;this.dead=false;
+    this.face=new Image();this.face.src='assets/textures/monster-face-v4-2.webp';this.pulse=0;this.kind='';this.elapsed=0;this.grainTimer=0;this.tearTimer=0;this.tear=null;this.dead=false;
     this.resize=()=>{this.canvas.width=Math.min(960,innerWidth);this.canvas.height=Math.round(this.canvas.width*innerHeight/innerWidth);};this.resize();addEventListener('resize',this.resize);
   }
   trigger(kind){this.kind=kind;this.pulse=kind==='death'?2.8:kind==='hit'?1.1:kind==='encounter'?1.25:.8;this.elapsed=0;if(kind==='death')this.dead=true;}

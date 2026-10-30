@@ -1,0 +1,29 @@
+{
+  "id": "creek-memory",
+  "sheetId": "mountain-photographs",
+  "file": "dist/assets/photos/creek-memory-v4-2.webp",
+  "record": "tools/local-media-records/creek-memory-v4-2.json",
+  "sha256": "b23e5a98086715c423c2899ea9581df45447b8495634b655dfd86d3a870d510c",
+  "status": "verified-existing",
+  "dimensions": [
+    512,
+    512
+  ],
+  "encoding": {
+    "format": "WEBP",
+    "quality": 68,
+    "method": 6,
+    "maxDimension": 512
+  },
+  "cropRect": [
+    0,
+    627,
+    627,
+    1254
+  ],
+  "sourceFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+  "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+  "sourceVerified": true,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-30T05:33:13.557Z"
+}

@@ -163,8 +163,24 @@ built-in image_genで各素材を別々に生成しました。Pillowによる�
 全3写真の配信サイズは621,414 bytes（606.85 KiB）。音声8本は既存の合成結果をSHA-256・台詞・設定・波形の一致で検証し直し、再合成していない。共有JSONキューの12ジョブ（音声8検証・写真3変換・台帳）が完了し、`assets/production.json` に全11素材を ready と記録した。台帳の source.kind は写真の generated-builtin / edited-builtin、音声の generated-local を区別する。
 # v4.2 小物の接写
 
-長靴・日誌・手鏡の接写3点を組み込みimage_genで生成し、960×720 WebPへ圧縮して記録画面へ追加。合計280,896バイト。架空の記録写真であり、ゲーム内の対象認識用には従来の3Dモデル見本も併記する。
+長靴・日誌・手鏡の接写3点を組み込みimage_genで生成し、720×540 WebPへ圧縮して記録画面へ追加。合計141,328バイト。架空の記録写真であり、ゲーム内の対象認識用には従来の3Dモデル見本も併記する。
 
 プロンプト・制作方式・用途は `tools/photo-briefs-v4.2.json`、元ファイルと出力のSHA-256・寸法・検収記録は `tools/local-media-records/{boots,ledger,mirror}-detail-v4-2.json`、配信ファイルは `dist/assets/photos/*-detail-v4-2.webp`。`tools/prepare-evidence.py` は選定済み原画の圧縮のみを行う。共通キューの検証ジョブは `tools/verify-evidence.mjs` で出力ハッシュ・WebP形式・容量を確認する。
 
 新しい戸・木・息の効果音は `dist/audio.js` のWeb Audio合成。外部録音や生成音声は追加していない。既存のVOICEVOX案内のクレジットは継続する。
+
+## v4.2 4分割シートからの掲示物と写真
+
+ユーザー指定に従い、組み込みimage_genで2×2シートを2枚生成し、各シートを4枚へ切り出した。掲示物は `trail-notice`、`forestry-notice`、`shelter-notice`、`bridge-notice`。写真は `cabin-memory`、`logging-memory`、`creek-memory`、`parking-memory`。配信先はすべて `dist/assets/photos/ID-v4-2.webp`。
+
+正確な生成入力と四隅の割り当ては `tools/scene-art-briefs-v4.2.json`。原画コピーはローカルの `assets/sources/batch-v4.2/`、各切り出し矩形・原画とWebPのSHA-256・寸法・圧縮設定は `tools/local-media-records/ID-v4-2.json` に保存する。再現用の切り出しは `tools/prepare-scene-art.py`、検収は `tools/verify-scene-art.mjs`。ゲーム内の見出しは読める文字で別描画し、写真の細部が必須の操作情報にならないよう本文を併記する。
+
+すべて架空の山中資料。実在の事件や人物を記録した写真ではない。ポスターには山道の白い影、工具と無人の戸口、小屋、橋を描き、写真には別荘、作業者の背中、足跡、車の内側の手形を使用する。
+
+## v4.2 最終圧縮と共有テクスチャ
+
+上記のv4.0〜v4.1の寸法・容量は制作時の履歴。現在の配信画像は `assets/runtime-images.json` を正本とする。地面・木・透明な枝・タイトル・肖像・顔・16小物を含む23点を2,265,686から383,286バイトへ圧縮。旧画像は原本として残し、ビルドから除外する。小物の再撮影も `tools/make-item-images.mjs` がWebP変換まで実行する（Python/Pillow、必要時はGF_PYTHONを指定）。
+
+14枚の写真は合計833,606バイト。掲示・写真8点は各512px、怪異の肌・布・鉄・木4点は各384pxで合計137,486バイト。怪異材質は3枚目の2×2シートで制作し、正確なプロンプトと切り出し矩形をscene-artのブリーフ・個別記録へ保存した。生成物の利用は生成サービスの適用条件に従い、新たなCC0権利表明はしない。
+
+標準game-kitへは怪異4点と森林4点の圧縮済みWebPを同一バイトで保存。各素材に本ゲーム・原本・変換設定・SHA-256を記録し、写真と物語本文は移さない。

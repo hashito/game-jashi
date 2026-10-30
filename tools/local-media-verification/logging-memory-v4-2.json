@@ -1,0 +1,29 @@
+{
+  "id": "logging-memory",
+  "sheetId": "mountain-photographs",
+  "file": "dist/assets/photos/logging-memory-v4-2.webp",
+  "record": "tools/local-media-records/logging-memory-v4-2.json",
+  "sha256": "a5601bf702b8d4ab29a0b8de7d4e32c38bcc6cde2d78a384494c1d5054debda2",
+  "status": "verified-existing",
+  "dimensions": [
+    512,
+    512
+  ],
+  "encoding": {
+    "format": "WEBP",
+    "quality": 68,
+    "method": 6,
+    "maxDimension": 512
+  },
+  "cropRect": [
+    627,
+    0,
+    1254,
+    627
+  ],
+  "sourceFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+  "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+  "sourceVerified": true,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-30T05:33:13.557Z"
+}

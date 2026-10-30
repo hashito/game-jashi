@@ -7,13 +7,20 @@
   "sourceFile": "C:\\Users\\hasit\\.codex\\generated_images\\01a17abc-33fb-7811-a323-50521555304b\\exec-52a91ee4-972b-4232-9e66-dd6d160cedbc.png",
   "sourceSha256": "49cc330c4ffec7ac65da777c7c8b9d45c3ad649150d4637b35564535b947df6f",
   "output": "dist/assets/photos/mirror-detail-v4-2.webp",
-  "sha256": "a59b8e633b7ec77ead0518d7f02066f269826681bf2e0ae413fc269a6ed30cf1",
+  "sha256": "770b632068a158859ba925424581d60397dc59c9adf09314cf5ac5977b150fa7",
   "dimensions": [
-    960,
-    720
+    768,
+    576
   ],
-  "bytes": 72892,
-  "processing": "RGB, bounded 960x720 Lanczos resize, WebP quality83 method6; no retouching",
+  "bytes": 37244,
+  "encoding": {
+    "format": "WEBP",
+    "quality": 76,
+    "method": 6,
+    "maxWidth": 768,
+    "maxHeight": 576
+  },
+  "processing": "Original PNG to RGB, bounded 768x576 Lanczos resize, WebP quality76 method6; no upscaling, retouching or lossy recompression",
   "review": "Generated fictional evidence close-up; visually inspected. The 3D model thumbnail remains the authoritative object recognition guide. Fine writing is provided as readable HTML, not generated lettering.",
   "file": "dist/assets/photos/mirror-detail-v4-2.webp",
   "purpose": "小物の任意調査に使う接写写真",

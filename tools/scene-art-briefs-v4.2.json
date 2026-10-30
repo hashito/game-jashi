@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "method": "built-in image_gen; user-requested 2x2 sheet generation followed by deterministic quadrant slicing",
+  "sheets": [
+    {
+      "id": "mountain-posters",
+      "prompt": "Generate ONE square 2048x2048 production image sheet divided into an EXACT 2 by 2 grid of FOUR EQUAL square independent assets. Each quadrant fills exactly one quarter; hard cut at 50% horizontal and vertical. No gutters, no grid lines, no outside border, no shared objects or shadows across cells. Important content stays 7% away from each quadrant edge. No captions, lettering, numbers, logos, watermark. These will be mechanically cut into four separate images for a Japanese woodland exploration horror game. Subtle dread, plausible rural setting, restrained detail readable at small size; absolutely no gore. Use case: illustration-story. Four flat front-facing vintage Japanese municipal/forestry poster ARTWORKS on aged matte paper, no perspective distortion, no frame. Muted cream, faded oxblood and pine green; tactile worn screenprint with foxing and rain stains, fine but visible ink. Each quadrant includes quiet unprinted cream top12% and bottom12% areas for separately rendered readable headings. TOP LEFT: narrow cedar trail leading into fog, a small white human-shaped gap among distant trunks, crimson path ribbon, melancholy hiking-route illustration. TOP RIGHT: abandoned forestry workplace, yellow hardhat hanging on hook, hand saw and stacked cut logs, a dark unattended doorway beyond, faded ochre occupational safety artwork. BOTTOM LEFT: a small old wooden mountain refuge hut with a red roof, illuminated empty doorway, towering forest surrounding it, faded green emergency-refuge artwork. BOTTOM RIGHT: a weathered narrow wooden bridge crossing a black mountain stream in rain, red cloth tied to one rail and ripples without a visible source, faded blue-grey crossing advisory artwork.",
+      "jobs": [
+        {
+          "id": "trail-notice",
+          "quadrant": "top-left",
+          "output": "dist/assets/photos/trail-notice-v4-2.webp",
+          "record": "tools/local-media-records/trail-notice-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "forestry-notice",
+          "quadrant": "top-right",
+          "output": "dist/assets/photos/forestry-notice-v4-2.webp",
+          "record": "tools/local-media-records/forestry-notice-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "shelter-notice",
+          "quadrant": "bottom-left",
+          "output": "dist/assets/photos/shelter-notice-v4-2.webp",
+          "record": "tools/local-media-records/shelter-notice-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "bridge-notice",
+          "quadrant": "bottom-right",
+          "output": "dist/assets/photos/bridge-notice-v4-2.webp",
+          "record": "tools/local-media-records/bridge-notice-v4-2.json",
+          "status": "ready"
+        }
+      ],
+      "sourceFile": "assets/sources/batch-v4.2/mountain-posters.png",
+      "status": "ready",
+      "sourceSha256": "e254b2c62d7511d9edfa3a063b2f309687afe0e8f3c7d0f3701d5ef6aef7dc92",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "seamTrimPixels": 0,
+      "encoding": {
+        "maxDimension": 512,
+        "quality": 68
+      }
+    },
+    {
+      "id": "mountain-photographs",
+      "prompt": "Generate ONE square 2048x2048 production image sheet divided into an EXACT 2 by 2 grid of FOUR EQUAL square independent assets. Each quadrant fills exactly one quarter; hard cut at 50% horizontal and vertical. No gutters, no grid lines, no outside border, no shared objects or shadows across cells. Important content stays 7% away from each quadrant edge. No captions, lettering, numbers, logos, watermark. These will be mechanically cut into four separate images for a Japanese woodland exploration horror game. Subtle dread, plausible rural setting, restrained detail readable at small size; absolutely no gore. Use case: photorealistic-natural. Four entirely separate ordinary 1990s 35mm color film documentary photographs from a remote Japanese forest mountain. Natural desaturated colors, visible film grain, quiet believable imperfections, no physical photograph frames or printed dates, usable moderate brightness and legible subjects. TOP LEFT: old two-story Japanese wooden vacation cabin on a foggy cedar hillside, exterior porch and upper balcony, one pale curtain drawn away from a dark upper window, no people. TOP RIGHT: six forestry workers photographed from behind at a logging clearing, 1990s work coats and helmets, faces not visible, five long human shadows falling across dirt, one abandoned pair of boots at the side, subtle uncanny asymmetry. BOTTOM LEFT: close low view across weathered wet wooden footbridge planks and one tied red cloth, distinct muddy barefoot footprints lead to the center then end, mossy stream out of focus. BOTTOM RIGHT: small empty dark-green 1990s Japanese compact car parked nose-out in a gravel cedar clearing, dusk, condensation streaks on the windshield and one faint hand-shaped clear area on its inside, no license text, no monster, realistic archival evidence mood.",
+      "jobs": [
+        {
+          "id": "cabin-memory",
+          "quadrant": "top-left",
+          "output": "dist/assets/photos/cabin-memory-v4-2.webp",
+          "record": "tools/local-media-records/cabin-memory-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "logging-memory",
+          "quadrant": "top-right",
+          "output": "dist/assets/photos/logging-memory-v4-2.webp",
+          "record": "tools/local-media-records/logging-memory-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "creek-memory",
+          "quadrant": "bottom-left",
+          "output": "dist/assets/photos/creek-memory-v4-2.webp",
+          "record": "tools/local-media-records/creek-memory-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "parking-memory",
+          "quadrant": "bottom-right",
+          "output": "dist/assets/photos/parking-memory-v4-2.webp",
+          "record": "tools/local-media-records/parking-memory-v4-2.json",
+          "status": "ready"
+        }
+      ],
+      "sourceFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+      "status": "ready",
+      "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "seamTrimPixels": 0,
+      "encoding": {
+        "maxDimension": 512,
+        "quality": 68
+      }
+    },
+    {
+      "id": "creature-materials",
+      "prompt": "Generate ONE square production material atlas divided into an exact 2 by 2 grid of FOUR equal square texture swatches, no gutters, no grid lines, no borders, hard horizontal/vertical split exactly at50%. Each quadrant is a separate seamlessly repeatable albedo texture for a restrained Japanese mountain horror creature, all lit flat and evenly, no cast shadows, no perspective, no objects, no text, no body parts, no face, no eyes, no gore, no watermarks. TOP LEFT: pale grey ivory papery uncanny skin surface, subtle mottled olive grey discolouration, fine leathery wrinkles, scattered faint capillary threads, desaturated, light enough for pale creature silhouette, calm broad tonal range and delicate close detail, no wounds. TOP RIGHT: old grey-green linen shroud fabric, visible tiny woven fibers running vertically, faint uneven dirt and water staining, frayed but opaque surface, flat tile without large holes, avoid high contrast. BOTTOM LEFT: oxidized sickle iron material surface, cold slate steel with fine directional polishing scratches, patchy thin muted umber rust and tiny pits, no actual blade outline, no bright specular highlights baked in. BOTTOM RIGHT: worn ash wood handle material, lengthwise vertical grain in desaturated warm taupe brown, polished dull hand wear, tiny dry cracks, no nails or object shape. Keep every tile coherent right to its edges; do not mix the four materials. Medium-frequency detail suited for compression to512pixels per tile.",
+      "sourceFile": "assets/sources/batch-v4.2/creature-materials.png",
+      "status": "ready",
+      "encoding": {
+        "maxDimension": 384,
+        "quality": 72
+      },
+      "jobs": [
+        {
+          "id": "creature-skin",
+          "quadrant": "top-left",
+          "output": "dist/assets/textures/creature-skin-v4-2.webp",
+          "record": "tools/local-media-records/creature-skin-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "creature-cloth",
+          "quadrant": "top-right",
+          "output": "dist/assets/textures/creature-cloth-v4-2.webp",
+          "record": "tools/local-media-records/creature-cloth-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "creature-iron",
+          "quadrant": "bottom-left",
+          "output": "dist/assets/textures/creature-iron-v4-2.webp",
+          "record": "tools/local-media-records/creature-iron-v4-2.json",
+          "status": "ready"
+        },
+        {
+          "id": "creature-wood",
+          "quadrant": "bottom-right",
+          "output": "dist/assets/textures/creature-wood-v4-2.webp",
+          "record": "tools/local-media-records/creature-wood-v4-2.json",
+          "status": "ready"
+        }
+      ],
+      "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+      "sourceDimensions": [
+        1254,
+        1254
+      ],
+      "seamTrimPixels": 0
+    }
+  ]
+}

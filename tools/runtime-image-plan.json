@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "excludeUnused": [
+    "assets/mountain-photo.webp",
+    "assets/textures/monster-face.webp",
+    "assets/textures/monster-skin-v4.webp"
+  ],
+  "images": [
+    {
+      "source": "dist/assets/textures/forest-floor.webp",
+      "output": "dist/assets/textures/forest-floor-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440
+    },
+    {
+      "source": "dist/assets/textures/cedar-bark.webp",
+      "output": "dist/assets/textures/cedar-bark-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440
+    },
+    {
+      "source": "dist/assets/textures/weathered-wood.webp",
+      "output": "dist/assets/textures/weathered-wood-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440
+    },
+    {
+      "source": "dist/assets/textures/cedar-bough-v4.png",
+      "output": "dist/assets/textures/cedar-bough-v4-2.webp",
+      "maxDimension": 384,
+      "quality": 74,
+      "maxBytes": 61440
+    },
+    {
+      "source": "dist/assets/title-forest.webp",
+      "output": "dist/assets/title-forest-v4-2.webp",
+      "maxDimension": 1280,
+      "quality": 74,
+      "maxBytes": 153600
+    },
+    {
+      "source": "dist/assets/portraits/shuji-v4.webp",
+      "output": "dist/assets/portraits/shuji-v4-2.webp",
+      "maxDimension": 256,
+      "quality": 76,
+      "maxBytes": 24576
+    },
+    {
+      "source": "dist/assets/textures/monster-face-v4.webp",
+      "output": "dist/assets/textures/monster-face-v4-2.webp",
+      "maxDimension": 640,
+      "quality": 78,
+      "maxBytes": 61440
+    }
+  ]
+}

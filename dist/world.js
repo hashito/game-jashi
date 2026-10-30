@@ -2,6 +2,7 @@ import * as THREE from './vendor/three.module.js';
 import { SoftwareRenderer } from './software-renderer.js';
 import {SpatialChunkManager,STREAMING_RULES,instanceRecord,addInstancedLayer,addTerrainChunks,streamingViewpoints} from './streaming.js';
 import {buildCreature,updateCreatureDetails} from './creature.js';
+import {SCENE_ART,SCENE_ART_RULES} from './scene-art.js';
 import {WORLD_BOUNDS,SPAWN,LANDMARKS,TRAILS,BUILDINGS,DOORS,ROOMS,PARKING,BRIDGE,FLOORS,STAIRS,BALCONY,CABIN_WINDOW,REVEAL_POINT,LORE_PLACEMENTS,MAP_ZONES,COVER_PATCHES,COMPANION_START,COMPANION_EXIT,distanceToTrail,distanceToSegment} from './layout.js';
 export {LANDMARKS} from './layout.js';
 let seed=82471;
@@ -58,7 +59,7 @@ export class MountainWorld {
     const moon=new THREE.DirectionalLight('#b7c5d1',1.0);moon.position.set(-22,36,-30);moon.castShadow=true;
     moon.shadow.mapSize.set(1024,1024);Object.assign(moon.shadow.camera,{left:-35,right:35,top:35,bottom:-35,near:1,far:100});
     moon.shadow.bias=-.001;this.scene.add(moon);
-    this.loadMaterials();this.createTerrain();this.createPaths();this.createForest();this.createRocks();this.createCabin();this.createShed();this.createShelter();this.createDoors();this.createCar();this.createParking();this.createObjects();this.createLore();this.createZoneLandmarks();this.createGimmicks();this.createCompanion();this.createDust();this.createCreature();this.createScares();
+    this.loadMaterials();this.createTerrain();this.createPaths();this.createForest();this.createRocks();this.createCabin();this.createShed();this.createShelter();this.createDoors();this.createCar();this.createParking();this.createObjects();this.createLore();this.createZoneLandmarks();this.createGimmicks();this.createCompanion();this.createDust();this.createCreature();this.createScares();this.createSceneArt();
     this.flashlight=new THREE.SpotLight('#fff2cf',32,28,.49,.67,1.25);this.flashlightTarget=new THREE.Object3D();this.flashlight.target=this.flashlightTarget;
     this.scene.add(this.flashlight,this.flashlightTarget);
     this.handlight=new THREE.PointLight('#efd9aa',.5,3);this.scene.add(this.handlight);
@@ -76,9 +77,9 @@ export class MountainWorld {
   upstairsContains(x,z,r=0){const b=FLOORS[1].bounds;return (x>=b.minX+r&&x<=b.maxX-r&&z>=b.minZ&&z<=b.maxZ-r)||(x>=BALCONY.minX+r&&x<=BALCONY.maxX-r&&z>=BALCONY.minZ+r&&z<=BALCONY.maxZ);}
   loadMaterials(){
     const loader=this.options.textureLoader||new THREE.TextureLoader();this.textureStatus={};
-    const load=(name,repeat=[1,1])=>{const texture=loader.load(`./assets/textures/${name}.webp`,()=>{this.textureStatus[name]='ready';},undefined,()=>{this.textureStatus[name]='failed';});texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(...repeat);texture.anisotropy=4;this.textureStatus[name]='loading';return texture;};
+    const load=(name,repeat=[1,1])=>{const texture=loader.load(`./assets/textures/${name}-v4-2.webp`,()=>{this.textureStatus[name]='ready';},undefined,()=>{this.textureStatus[name]='failed';});texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(...repeat);texture.anisotropy=4;this.textureStatus[name]='loading';return texture;};
     this.floorTexture=load('forest-floor');this.woodTexture=load('weathered-wood');this.barkTexture=load('cedar-bark',[1,9]);
-    this.boughTexture=loader.load('./assets/textures/cedar-bough-v4.png',()=>{this.textureStatus['cedar-bough-v4']='ready';},undefined,()=>{this.textureStatus['cedar-bough-v4']='failed';});
+    this.boughTexture=loader.load('./assets/textures/cedar-bough-v4-2.webp',()=>{this.textureStatus['cedar-bough-v4']='ready';},undefined,()=>{this.textureStatus['cedar-bough-v4']='failed';});
     this.boughTexture.colorSpace=THREE.SRGBColorSpace;this.boughTexture.wrapS=this.boughTexture.wrapT=THREE.ClampToEdgeWrapping;this.boughTexture.userData.cutout=true;this.textureStatus['cedar-bough-v4']='loading';
     this.boughMaterial=mat('#d7dfd2',{map:this.boughTexture,side:THREE.DoubleSide,alphaTest:.18,roughness:1});
     wood.map=this.woodTexture;wood.bumpMap=this.woodTexture;wood.bumpScale=.025;wood.needsUpdate=true;
@@ -319,6 +320,75 @@ export class MountainWorld {
       if(p.type==='tag'){this.box(.08,1.6,.08,wood,p.x+.15,terrainY(p.x,p.z)+.8,p.z);this.box(.23,.34,.025,wood,0,0,0,g);this.box(.15,.2,.005,paper,0,0,.017,g);for(let i=0;i<3;i++)this.box(.08,.006,.006,mat('#575e51'),0,.05-i*.05,.022,g);g.rotation.z=.18;}
       this.makeItem(p.id,p.label,p.x,p.z,g,height);this.items[p.id].persistent=true;
     }
+  }
+  createSceneArt(){
+    this.artPanels=new Map(SCENE_ART.map(art=>[art.id,{art,group:null,status:'idle',generation:0}]));
+    this.updateSceneArt(SPAWN);
+  }
+  _paintArtPanel(panel,image=null){
+    const {art,canvas}=panel,ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+    ctx.fillStyle=art.type==='notice'?'#c4baa0':'#cfc6ae';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#302f28';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='bold 38px "Yu Gothic", "Hiragino Sans", sans-serif';ctx.fillText(art.title,w/2,48,w-56);
+    ctx.fillStyle='#4d5147';ctx.fillRect(36,92,440,440);
+    if(image){const iw=image.naturalWidth||image.width,ih=image.naturalHeight||image.height,side=Math.min(iw,ih);if(side>0)ctx.drawImage(image,(iw-side)/2,(ih-side)/2,side,side,40,96,432,432);}
+    ctx.strokeStyle='#736c59';ctx.lineWidth=2;ctx.strokeRect(34,90,444,444);
+    ctx.font='22px "Yu Gothic", "Hiragino Sans", sans-serif';ctx.fillStyle='#403c32';ctx.fillText(art.caption,w/2,570,w-58);
+    ctx.font='18px "Yu Gothic", "Hiragino Sans", sans-serif';ctx.fillStyle='#706751';ctx.fillText(art.type==='notice'?'山林管理記録 / 掲示写し':'山林管理記録 / 写真資料',w/2,609,w-58);
+    panel.texture.needsUpdate=true;
+  }
+  _loadArtPanel(panel){
+    const {art}=panel,generation=++panel.generation,group=new THREE.Group();group.name=art.label;group.userData.sceneArt=art.id;
+    group.position.set(art.x,this.ground(art.x,art.z,art.level)+art.y,art.z);group.rotation.y=art.rotation;this.scene.add(group);panel.group=group;
+    const canvas=document.createElement('canvas');canvas.width=SCENE_ART_RULES.textureWidth;canvas.height=SCENE_ART_RULES.textureHeight;panel.canvas=canvas;
+    panel.texture=new THREE.CanvasTexture(canvas);panel.texture.colorSpace=THREE.SRGBColorSpace;panel.texture.anisotropy=2;
+    const frame=mat('#625947'),paper=mat('#ffffff',{map:panel.texture,roughness:1});
+    this.box(art.width+.028,art.height+.028,.018,frame,0,0,0,group);
+    panel.surface=this.mesh(new THREE.PlaneGeometry(art.width,art.height),paper,0,0,.011,group);
+    for(const x of [-art.width*.4,art.width*.4])this.mesh(new THREE.SphereGeometry(.009,5,3),frame,x,art.height*.45,.017,group);
+    this._paintArtPanel(panel);panel.status='loading';let settled=false;
+    const loader=this.options.textureLoader||new THREE.TextureLoader();
+    const source=loader.load(art.image,texture=>{
+      settled=true;
+      // A request may complete after walking away or after a new panel loaded.
+      // It must never resurrect a released material or overwrite the new one.
+      if(panel.generation===generation&&panel.group){this._paintArtPanel(panel,texture.image);panel.status='ready';panel.sourceTexture=null;}
+      texture.dispose();
+    },undefined,()=>{settled=true;if(panel.generation===generation&&panel.group){panel.status='failed';panel.sourceTexture?.dispose();panel.sourceTexture=null;}});
+    panel.sourceTexture=settled?null:source;
+  }
+  _releaseArtPanel(panel){
+    if(!panel.group)return;
+    panel.generation++;const geometries=new Set(),materials=new Set();
+    panel.group.traverse(part=>{if(part.geometry)geometries.add(part.geometry);if(part.material)materials.add(part.material);});
+    panel.group.removeFromParent();for(const geometry of geometries)geometry.dispose();for(const material of materials)material.dispose();
+    panel.texture.dispose();panel.sourceTexture?.dispose();
+    panel.group=null;panel.surface=null;panel.texture=null;panel.sourceTexture=null;panel.canvas=null;panel.status='idle';
+  }
+  updateSceneArt(pos){
+    if(!this.artPanels)return;
+    const nearby=[];
+    for(const panel of this.artPanels.values()){
+      const distance=Math.hypot(panel.art.x-pos.x,panel.art.z-pos.z);
+      if(panel.group&&distance>SCENE_ART_RULES.unloadRadius)this._releaseArtPanel(panel);
+      if(!panel.group&&distance<=SCENE_ART_RULES.loadRadius)nearby.push({panel,distance});
+    }
+    nearby.sort((a,b)=>a.distance-b.distance);
+    for(const {panel}of nearby.slice(0,SCENE_ART_RULES.maxLoadsPerUpdate))this._loadArtPanel(panel);
+  }
+  disposeSceneArt(){for(const panel of this.artPanels?.values()||[])this._releaseArtPanel(panel);}
+  getArtTarget(player,yaw=0,maxDistance=2.8){
+    let best=null;
+    for(const art of SCENE_ART){
+      if((player.level??0)!==art.level)continue;
+      const dx=art.x-player.x,dz=art.z-player.z,distance=Math.hypot(dx,dz),nx=Math.sin(art.rotation),nz=Math.cos(art.rotation);
+      if(distance<.05||distance>maxDistance||(-Math.sin(yaw)*dx-Math.cos(yaw)*dz)/distance<.72)continue;
+      if((-dx*nx-dz*nz)/distance<.2)continue;
+      const a={x:player.x,z:player.z,y:this.actorHeight(player)+1.65},b={x:art.x+nx*.025,z:art.z+nz*.025,y:this.ground(art.x,art.z,art.level)+art.y};
+      if(this.colliders.some(c=>c.enabled!==false&&segmentHitsVolume(a,b,c,.01))||this.slabs.some(c=>segmentHitsVolume(a,b,c,.01)))continue;
+      if(!best||distance<best.distance)best={...art,kind:'sceneArt',distance};
+    }
+    return best;
   }
   createZoneLandmarks(){
     this.mapZones=MAP_ZONES;
@@ -677,6 +747,7 @@ export class MountainWorld {
     const visualOrigin=scope?{x:LANDMARKS.telescope.x,z:LANDMARKS.telescope.z+.5}:pos;
     const jumped=!this._streamingOrigin||Math.hypot(visualOrigin.x-this._streamingOrigin.x,visualOrigin.z-this._streamingOrigin.z)>8;
     this.streaming.update(streamingViewpoints(visualOrigin,opticalTarget),{flush:jumped||!!scope&&!this._streamingScope});
+    this.updateSceneArt(visualOrigin);
     this._streamingOrigin={x:visualOrigin.x,z:visualOrigin.z};
     this._streamingScope=!!scope;
     this.renderer.render(this.scene,this.camera);

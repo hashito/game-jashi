@@ -1,0 +1,29 @@
+{
+  "id": "creature-cloth",
+  "sheetId": "creature-materials",
+  "file": "dist/assets/textures/creature-cloth-v4-2.webp",
+  "record": "tools/local-media-records/creature-cloth-v4-2.json",
+  "sha256": "2cd1c7a29a391566f22acafce32548475bb2c6e8720e0b41be35a8b5f9b8224b",
+  "status": "verified-existing",
+  "dimensions": [
+    384,
+    384
+  ],
+  "encoding": {
+    "format": "WEBP",
+    "quality": 72,
+    "method": 6,
+    "maxDimension": 384
+  },
+  "cropRect": [
+    627,
+    0,
+    1254,
+    627
+  ],
+  "sourceFile": "assets/sources/batch-v4.2/creature-materials.png",
+  "sourceSha256": "f4bc2f921fa733650f8c64c01152d1db0d0283817c8b60d6253841ffb4ea2f9b",
+  "sourceVerified": true,
+  "engineContacted": false,
+  "verifiedAt": "2026-10-30T05:33:13.557Z"
+}

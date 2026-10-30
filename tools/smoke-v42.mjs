@@ -8,13 +8,14 @@ import {serve} from './serve.mjs';
 import {DOORS} from '../dist/layout.js';
 import {TELESCOPE_SCENES} from '../dist/narrative.js';
 import {EVIDENCE} from '../dist/evidence.js';
+import {SCENE_ART} from '../dist/scene-art.js';
 
 const out=path.resolve('shots/v4.2');fs.mkdirSync(out,{recursive:true});
 const server=await serve(0,'dist'),base=`http://127.0.0.1:${server.port}/`,saveKey='jashi-mountain-checkpoint-v4';
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const report=[];
 try{
-  for(const [name,profile]of [['desktop',{width:1440,height:900}],['phone',{width:390,height:844,mobile:true,dpr:1}]]){
+  for(const [name,profile]of [['desktop',{width:1280,height:720}],['phone',{width:390,height:844,mobile:true,dpr:1}]]){
     console.log(`${name}: launching browser`);
     const p=await launch(profile);
     const trace=[];let lastPose=null,stage='initial load';
@@ -42,9 +43,11 @@ try{
       let at=await pose();
       // Arrow controls are also supported on touch browsers. Read the rendered
       // compass after every turn, so CPU-only frame rates cannot skew the aim.
-      for(let i=0;i<12;i++){
-        const desired=Math.atan2(-(target.x-at.x),-(target.z-at.z)),delta=wrap(desired-at.yaw);if(Math.abs(delta)<.065)return at;
-        await hold(delta>0?'ArrowLeft':'ArrowRight',Math.max(35,Math.min(800,Math.abs(delta)*520)));at=await pose();
+      // A seven-degree aim still faces the center of a real doorway; very short
+      // key pulses can fall between frames on the software-rendered CI runner.
+      for(let i=0;i<24;i++){
+        const desired=Math.atan2(-(target.x-at.x),-(target.z-at.z)),delta=wrap(desired-at.yaw);if(Math.abs(delta)<.12)return at;
+        await hold(delta>0?'ArrowLeft':'ArrowRight',Math.max(120,Math.min(800,Math.abs(delta)*520)));at=await pose();
       }
       throw Error(`could not face ${JSON.stringify(target)} from ${JSON.stringify(at)}`);
     };
@@ -82,6 +85,14 @@ try{
       await p.goto(base);await p.eval("localStorage.clear();localStorage.setItem('jashi-mountain-options-v1',JSON.stringify({quality:'low',tape:0,motion:false,volume:.6}));");
       await p.goto(base);await p.waitFor("!document.getElementById('start-button').disabled",90000);await tap('[data-action="start"]');await tap('[data-action="begin"]');await p.sleep(600);
       initial=await p.eval(`JSON.parse(localStorage.getItem('${saveKey}'))`);assert.equal(initial.v,4);
+      if(name==='desktop'){
+        stage='scene art asset decode';
+        assert.equal(SCENE_ART.length,8,'both four-panel sheets provide eight scene assets');
+        assert.equal(new Set(SCENE_ART.map(art=>art.image)).size,8,'each scene panel uses its own cropped image');
+        const decoded=await p.eval(`Promise.all(${JSON.stringify(SCENE_ART.map(({id,image})=>({id,image})))}.map(async art=>{const img=new Image();img.src=art.image;await img.decode();return{id:art.id,image:art.image,width:img.naturalWidth,height:img.naturalHeight};}))`);
+        for(const art of decoded)assert.ok(art.width>0&&art.height>0,`${art.id}: final asset decodes through the game server`);
+        report.push({profile:name,sceneArtAssets:decoded});
+      }
       for(const [id,start]of [['cabin-entry',{x:0,z:20.6,level:0}],['shed-entry',{x:-19,z:.6,level:0}]]){
         stage=id;console.log(`${name}: ${id}`);
         const d=DOORS.find(d=>d.id===id),c=checkpoint(start);c.doors[id]=false;await load(c);await turnToward(d);
@@ -101,6 +112,27 @@ try{
           await p.waitFor(`JSON.parse(localStorage.getItem('${saveKey}')).flags.bottle===true`);assert.equal(await p.eval("document.getElementById('charge-count').textContent"),'×2');await bounds('bottle record');await p.shot(path.join(out,`${name}-shed-bottle.png`));await closePanel();
         }
       }
+      // Approach the actual poster and mounted photo from normal checkpoint
+      // positions, then use the same interaction controls as a player.
+      for(const [id,position]of [['trail-notice',{x:-4.25,z:17.3,level:0}],['cabin-memory',{x:4.5,z:23.15,level:0}]]){
+        stage=`scene art ${id}`;console.log(`${name}: ${stage}`);
+        const art=SCENE_ART.find(entry=>entry.id===id);assert.ok(art,`${id}: authored scene panel exists`);
+        await load(checkpoint(position));await turnToward(art);
+        await p.waitFor(`!document.getElementById('interaction').hidden&&document.getElementById('interaction-text').textContent.includes(${JSON.stringify(art.label)})`);
+        await p.shot(path.join(out,`${name}-${id}-world.png`));await interact();
+        await p.waitFor("!document.getElementById('panel').hidden&&document.querySelector('.scene-art-photo img')?.complete&&document.querySelector('.scene-art-photo img')?.naturalWidth>0",30000);
+        const shown=await p.eval(`(()=>{const img=document.querySelector('.scene-art-photo img'),r=img.getBoundingClientRect(),body=document.getElementById('panel-body'),b=body.getBoundingClientRect();return{src:img.getAttribute('src'),alt:img.alt,title:document.getElementById('panel-title').textContent,width:img.naturalWidth,height:img.naturalHeight,rect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height},body:{left:b.left,top:b.top,right:b.right,bottom:b.bottom,overflow:body.scrollWidth>body.clientWidth+1},viewport:{width:innerWidth,height:innerHeight}};})()`);
+        assert.equal(shown.src,art.image,`${id}: interaction opens its own photograph`);assert.equal(shown.title,art.title);assert.equal(shown.alt,art.alt);
+        assert.ok(shown.width>0&&shown.height>0,`${id}: visible photo is decoded`);
+        assert.ok(shown.rect.width>=120&&shown.rect.height>=120,`${id}: photo is large enough to inspect: ${JSON.stringify(shown)}`);
+        assert.ok(shown.rect.left>=0&&shown.rect.right<=shown.viewport.width+1&&shown.rect.top>=0&&shown.rect.bottom<=shown.viewport.height+1,`${id}: entire photo fits the viewport: ${JSON.stringify(shown)}`);
+        assert.ok(shown.rect.left>=shown.body.left-1&&shown.rect.right<=shown.body.right+1&&shown.rect.top>=shown.body.top-1&&shown.rect.bottom<=shown.body.bottom+1,`${id}: photo is not clipped by the scrolling panel: ${JSON.stringify(shown)}`);
+        assert.equal(shown.body.overflow,false,`${id}: panel has no horizontal overflow`);await bounds(`${id} scene photo`);
+        const pausedClock=(await uiState()).clock;await p.sleep(400);assert.equal((await uiState()).clock,pausedClock,`${id}: inspecting the photograph pauses exploration`);
+        await p.shot(path.join(out,`${name}-${id}-photo.png`));await closePanel();
+        assert.equal((await uiState()).screen,'play',`${id}: closing returns to exploration`);
+        report.push({profile:name,sceneArt:id,shown});
+      }
       // These are already photographed records in a normal saved game. Opening
       // and inspecting them still goes through the actual journal UI.
       const records=checkpoint({x:0,z:23,level:0});records.collected=['boots','ledger','mirror'];records.examined=[];await load(records);
@@ -118,7 +150,7 @@ try{
       for(let phase=0;phase<3;phase++){
         await p.waitFor(`!document.getElementById('scope-sequence').hidden&&document.getElementById('scope-title').textContent===${JSON.stringify(TELESCOPE_SCENES[phase].title)}`,90000);await p.sleep(phase===2?1000:250);await bounds(`scope ${phase}`);await p.shot(path.join(out,`${name}-scope-${phase}.png`));
       }
-      assert.deepEqual(p.errors.filter(e=>!e.includes('favicon')),[],`${name}: browser errors`);console.log(`${name}: doors, movement, bottle, detail photos, inspection persistence and all scope beats OK`);
+      assert.deepEqual(p.errors.filter(e=>!e.includes('favicon')),[],`${name}: browser errors`);console.log(`${name}: doors, movement, bottle, scene art, detail photos, inspection persistence and all scope beats OK`);
     }catch(error){
       const diagnostics={error:String(error),stage,lastPose,ui:await uiState().catch(stateError=>({error:String(stateError)})),trace,errors:p.errors,logs:p.logs};
       fs.writeFileSync(path.join(out,`${name}-failure.json`),JSON.stringify(diagnostics,null,2));console.error(diagnostics);

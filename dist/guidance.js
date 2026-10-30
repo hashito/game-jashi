@@ -21,7 +21,7 @@ export function objectiveFor(flags = {}, stage = 0) {
     : !flags.note ? 'note' : !flags.bottle ? 'bottle' : !flags.crank ? 'crank' : 'listen';
   const detail = DETAILS[id];
   return {id,...detail,text:detail.action,target:id === 'stairs' ? STAIRS.top : LANDMARKS[id] || null,
-    image:detail.image ? `assets/items/${detail.image}.png` : null,
+    image:detail.image ? `assets/items/${detail.image}.webp` : null,
     voice:['stairs','listen'].includes(id) ? null : `assets/audio/guide-${id}.wav`};
 }
 

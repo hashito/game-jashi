@@ -5,9 +5,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import {checkRuntimeImages} from './check-runtime-images.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'public');
+const runtimeImages=checkRuntimeImages(ROOT);
+if(runtimeImages.problems.length)throw new Error('Runtime image verification failed:\n'+runtimeImages.problems.join('\n'));
+const excludedImages = new Set(JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/runtime-images.json'), 'utf8')).excludedFromBuild);
 const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.json'), 'utf8'));
 const origin = `https://${site.domain}`;
 const url = `${origin}/`;
@@ -19,7 +23,7 @@ try { lastmod = execSync('git log -1 --format=%cs', { cwd: ROOT, stdio: ['ignore
 if (!lastmod) lastmod = new Date().toISOString().slice(0, 10);
 
 fs.rmSync(OUT, { recursive: true, force: true });
-fs.cpSync(path.join(ROOT, 'dist'), OUT, { recursive: true, filter: (s) => !path.basename(s).startsWith('_') });
+fs.cpSync(path.join(ROOT, 'dist'), OUT, { recursive: true, filter: (s) => !path.basename(s).startsWith('_') && !excludedImages.has(path.relative(path.join(ROOT,'dist'),s).replaceAll('\\','/')) });
 fs.copyFileSync(path.join(ROOT, 'assets/og-image.jpg'), path.join(OUT, 'og-image.jpg'));
 fs.copyFileSync(path.join(ROOT, 'assets/favicon.svg'), path.join(OUT, 'favicon.svg'));
 
@@ -97,8 +101,11 @@ for (const f of files.filter((x) => x.endsWith('.css'))) {
   for (const m of fs.readFileSync(f, 'utf8').matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) if (!exists(f, m[1])) problems.push(`${path.relative(OUT, f)} -> ${m[1]}`);
 }
 for (const f of files.filter((x) => x.endsWith('.js'))) {
-  for (const m of fs.readFileSync(f, 'utf8').matchAll(/(?:^|\n)\s*(?:import|export)[^'"\n]*?from\s*["'](\.[^"']+)["']/g)) if (!exists(f, m[1])) problems.push(`${path.relative(OUT, f)} -> ${m[1]}`);
+  const script=fs.readFileSync(f,'utf8');
+  for (const m of script.matchAll(/(?:^|\n)\s*(?:import|export)[^'"\n]*?from\s*["'](\.[^"']+)["']/g)) if (!exists(f, m[1])) problems.push(`${path.relative(OUT, f)} -> ${m[1]}`);
+  for(const m of script.matchAll(/["'`]((?:\.\/)?assets\/[^"'`\n]+)["'`]/g))if(!m[1].includes('${')&&!exists(idx,m[1]))problems.push(`${path.relative(OUT,f)} -> ${m[1]}`);
 }
+for(const item of JSON.parse(fs.readFileSync(path.join(OUT,'assets/items/manifest.json'),'utf8')).items)if(!exists(idx,item.file))problems.push(`item manifest -> ${item.file}`);
 const bytes = files.reduce((a, f) => a + fs.statSync(f).size, 0);
 const og = fs.statSync(path.join(OUT, 'og-image.jpg')).size;
 console.log(`built ${path.relative(ROOT, OUT)}/ for ${url} (lastmod ${lastmod}, GA ${site.gaId || 'off'}): ${files.length} files, ${(bytes / 1048576).toFixed(2)} MB, og-image ${Math.round(og / 1024)} KB`);

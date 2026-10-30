@@ -305,7 +305,44 @@
         "tools/local-media-records/mirror-detail-v4-2.json",
         "dist/assets/photos/mirror-detail-v4-2.webp",
         "tools/local-media-verification/mirror-detail-v4-2.json",
-        "tools/photo-briefs-v4.2.json"
+        "tools/photo-briefs-v4.2.json",
+        "dist/assets/photos/trail-notice-v4-2.webp",
+        "tools/local-media-records/trail-notice-v4-2.json",
+        "dist/assets/photos/forestry-notice-v4-2.webp",
+        "tools/local-media-records/forestry-notice-v4-2.json",
+        "dist/assets/photos/shelter-notice-v4-2.webp",
+        "tools/local-media-records/shelter-notice-v4-2.json",
+        "dist/assets/photos/bridge-notice-v4-2.webp",
+        "tools/local-media-records/bridge-notice-v4-2.json",
+        "tools/local-media-verification/trail-notice-v4-2.json",
+        "tools/local-media-verification/forestry-notice-v4-2.json",
+        "tools/local-media-verification/shelter-notice-v4-2.json",
+        "tools/local-media-verification/bridge-notice-v4-2.json",
+        "tools/scene-art-briefs-v4.2.json",
+        "dist/assets/photos/cabin-memory-v4-2.webp",
+        "tools/local-media-records/cabin-memory-v4-2.json",
+        "dist/assets/photos/logging-memory-v4-2.webp",
+        "tools/local-media-records/logging-memory-v4-2.json",
+        "dist/assets/photos/creek-memory-v4-2.webp",
+        "tools/local-media-records/creek-memory-v4-2.json",
+        "dist/assets/photos/parking-memory-v4-2.webp",
+        "tools/local-media-records/parking-memory-v4-2.json",
+        "tools/local-media-verification/cabin-memory-v4-2.json",
+        "tools/local-media-verification/logging-memory-v4-2.json",
+        "tools/local-media-verification/creek-memory-v4-2.json",
+        "tools/local-media-verification/parking-memory-v4-2.json",
+        "dist/assets/textures/creature-skin-v4-2.webp",
+        "tools/local-media-records/creature-skin-v4-2.json",
+        "dist/assets/textures/creature-cloth-v4-2.webp",
+        "tools/local-media-records/creature-cloth-v4-2.json",
+        "dist/assets/textures/creature-iron-v4-2.webp",
+        "tools/local-media-records/creature-iron-v4-2.json",
+        "dist/assets/textures/creature-wood-v4-2.webp",
+        "tools/local-media-records/creature-wood-v4-2.json",
+        "tools/local-media-verification/creature-skin-v4-2.json",
+        "tools/local-media-verification/creature-cloth-v4-2.json",
+        "tools/local-media-verification/creature-iron-v4-2.json",
+        "tools/local-media-verification/creature-wood-v4-2.json"
       ],
       "outputs": [
         "assets/production.json"
@@ -379,6 +416,102 @@
         "node",
         "tools/verify-evidence.mjs",
         "mirror-detail"
+      ],
+      "retries": 0,
+      "timeoutMs": 60000
+    },
+    {
+      "id": "verify-scene-art-mountain-posters",
+      "kind": "process",
+      "pool": "cpu",
+      "purpose": "4分割シートから切り出した4素材の検証: mountain-posters",
+      "inputs": [
+        "dist/assets/photos/trail-notice-v4-2.webp",
+        "tools/local-media-records/trail-notice-v4-2.json",
+        "dist/assets/photos/forestry-notice-v4-2.webp",
+        "tools/local-media-records/forestry-notice-v4-2.json",
+        "dist/assets/photos/shelter-notice-v4-2.webp",
+        "tools/local-media-records/shelter-notice-v4-2.json",
+        "dist/assets/photos/bridge-notice-v4-2.webp",
+        "tools/local-media-records/bridge-notice-v4-2.json",
+        "tools/scene-art-briefs-v4.2.json",
+        "tools/verify-scene-art.mjs"
+      ],
+      "outputs": [
+        "tools/local-media-verification/trail-notice-v4-2.json",
+        "tools/local-media-verification/forestry-notice-v4-2.json",
+        "tools/local-media-verification/shelter-notice-v4-2.json",
+        "tools/local-media-verification/bridge-notice-v4-2.json"
+      ],
+      "command": [
+        "node",
+        "tools/verify-scene-art.mjs",
+        "--sheet",
+        "mountain-posters"
+      ],
+      "retries": 0,
+      "timeoutMs": 60000
+    },
+    {
+      "id": "verify-scene-art-mountain-photographs",
+      "kind": "process",
+      "pool": "cpu",
+      "purpose": "4分割シートから切り出した4素材の検証: mountain-photographs",
+      "inputs": [
+        "dist/assets/photos/cabin-memory-v4-2.webp",
+        "tools/local-media-records/cabin-memory-v4-2.json",
+        "dist/assets/photos/logging-memory-v4-2.webp",
+        "tools/local-media-records/logging-memory-v4-2.json",
+        "dist/assets/photos/creek-memory-v4-2.webp",
+        "tools/local-media-records/creek-memory-v4-2.json",
+        "dist/assets/photos/parking-memory-v4-2.webp",
+        "tools/local-media-records/parking-memory-v4-2.json",
+        "tools/scene-art-briefs-v4.2.json",
+        "tools/verify-scene-art.mjs"
+      ],
+      "outputs": [
+        "tools/local-media-verification/cabin-memory-v4-2.json",
+        "tools/local-media-verification/logging-memory-v4-2.json",
+        "tools/local-media-verification/creek-memory-v4-2.json",
+        "tools/local-media-verification/parking-memory-v4-2.json"
+      ],
+      "command": [
+        "node",
+        "tools/verify-scene-art.mjs",
+        "--sheet",
+        "mountain-photographs"
+      ],
+      "retries": 0,
+      "timeoutMs": 60000
+    },
+    {
+      "id": "verify-scene-art-creature-materials",
+      "kind": "process",
+      "pool": "cpu",
+      "purpose": "4分割シートから切り出した4素材の検証: creature-materials",
+      "inputs": [
+        "dist/assets/textures/creature-skin-v4-2.webp",
+        "tools/local-media-records/creature-skin-v4-2.json",
+        "dist/assets/textures/creature-cloth-v4-2.webp",
+        "tools/local-media-records/creature-cloth-v4-2.json",
+        "dist/assets/textures/creature-iron-v4-2.webp",
+        "tools/local-media-records/creature-iron-v4-2.json",
+        "dist/assets/textures/creature-wood-v4-2.webp",
+        "tools/local-media-records/creature-wood-v4-2.json",
+        "tools/scene-art-briefs-v4.2.json",
+        "tools/verify-scene-art.mjs"
+      ],
+      "outputs": [
+        "tools/local-media-verification/creature-skin-v4-2.json",
+        "tools/local-media-verification/creature-cloth-v4-2.json",
+        "tools/local-media-verification/creature-iron-v4-2.json",
+        "tools/local-media-verification/creature-wood-v4-2.json"
+      ],
+      "command": [
+        "node",
+        "tools/verify-scene-art.mjs",
+        "--sheet",
+        "creature-materials"
       ],
       "retries": 0,
       "timeoutMs": 60000

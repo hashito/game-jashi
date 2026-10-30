@@ -1,0 +1,53 @@
+{
+  "id": "parking-memory",
+  "sheetId": "mountain-photographs",
+  "kind": "image",
+  "engine": "built-in image_gen",
+  "model": "not reported by tool",
+  "seed": "not reported by tool",
+  "prompt": "Generate ONE square 2048x2048 production image sheet divided into an EXACT 2 by 2 grid of FOUR EQUAL square independent assets. Each quadrant fills exactly one quarter; hard cut at 50% horizontal and vertical. No gutters, no grid lines, no outside border, no shared objects or shadows across cells. Important content stays 7% away from each quadrant edge. No captions, lettering, numbers, logos, watermark. These will be mechanically cut into four separate images for a Japanese woodland exploration horror game. Subtle dread, plausible rural setting, restrained detail readable at small size; absolutely no gore. Use case: photorealistic-natural. Four entirely separate ordinary 1990s 35mm color film documentary photographs from a remote Japanese forest mountain. Natural desaturated colors, visible film grain, quiet believable imperfections, no physical photograph frames or printed dates, usable moderate brightness and legible subjects. TOP LEFT: old two-story Japanese wooden vacation cabin on a foggy cedar hillside, exterior porch and upper balcony, one pale curtain drawn away from a dark upper window, no people. TOP RIGHT: six forestry workers photographed from behind at a logging clearing, 1990s work coats and helmets, faces not visible, five long human shadows falling across dirt, one abandoned pair of boots at the side, subtle uncanny asymmetry. BOTTOM LEFT: close low view across weathered wet wooden footbridge planks and one tied red cloth, distinct muddy barefoot footprints lead to the center then end, mossy stream out of focus. BOTTOM RIGHT: small empty dark-green 1990s Japanese compact car parked nose-out in a gravel cedar clearing, dusk, condensation streaks on the windshield and one faint hand-shaped clear area on its inside, no license text, no monster, realistic archival evidence mood.",
+  "file": "dist/assets/photos/parking-memory-v4-2.webp",
+  "output": "dist/assets/photos/parking-memory-v4-2.webp",
+  "sha256": "8a5adad983684af0ca7e7ea2cb4dc78dbba61df5fc394aa9b3ff735c01f57535",
+  "bytes": 26008,
+  "preparedAt": "2026-10-30T05:29:55.916114+00:00",
+  "sourceFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+  "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+  "sourceDimensions": [
+    1254,
+    1254
+  ],
+  "quadrant": "bottom-right",
+  "cropRect": [
+    627,
+    627,
+    1254,
+    1254
+  ],
+  "seamTrimPixels": 0,
+  "dimensions": [
+    512,
+    512
+  ],
+  "width": 512,
+  "height": 512,
+  "encoding": {
+    "format": "WEBP",
+    "quality": 68,
+    "method": 6,
+    "maxDimension": 512
+  },
+  "processing": "User-requested exact 2x2 quadrant crop; optional internal seam trim; RGB Lanczos thumbnail bounded to 512px without upscaling or stretching; WebP quality68 method6. No content retouching.",
+  "purpose": "山中の掲示物・探索地点に残された記録画像 / parking-memory",
+  "credit": "AI-generated fictional scene artwork, built-in image_gen; cropped from one four-image sheet.",
+  "license": "Generated output; the generating service's applicable terms govern use. No third-party stock license is asserted.",
+  "licenseUrl": "https://openai.com/policies/terms-of-use/",
+  "source": {
+    "kind": "generated-builtin",
+    "engine": "image_gen",
+    "originalFile": "assets/sources/batch-v4.2/mountain-photographs.png",
+    "sourceSha256": "28998480a1d31bc5984eb28facd31d4f6b8b0b79442952d067c68ab737b16325",
+    "sheetId": "mountain-photographs",
+    "quadrant": "bottom-right"
+  }
+}

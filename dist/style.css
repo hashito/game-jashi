@@ -11,7 +11,7 @@ a{color:#d8c99e;text-underline-offset:4px;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 #world{position:fixed;inset:0;background:#111a17;touch-action:none}
 #world canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
-#title-screen{position:fixed;inset:0;z-index:10;isolation:isolate;background:#17211c url("assets/title-forest.webp") center center/cover no-repeat;overflow:hidden}
+#title-screen{position:fixed;inset:0;z-index:10;isolation:isolate;background:#17211c url("assets/title-forest-v4-2.webp") center center/cover no-repeat;overflow:hidden}
 body:not([data-screen="title"]) #title-screen{display:none}
 #title-screen:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(4,10,8,.86) 0%,rgba(5,11,9,.67) 30%,rgba(5,11,9,.18) 69%,rgba(5,11,9,.12) 100%),linear-gradient(0deg,rgba(4,9,7,.96),transparent 25%,transparent 75%,rgba(4,9,7,.25))}
 #title-screen:after{content:"";position:absolute;inset:20px;z-index:-1;border:1px solid rgba(223,228,214,.08);pointer-events:none}
@@ -743,3 +743,5 @@ body[data-danger="high"] .search-card img,body[data-danger="high"] #search-phase
 .evidence-action p { font-size: .85rem; color: #b8bba8; }
 .evidence-action button { max-width: 100%; white-space: normal; text-align: left; line-height: 1.6; }
 .evidence-photo { margin-top: 1.2rem; }
+.scene-art-photo{max-width:460px;margin:0 auto 22px;transform:none}
+.scene-art-photo img{max-height:min(44vh,420px);object-fit:contain}

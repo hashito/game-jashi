@@ -334,7 +334,7 @@ function maybeHunt(){
 }
 // v4.0.2: pictures of the in-game item models (tools/make-item-images.mjs).
 const ITEM_IMAGES=new Set(['glasses','note','bottle','crank','photo','phone','radio','bell','telescope','boots','ledger','cassette','mirror','ribbon','toy','tag']);
-const itemImage=(id,cls='item-figure')=>ITEM_IMAGES.has(id)?`<img class="${cls}" src="assets/items/${id}.png" alt="" width="320" height="240" decoding="async">`:'';
+const itemImage=(id,cls='item-figure')=>ITEM_IMAGES.has(id)?`<img class="${cls}" src="assets/items/${id}.webp" alt="" width="320" height="240" decoding="async">`:'';
 function docHTML(d,id=''){
   let body=!d.image&&ITEM_IMAGES.has(id)?`<figure class="item-shot">${itemImage(id)}<figcaption>DVで撮った ${textHTML(d.title)}</figcaption></figure>`:'';
   body+=d.image?'<figure class="photo-frame"><img src="'+d.image+'" alt="'+textHTML(d.title)+'"><figcaption>'+textHTML(d.caption||'撮影した記録。')+'</figcaption></figure>':'';
@@ -388,13 +388,23 @@ function findTarget(){
     const value=d+(1-dot)*1.4-(item.id===getObjective().id ? .3 : 0);if(value<score){best=item;score=value;}
   }
   const door=world.getDoorTarget?.(player,yaw);
-  if(door&&(!best||door.distance+.35<score))return door;
+  if(door&&(!best||door.distance+.35<score)){best=door;score=door.distance+.35;}
+  const art=world.getArtTarget?.(player,yaw);
+  if(art&&(!best||art.distance+.65<score))return art;
   return best;
+}
+
+function readSceneArt(item){
+  cue('page',item);
+  panel('scene-art','山に残された掲示 / 写真',item.title,
+    `<figure class="photo-frame scene-art-photo"><img src="${textHTML(item.image)}" alt="${textHTML(item.alt||item.title)}" width="512" height="512" decoding="async"><figcaption>${textHTML(item.caption||item.label)}</figcaption></figure>${paragraphs(item.text.split('\n'))}`,
+    button('close-panel','探索に戻る'));
 }
 
 function interact(){
   if(mode!=='play'||survival.dead||dialoguePaused)return;if(action){action=null;toast('手を止めた');return;}
   const item=findTarget();if(!item){toast('調べるものに近づき、そちらを向いてください',2000);return;}const id=item.id;cue('interact');
+  if(item.kind==='sceneArt'){readSceneArt(item);return;}
   if(item.kind==='door'){
     const actors=[player,monster];if(companionState!=='away'&&world.companionPos)actors.push(world.companionPos);
     const result=world.toggleDoor(id,actors);
