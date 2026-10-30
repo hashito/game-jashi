@@ -29,8 +29,6 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Render and measure audio cues
         run: node tools/check-audio-render.mjs
-      - name: Doors, evidence close-ups and continuous telescope encounter
-        run: node tools/smoke-v42.mjs
       - name: Desktop and mobile controls, photos, voice and escape
         run: npm run smoke
       - uses: actions/upload-artifact@v4
@@ -38,4 +36,29 @@ jobs:
         with:
           name: game-verification
           path: shots/
+          if-no-files-found: ignore
+  v42-browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [desktop, phone]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BROWSER: /usr/bin/google-chrome
+      GF_SOFTWARE_GL: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Japanese fonts for readable screenshots
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+      - name: Doors, evidence close-ups and continuous telescope encounter
+        run: node tools/smoke-v42.mjs --profile ${{ matrix.profile }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v42-${{ matrix.profile }}
+          path: shots/v4.2/
           if-no-files-found: ignore

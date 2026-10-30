@@ -14,8 +14,11 @@ const out=path.resolve('shots/v4.2');fs.mkdirSync(out,{recursive:true});
 const server=await serve(0,'dist'),base=`http://127.0.0.1:${server.port}/`,saveKey='jashi-mountain-checkpoint-v4';
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const report=[];
+const selected=process.argv.includes('--profile')?process.argv[process.argv.indexOf('--profile')+1]:null;
+assert.ok(selected===null||['desktop','phone'].includes(selected),'--profile must be desktop or phone');
 try{
   for(const [name,profile]of [['desktop',{width:1280,height:720}],['phone',{width:390,height:844,mobile:true,dpr:1}]]){
+    if(selected&&selected!==name)continue;
     console.log(`${name}: launching browser`);
     const p=await launch(profile);
     const trace=[];let lastPose=null,stage='initial load';
@@ -106,7 +109,11 @@ try{
         const approach=await pose();await forward(2);const blocked=await pose();await traceState(`${id}: closed movement`);
         assert.ok(blocked.z>d.z+.25,`${id}: a closed door blocks actual movement: ${JSON.stringify(blocked)}`);
         assert.ok(blocked.z<approach.z-.3,`${id}: movement input approaches the closed door: ${JSON.stringify({approach,blocked})}`);
-        await forward(1);const stillBlocked=await pose();assert.ok(Math.hypot(stillBlocked.x-blocked.x,stillBlocked.z-blocked.z)<.2,`${id}: continued walking stops at the physical leaf`);
+        await forward(1);const stillBlocked=await pose();
+        // Collision intentionally permits sliding ALONG a leaf. Measure its
+        // normal axis, and keep the player between the posts, rather than
+        // treating valid sideways movement as passing through the closed door.
+        assert.ok(Math.abs(stillBlocked.z-blocked.z)<.08&&stillBlocked.z>d.z+.25&&Math.abs(stillBlocked.x-d.x)<d.width/2,`${id}: continued walking cannot cross the closed leaf: ${JSON.stringify({blocked,stillBlocked,door:d})}`);
         await turnToward(d);await interact();await p.waitFor(`JSON.parse(localStorage.getItem('${saveKey}')).doors[${JSON.stringify(id)}]===true`);await p.sleep(600);
         await p.shot(path.join(out,`${name}-${id}-open.png`));
         let inside=await pose();for(let i=0;i<8&&inside.z>d.z-.65;i++){await turnToward({x:d.x,z:d.z-2});await forward(1);inside=await pose();await traceState(`${id}: open movement ${i+1}`);}
