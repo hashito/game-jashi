@@ -1,0 +1,178 @@
+{
+ "goal": {
+  "title": "日が暮れる前に、山を下りる",
+  "short": "山を下りる",
+  "sub": "別荘から駐車場の車まで戻り、林道ゲートを上げて山を下りる。",
+  "meter": "帰り道"
+ },
+ "levels": [
+  {
+   "id": "L1",
+   "name": "二階の備品",
+   "title": "二階のベランダで、望遠鏡を確かめる",
+   "unlocks": [
+    "upstairs"
+   ],
+   "look": {
+    "fog": "#8b938a",
+    "density": 0.018,
+    "light": 1,
+    "background": "fog"
+   }
+  },
+  {
+   "id": "L2",
+   "name": "窓の向こう",
+   "title": "窓から離れ、雨戸を閉める",
+   "unlocks": [
+    "window"
+   ],
+   "look": {
+    "fog": "#7c837b",
+    "density": 0.021,
+    "light": 0.92
+   }
+  },
+  {
+   "id": "L3",
+   "name": "一階の机",
+   "title": "机の無線を合わせ、修司の声を拾う",
+   "unlocks": [
+    "downstairs"
+   ],
+   "look": {
+    "fog": "#717870",
+    "density": 0.023,
+    "light": 0.86
+   }
+  },
+  {
+   "id": "L4",
+   "name": "帰る支度",
+   "title": "西の物置で、ボトルを二本持ち出す",
+   "unlocks": [
+    "outside",
+    "shed"
+   ],
+   "look": {
+    "fog": "#636a63",
+    "density": 0.026,
+    "light": 0.78
+   }
+  },
+  {
+   "id": "L5",
+   "name": "山道の記録",
+   "title": "東の避難小屋で、巻上げハンドルを探す",
+   "unlocks": [
+    "shelter"
+   ],
+   "look": {
+    "fog": "#545a55",
+    "density": 0.029,
+    "light": 0.68
+   }
+  },
+  {
+   "id": "L6",
+   "name": "戻る道",
+   "title": "林道ゲートを、巻き上げる",
+   "unlocks": [
+    "road"
+   ],
+   "look": {
+    "fog": "#424844",
+    "density": 0.032,
+    "light": 0.58,
+    "exposure": 0.92
+   }
+  },
+  {
+   "id": "L7",
+   "name": "最後の数秒",
+   "title": "車を始動して、山を下りる",
+   "unlocks": [
+    "gate"
+   ],
+   "look": {
+    "fog": "#323734",
+    "density": 0.034,
+    "light": 0.5,
+    "exposure": 0.88
+   }
+  }
+ ],
+ "unlocks": {
+  "upstairs": {
+   "name": "別荘の二階",
+   "icon": "building",
+   "desc": "最初から歩けます。地図は手帳（Tab）の「地図」でいつでも見られます。"
+  },
+  "window": {
+   "name": "二階の雨戸",
+   "icon": "door",
+   "desc": "窓から離れて、雨戸を引く。視線を切れば、胸の苦しさは引いていく。"
+  },
+  "downstairs": {
+   "name": "別荘の一階",
+   "icon": "door",
+   "desc": "階段を下りて、一階の机へ。無線と書き置きがある。"
+  },
+  "outside": {
+   "name": "林道",
+   "icon": "map",
+   "desc": "修司の声を聞いたら、外へ出られる。目が合わないように、木の陰を選んで歩く。"
+  },
+  "shed": {
+   "name": "西の物置",
+   "icon": "door",
+   "desc": "伐採跡の奥。机にあった鍵で開く。"
+  },
+  "shelter": {
+   "name": "東の避難小屋",
+   "icon": "door",
+   "desc": "沢沿いの小屋。巻上げハンドルは赤い握りが目印。"
+  },
+  "road": {
+   "name": "林道ゲート",
+   "icon": "map",
+   "desc": "ハンドルを、ゲートの巻上げ箱に差す。"
+  },
+  "gate": {
+   "name": "駐車場",
+   "icon": "flag",
+   "desc": "ゲートが上がった。車まで走る。"
+  }
+ },
+ "show": [
+  {
+   "name": "uncle",
+   "until": "L1",
+   "notDone": "T_TELESCOPE"
+  },
+  {
+   "name": "gate_bar_down",
+   "notDone": "T_GATE"
+  },
+  {
+   "name": "gate_bar_up",
+   "done": "T_GATE"
+  },
+  {
+   "name": "car_cue",
+   "done": "T_GATE"
+  },
+  {
+   "name": "bottles_shelf",
+   "notDone": "T_BOTTLE"
+  },
+  {
+   "name": "crank_floor",
+   "notDone": "T_CRANK"
+  },
+  {
+   "name": "phone_mud",
+   "notDone": "T_PHONE"
+  }
+ ]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "monsters.json - the default monster pack (js/monster-std.js; rules S12 / S20)",
+  "type": "object",
+  "required": ["monsters"],
+  "properties": {
+    "early": { "type": "object", "description": "which rooms count as the early game for tools/check-escape.mjs: the rooms reachable at the first N levels, or an explicit list", "properties": { "stages": { "type": "integer", "minimum": 1 }, "rooms": { "type": "array", "items": { "type": "string" } } } },
+    "assets": { "type": "string", "description": "folder of the windmill pictures (default assets/monster/)" },
+    "hints": { "type": "object", "description": "the protagonist's lines while chased (U23): run / turn / hide", "properties": { "run": { "type": "string" }, "turn": { "type": "string" }, "hide": { "type": "string" } } },
+    "monsters": {
+      "type": "array", "uniqueBy": "id",
+      "items": {
+        "type": "object", "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "spotFx": { "description": "standard 1.9: the effect when this monster notices the player (js/spot-fx.js): a name (red-flash, white-flash, ink, heartbeat, static, glitch, shake, zoom, tunnel, desaturate, letterbox, word, veins), a set (jump, dread, tape, stare), { name, strength, ms, text }, or a list; a game effect registered with ext.registerSpotFx" },
+          "look": { "type": "string", "minLength": 1, "description": "windmill = the original みる風車 look (no red / black); dark-red-mist = near-black body, thin deep-red rim, with the red-black mist; any other name = a look the game registers with ext.registerLook (standard 1.7)" },
+          "afterNear": { "type": "boolean", "description": "with a nearAttack: do not patrol before the scripted encounter (default true)" },
+          "nearRespawn": { "type": "number", "minimum": 0, "description": "seconds after the scripted encounter before it patrols (default 6)" },
+          "preset": { "enum": ["early", "normal", "hunter"] },
+          "phases": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["preset"], "properties": { "preset": { "enum": ["early", "normal", "hunter"] }, "untilStage": { "type": "string", "description": "this phase holds while the player's level is before this stage" } } } },
+          "spawn": { "type": "object", "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "z": { "type": "number" } } },
+          "route": { "description": "'auto' (a loop through the spawn room), a plan.routes id, { rooms: [...] } or null (stands still until it notices you)" },
+          "activeFrom": { "type": "object", "properties": { "stage": { "type": "string" }, "task": { "type": "string" }, "flag": { "type": "string" }, "room": { "type": "string" } } },
+          "nearAttack": { "type": "object", "required": ["room"], "description": "the scripted safe attack (S8), once: when the player enters `room` it walks from `from` to `target`; it never touches anyone", "properties": { "room": { "type": "string" }, "from": { "type": "object" }, "target": { "type": "object" }, "stop": { "type": "number" }, "speed": { "type": "number" } } },
+          "kill": { "type": "object", "description": "a monster that kills with its own attack instead of contact (params.catch 0): `reach` metres is where that attack lands; check-escape replays with it as the catch distance", "properties": { "by": { "type": "string" }, "reach": { "type": "number" } } },
+          "params": { "type": "object", "description": "overrides of the preset (js/monster-ai.js PRESETS): speed { wander seek chase }, sight, fov, near, notice, catch, lose { noLos corners cornersDelay dist cap hide }, hints, hintText" },
+          "respawn": { "type": "number" },
+          "assets": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "stages.json - levels and unlocks (js/progression.js DEF without goals; the goals are derived from tasks.json)",
+  "type": "object", "required": ["goal", "levels"],
+  "properties": {
+    "goal": { "type": "object", "required": ["title"], "properties": { "title": { "type": "string" }, "short": { "type": "string" }, "sub": { "type": "string" }, "meter": { "type": "string" }, "unit": { "type": "string" } } },
+    "stats": { "type": "object" },
+    "levels": { "type": "array", "minItems": 1, "uniqueBy": "id", "items": { "type": "object", "required": ["id", "name"], "properties": {
+      "id": { "type": "string" }, "name": { "type": "string" }, "title": { "type": "string" }, "text": { "type": "string" },
+      "when": { "type": "array" }, "unlocks": { "type": "array", "items": { "type": "string" } }, "gate": { "type": "boolean" },
+      "look": { "description": "standard 1.9: this stage's sky (js/stage-look.js); inherited, so a level names only what changes", "type": "object", "additionalProperties": false, "properties": {
+        "fog": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }, "density": { "type": "number", "minimum": 0, "maximum": 1 }, "near": { "type": "number" }, "far": { "type": "number" },
+        "background": { "type": "string", "pattern": "^(fog|#[0-9a-fA-F]{6})$" }, "light": { "type": "number", "minimum": 0, "maximum": 4 }, "exposure": { "type": "number", "minimum": 0, "maximum": 4 }, "music": { "type": "string" } } } } } },
+    "show": { "description": "standard 1.9: scene objects by name that are out only at some stages / after some tasks or flags (js/stage-look.js shown())", "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": {
+      "name": { "type": "string" }, "names": { "type": "array", "items": { "type": "string" } }, "stages": { "type": "array", "items": { "type": "string" } }, "from": { "type": "string" }, "until": { "type": "string" },
+      "done": {}, "notDone": {}, "flag": {}, "notFlag": {} } } },
+    "unlocks": { "type": "object", "additionalProperties": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" }, "desc": { "type": "string" }, "why": { "type": "string" }, "icon": { "type": "string" } } } }
+  }
+}

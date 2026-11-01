@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hashito/game-kit/schema/chat-story.schema.json",
+  "title": "game-kit chat story (docs/standard-chat.md)",
+  "description": "A chat-fiction story as loaded by js/chat.js loadStory(). js/chat-schema.js validateStory() applies the same rules plus the cross-reference checks JSON Schema cannot express (dangling targets, unknown speakers / channels / images). Story files are JS modules (export default {...}); validate the object, or JSON.stringify it for an editor.",
+  "type": "object",
+  "required": ["id", "title", "player", "nodes"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[\\w-]+$" },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "app": { "type": "string", "description": "name of the fictional messenger app (call screen, talk list)" },
+    "format": { "type": "string", "description": "what kind of chat this is" },
+    "date": { "type": "string" },
+    "minutes": { "type": "number", "minimum": 1 },
+    "player": { "type": "string", "description": "the speaker the player acts as (a key of characters)" },
+    "cover": { "type": "string", "description": "key of images" },
+    "start": { "type": "string" },
+    "state": { "type": "object", "additionalProperties": { "type": ["boolean", "number", "string"] } },
+    "intro": { "$ref": "#/$defs/screen" },
+    "outro": { "$ref": "#/$defs/screen" },
+    "characters": { "type": "object", "additionalProperties": { "$ref": "#/$defs/character" } },
+    "speakers": { "type": "object", "additionalProperties": { "$ref": "#/$defs/character" }, "description": "alias of characters" },
+    "channels": { "type": "object", "additionalProperties": { "$ref": "#/$defs/channel" } },
+    "tabs": { "type": "object", "additionalProperties": { "$ref": "#/$defs/channel" }, "description": "alias of channels" },
+    "images": { "type": "object", "additionalProperties": { "$ref": "#/$defs/image" } },
+    "media": { "type": "object", "additionalProperties": { "$ref": "#/$defs/mediaItem" } },
+    "stickers": { "type": "object", "additionalProperties": { "$ref": "#/$defs/sticker" } },
+    "nodes": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/node" } },
+    "endings": { "type": "object", "additionalProperties": { "$ref": "#/$defs/ending" } },
+    "afterStories": { "type": "object", "additionalProperties": { "$ref": "#/$defs/afterStory" } }
+  },
+  "$defs": {
+    "lines": {
+      "description": "notation of docs/standard-chat.md: [channel], 21:02 name：text, ［画像#key：caption］, @tag args, ?flag line",
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": ["string", "object"] } }]
+    },
+    "text": {
+      "description": "a string, or [{ if, text }, ..., \"fallback\"] (first match wins)",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "required": ["text"], "properties": { "if": { "type": "string" }, "text": { "type": "string" } } }] } }
+      ]
+    },
+    "screen": {
+      "description": "text-only intro / outro screen: paragraphs separated by a blank line, optional generated photo (no text in it)",
+      "oneOf": [
+        { "$ref": "#/$defs/text" },
+        { "type": "object", "required": ["text"], "properties": { "text": { "$ref": "#/$defs/text" }, "photo": { "type": "string" }, "place": { "type": "string" }, "button": { "type": "string" }, "chip": { "type": "string" }, "reveal": { "type": "boolean", "description": "show the paragraphs one by one on a tap" } } }
+      ]
+    },
+    "character": {
+      "type": "object",
+      "properties": {
+        "role": { "type": "string" },
+        "color": { "type": "string", "pattern": "^(#[0-9a-fA-F]{3,8}|rgba?\\(.*\\)|hsla?\\(.*\\))$", "description": "name tag / bubble edge / avatar ring (C15)" },
+        "face": { "type": "string", "description": "key of the generated face image (people only)" },
+        "avatar": { "type": "string", "description": "image URL (resolved face)" },
+        "initial": { "type": "string" },
+        "voice": { "type": "string", "description": "personality, catch phrases, reply speed and length, emoji / sticker habits, standing, fears, rumours (C3). Writer-facing; not shown" },
+        "kind": { "enum": ["person", "bot", "notice", "system", "host", "unknown"], "description": "unknown = a sender the app shows no name for; registerSpeakerKind() draws a kind yourself" },
+        "faceless": { "type": "boolean", "description": "no face by design (the player): no face warning" },
+        "showName": { "type": "boolean", "description": "show the name above the first bubble even in a 1:1 talk" },
+        "tintText": { "type": "string", "description": "text colour on the tint bubble" },
+        "profile": { "type": "object", "description": "the profile sheet (avatar tap): full name, status, rows [label, text], a note about the player", "properties": { "full": { "type": "string" }, "status": { "type": "string" }, "rows": { "type": "array", "items": { "type": "array" } }, "you": { "type": "string" } } },
+        "minor": { "type": "boolean", "description": "an extra (anonymous poster): no voice needed" },
+        "secret": { "type": "boolean" },
+        "tint": { "type": "string", "description": "bubble colour of this person's messages" },
+        "tts": { "type": "object", "description": "VOICEVOX speaker for generated voice lines", "properties": { "engine": { "enum": ["voicevox"] }, "speaker": { "type": "integer" }, "credit": { "type": "string" } } }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "sub": { "type": "string" },
+        "members": { "type": "integer", "minimum": 1 },
+        "type": { "type": "string", "description": "talk | call | board | a registerChannelType() id" },
+        "skin": { "type": "string", "description": "legacy channel hint (call / board / group / support / dm); mapped to type" },
+        "with": { "type": "string", "description": "the other person (1:1 talk / call)" },
+        "number": { "type": "string" },
+        "rel": { "type": "string", "description": "second line of the name in the talk list (e.g. 高校の友人)" },
+        "initial": { "type": "string" },
+        "list": { "type": "boolean", "description": "false: not in the talk list" },
+        "static": { "$ref": "#/$defs/lines", "description": "a read-only old talk (not part of the story): date lines and 名前：本文 lines" },
+        "staticNote": { "type": "string" },
+        "time": { "type": "string", "description": "time label of a static talk in the list" }
+      }
+    },
+    "image": { "type": "object", "properties": { "src": { "type": "string" }, "file": { "type": "string" }, "alt": { "type": "string" }, "cap": { "type": "string", "description": "short caption (album)" }, "caption": { "type": ["boolean", "string"], "description": "false: alt is for screen readers only, not shown under the picture; a string: the long caption of the result photo (ending card, viewer)" }, "overlays": { "type": "array", "description": "HTML text / box parts drawn over the picture in % of its size (never part of a generated picture)" }, "html": { "type": "string", "description": "an HTML document drawn as a picture (instead of src)" }, "ratio": { "type": "number" }, "bg": { "type": "string" } } },
+    "mediaItem": {
+      "type": "object",
+      "properties": {
+        "src": { "type": "string" }, "file": { "type": "string" }, "alt": { "type": "string" }, "poster": { "type": "string" }, "transcript": { "type": "string" }, "sec": { "type": "number" },
+        "credit": { "type": "string", "description": "VOICEVOX:character name; required for generated voices" },
+        "widget": { "type": "string", "description": "registerWidget() id for a ［ウィジェット#key］ bubble" },
+        "cap": { "type": "string" }, "album": { "type": "boolean", "description": "false: not collected in the album" }
+      }
+    },
+    "sticker": { "type": "object", "properties": { "src": { "type": "string" }, "file": { "type": "string" }, "alt": { "type": "string" }, "name": { "type": "string" }, "mine": { "type": "boolean" }, "word": { "type": "string", "description": "the words of the sticker, shown as page text (never part of a generated picture)" } } },
+    "choice": {
+      "type": "object",
+      "required": ["id", "label", "next"],
+      "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "t": { "type": "string", "description": "time of the player's bubble (HH:MM)" }, "note": { "type": "string" }, "say": { "type": ["string", "boolean"] }, "if": { "type": "string" }, "set": { "type": "object" }, "add": { "type": "object" }, "lines": { "$ref": "#/$defs/lines" }, "next": { "type": "string" } }
+    },
+    "node": {
+      "type": "object",
+      "description": "exactly one exit: choices | next | branch | ending | done",
+      "properties": {
+        "lines": { "$ref": "#/$defs/lines" }, "set": { "type": "object" }, "add": { "type": "object" }, "prompt": { "type": "string" },
+        "backlog": { "type": "boolean", "description": "the earlier conversation, already read: shown at once, no sound, no unread" },
+        "emphasis": { "enum": ["warn", "important"] },
+        "choices": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/choice" } },
+        "next": { "type": "string" },
+        "branch": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["next"], "properties": { "if": { "type": "string" }, "next": { "type": "string" } } } },
+        "ending": { "type": "string" },
+        "done": { "type": "boolean" }
+      }
+    },
+    "ending": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" }, "type": { "enum": ["bad", "cost", "true", "good", "other"] }, "epilogue": { "type": "string" }, "hint": { "type": "string" }, "kind": { "type": "string", "description": "free label instead of the type label" }, "theme": { "type": "string" }, "group": { "type": "string", "description": "the road this ending belongs to (records list)" },
+        "reader": { "type": "boolean", "description": "a reader-involving ending: no after-story by design" }, "inlineAfter": { "type": "boolean", "description": "the later-day part is written inline in the nodes (it contains a reply of the player)" },
+        "photo": { "type": "string", "description": "key of images: shows the result (C16)" },
+        "outro": { "$ref": "#/$defs/screen" },
+        "after": { "type": "object", "properties": { "when": { "type": "string" }, "date": { "type": "string" }, "tab": { "type": "string" }, "lines": { "$ref": "#/$defs/lines" }, "summary": { "$ref": "#/$defs/text" }, "photo": { "type": "string" } } }
+      }
+    },
+    "afterStory": { "type": "object", "required": ["start"], "properties": { "title": { "type": "string" }, "date": { "type": "string" }, "unlock": { "type": ["string", "array"] }, "start": { "type": "string" } } }
+  }
+}

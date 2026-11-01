@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "docs.json - papers and records the player reads",
+  "type": "array",
+  "uniqueBy": "id",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "title",
+      "text",
+      "room",
+      "stage"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]+$"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1
+      },
+      "text": {
+        "type": "string",
+        "minLength": 1
+      },
+      "photo": {
+        "type": "string"
+      },
+      "feeling": {
+        "type": "string"
+      },
+      "room": {
+        "type": "string"
+      },
+      "stage": {
+        "type": "string"
+      },
+      "x": {
+        "type": "number"
+      },
+      "z": {
+        "type": "number"
+      },
+      "related": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "kind": {
+        "type": "string",
+        "description": "the model (default paper; js/item-kinds.js)"
+      },
+      "y": {
+        "type": "number"
+      },
+      "scale": {
+        "type": "number",
+        "minimum": 0.2,
+        "maximum": 5
+      }
+    }
+  }
+}

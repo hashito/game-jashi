@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shared game media production queue v1",
+  "type": "object",
+  "required": ["version", "jobs"],
+  "properties": {
+    "version": { "const": 1 },
+    "concurrency": { "type": "integer", "minimum": 1, "maximum": 16 },
+    "pools": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1, "maximum": 16 } },
+    "jobs": { "type": "array", "items": { "$ref": "#/$defs/job" } }
+  },
+  "$defs": {
+    "job": {
+      "type": "object", "required": ["id", "kind", "outputs"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,79}$" },
+        "kind": { "enum": ["image", "video", "voice", "audio", "model", "copy", "process"] },
+        "pool": { "type": "string" },
+        "purpose": { "type": "string" }, "prompt": { "type": "string" }, "replaces": { "type": "string" },
+        "command": { "type": ["array", "null"], "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "inputs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "outputs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "dependsOn": { "type": "array", "items": { "type": "string" } },
+        "retries": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 3600000 }
+      }
+    }
+  }
+}

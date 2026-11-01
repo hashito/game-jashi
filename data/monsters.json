@@ -1,0 +1,53 @@
+{
+ "early": {
+  "stages": 4
+ },
+ "hints": {
+  "run": "走れ。目を合わせるな。",
+  "turn": "曲がって、木の陰へ。",
+  "hide": "隠れろ。目を閉じて。"
+ },
+ "monsters": [
+  {
+   "id": "jashi",
+   "look": "jashi",
+   "spotFx": "dread",
+   "phases": [
+    {
+     "preset": "early",
+     "untilStage": "L5"
+    },
+    {
+     "preset": "normal"
+    }
+   ],
+   "activeFrom": {
+    "task": "T_RADIO"
+   },
+   "spawn": {
+    "room": "O_SOUTH"
+   },
+   "route": "mountain_loop",
+   "nearAttack": {
+    "room": "O_TIMBER_N",
+    "from": {
+     "room": "O_TIMBER_E"
+    },
+    "target": {
+     "room": "O_TIMBER_N"
+    }
+   },
+   "kill": {
+    "by": "melee",
+    "reach": 2.95
+   },
+   "params": {
+    "sight": 22,
+    "catch": 0,
+    "lose": {
+     "dist": 24
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,202 @@
+/* game-kit 6e0b6f0: css/shell.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit: the standard 3D shell (js/game-core.js): title screen, prompt, endings, pause menu, custom mini-game layer.
+   Tokens only (css/theme.css); loaded after kit.css and theme.css. A game restyles it through tokens in css/theme-game.css. */
+#title { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--gf-win-margin, 16px); overflow-y: auto; overscroll-behavior: contain;
+  background: radial-gradient(ellipse at 50% 40%, var(--gf-surface-2, #2a2a2a), var(--gf-bg, #000) 70%); color: var(--gf-text, #eee); }
+#title.hidden { display: none; }
+/* the title text sits on the title picture: a scrim of the page colour keeps every line AA whatever the picture is (rule U30; tools/check-text-contrast.mjs reads the real pixels).
+   A light theme with a dark page colour (--gf-bg) sets --gf-title-text / --gf-title-dim (light) in css/theme-game.css: the text follows the scrim, not the windows */
+.gf-title-box { max-width: min(36rem, 100%); padding: var(--gf-space-5, 24px) var(--gf-space-4, 16px); border-radius: var(--gf-radius-lg, 12px); background: color-mix(in srgb, var(--gf-bg, #000) 84%, transparent); color: var(--gf-title-text, var(--gf-text, #eee)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.gf-title-box h1 { margin: 0 0 var(--gf-space-2, 8px); font-size: clamp(1.8rem, 6vw, 3rem); letter-spacing: 0.08em; }
+.gf-sub, .gf-ver { color: var(--gf-title-dim, var(--gf-text-dim, #999)); margin: var(--gf-space-2, 8px) 0; }
+.gf-title-btns { display: flex; flex-direction: column; align-items: center; gap: var(--gf-space-2, 8px); margin: var(--gf-space-5, 24px) 0 var(--gf-space-3, 12px); }
+.gf-title-btns .btn { min-width: 12em; min-height: var(--gf-hit, 44px); background: var(--gf-surface, #fff); color: var(--gf-text, #222); border-color: var(--gf-border, #ccc); border-radius: var(--gf-radius, 10px); }
+.gf-title-btns .btn.primary { background: var(--gf-accent, #3a7a5a); color: var(--gf-accent-ink, #fff); border-color: var(--gf-accent, #3a7a5a); }
+.gf-title-btns .rn-link { color: var(--gf-title-dim, var(--gf-text-dim, #999)); }
+#prompt { background: var(--gf-panel-soft, rgba(255, 253, 246, 0.94)); color: var(--gf-text, #23302c); border: 1px solid var(--gf-border, transparent); }
+.gf-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(10em, 1fr)); gap: var(--gf-space-2, 8px); margin-bottom: var(--gf-space-4, 16px); }
+.gf-menu-btn { min-height: var(--gf-hit, 44px); margin: 0; }
+.gf-set { display: flex; align-items: center; gap: var(--gf-space-3, 12px); margin: var(--gf-space-2, 8px) 0; min-height: var(--gf-hit, 44px); }
+.gf-set input[type=range] { flex: 1; }
+.gf-ending-img, .gf-doc-img { display: block; max-width: 100%; max-height: 40vh; margin: 0 auto var(--gf-space-3, 12px); border-radius: var(--gf-radius, 10px); }
+.gf-overlay { position: fixed; inset: 0; z-index: 24; display: flex; align-items: center; justify-content: center; background: var(--gf-overlay-strong, rgba(0, 0, 0, 0.72)); color: var(--gf-text, #eee); padding: var(--gf-win-margin, 16px); }
+.gf-scanlines { display: none; }
+[data-theme] .gf-scanlines { display: block; }
+#guide { max-width: min(340px, 62vw); pointer-events: none; background: none; color: var(--gf-text, #23302c); padding: 0; box-shadow: none; border-radius: 0; } /* the STEP card (sg-card) is the panel; the legacy green band behind it is gone */
+#guide b { color: inherit; }
+#guide .sg-btn { pointer-events: auto; }
+body.touch #guide { max-width: 46vw; font-size: 0.85em; }
+
+/* ---- compact HUD (rules U14 / U24): on small screens (< 600 wide, < 500 tall, or touch) the top-left column is a row of small chips:
+   "STEP n/m + title" (tap = the full card), the goal chip (one or two lines, tap = the goal screen sheet), the menu button (icon only).
+   game-core sets #hud.hud-compact and --gf-hud-w (hudLayout() in js/win-manager.js; tokens --gf-hud-compact-w / --gf-hud-open-w in theme.css). ---- */
+#hud-left { left: max(12px, var(--gf-safe-l, 0px)); top: max(12px, var(--gf-safe-t, 0px)); }
+#hud.hud-compact #hud-left { width: var(--gf-hud-w, var(--gf-hud-compact-w, min(45vw, 240px))); max-width: none; gap: 6px; font-size: 0.85em; pointer-events: none; overflow: hidden auto;
+  max-height: calc(100vh - var(--gf-hud-reserve, 170px) - 24px); max-height: calc(100dvh - var(--gf-hud-reserve, 170px) - 24px); overscroll-behavior: contain; scrollbar-width: none; }
+#hud.hud-compact #guide { max-width: none; font-size: 1em; }
+#hud.hud-compact #guide .sg-card { padding: 6px 10px; border-width: 1px; box-shadow: none; cursor: pointer; pointer-events: auto; touch-action: manipulation; }
+#hud.hud-compact #guide:not([data-open]) .sg-card { display: flex; align-items: baseline; gap: 6px; min-height: 36px; box-sizing: border-box; align-items: center; }
+#hud.hud-compact #guide:not([data-open]) .sg-card > :not(.sg-step):not(.sg-title) { display: none; }
+#hud.hud-compact #guide:not([data-open]) .sg-title { margin: 0; font-size: 0.95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#hud.hud-compact #guide .sg-step::after { content: " ▸"; }
+#hud.hud-compact #guide[data-open] .sg-step::after { content: " ▾"; }
+#hud.hud-compact .pg-hud { max-width: none; padding: 5px 9px; gap: 1px; min-height: 36px; box-sizing: border-box; font-size: 1em; line-height: 1.35; }
+#hud.hud-compact .pg-hud .pg-goal, #hud.hud-compact .pg-hud .pg-bar, #hud.hud-compact .pg-hud .pg-meter { display: none; }
+#hud.hud-compact #guide .sg-step { white-space: nowrap; flex: none; }
+#hud.hud-compact .pg-hud .pg-head, #hud.hud-compact .pg-hud .pg-now { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#hud.hud-compact .pg-hud .pg-now { font-size: 0.85em; }
+#hud.hud-compact .tm-hud { align-self: flex-start; padding: 0; width: 44px; }
+#hud.hud-compact .tm-hud .tm-hud-lb { display: none; }
+#hud.hud-compact #hud-left > * { flex: none; }
+/* the top-right column of the HUD (game-core puts the menu button there on desktop; a game adds its own chips to it) */
+#hud-right { position: absolute; right: max(12px, var(--gf-safe-r, 0px)); top: max(12px, var(--gf-safe-t, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; }
+#hud-right > * { pointer-events: auto; }
+#t-menu { background: var(--gf-panel, rgba(255, 253, 246, 0.97)); color: var(--gf-text, #23302c); border-color: var(--gf-border-strong, rgba(60, 80, 70, 0.5)); font-size: 20px; }
+
+/* ---- HUD translucency (standard 1.3): the 3D shows through (resting alpha --gf-hud-alpha .72, buttons --gf-hud-btn-alpha .6, pressed / hover / focus --gf-hud-alpha-active .92).
+   Text and icons stay opaque; a blur + a soft text outline keep them readable (AA is checked over white AND black in test/contrast.test.mjs). Windows (wm-*) stay >= 92%. ---- */
+.pg-hud, #guide .sg-card, #prompt, .toast, .pg-toast, #say, #keys, .sg-done { background: var(--gf-hud-surface); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); text-shadow: 0 1px 2px var(--gf-hud-bg); }
+.tm-hud, #t-menu, #t-buttons button, .jn-hud { background: var(--gf-hud-btn); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); text-shadow: 0 1px 2px var(--gf-hud-bg); transition: background-color 0.12s; }
+.tm-hud:hover, .tm-hud:active, .tm-hud:focus-visible, #t-menu:hover, #t-menu:active, #t-menu:focus-visible, #t-buttons button:active, #t-buttons button:focus-visible, .jn-hud:hover, .jn-hud:active, .jn-hud:focus-visible, .pg-hud:hover, .pg-hud:active { background: var(--gf-hud-surface-active); }
+/* the main button and the pressed state are PAIRS (accent + accent-ink; accent-hover + accent-ink): opaque, so the label never depends on the 3D scene behind (U30) */
+#t-buttons button.big { background: var(--gf-accent, #3a7a5a); color: var(--gf-accent-ink, #fff); border-color: var(--gf-accent-hover, var(--gf-accent, #3a7a5a)); text-shadow: none; }
+#t-buttons button.on { background: var(--gf-accent-hover, #2f6a4c); color: var(--gf-accent-ink, #fff); text-shadow: none; }
+#t-stick { background: color-mix(in srgb, var(--gf-hud-bg) calc(var(--gf-hud-btn-alpha) * 55%), transparent); border-color: color-mix(in srgb, var(--gf-text, #23302c) 45%, transparent); }
+#t-knob { background: color-mix(in srgb, var(--gf-accent, #3a7a5a) calc(var(--gf-hud-alpha) * 100%), transparent); }
+@media (prefers-reduced-transparency: reduce) { html { --gf-hud-alpha: 0.95; --gf-hud-btn-alpha: 0.92; --gf-hud-alpha-active: 1; } }
+/* HUD text is the main text colour (readable over any scene); the goal / STEP / level are marked by the accent bar and pills, not by a coloured glyph */
+.pg-hud .pg-now, .pg-hud .pg-lv, .pg-hud .pg-meter, .pg-hud .pg-meter b, .pg-hud .pg-goal, #guide .sg-step, #guide .sg-check { color: var(--gf-text, #23302c); }
+.pg-hud .pg-now { text-decoration: underline; text-decoration-color: var(--gf-goal, #8a4e0c); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+/* ---- layout (standard 1.4): the OPERATION controls own the extreme bottom-right (action cluster) + bottom-left (stick); everything else is at the TOP.
+   touch:   bottom-right column #t-right = [menu icon (端末 / tab menu), 44px+] above [#t-buttons: 操作 (big), 走る, ライト ...]; no 気になる / 地図 / 目標 buttons there (top-right ≡ -> tab menu);
+   desktop: the menu icon + label sits at the top-right (#hud-right); the key hints stay.
+   The thought line (#say) is a bottom band that never reaches the action cluster. ---- */
+#t-right { position: absolute; right: max(12px, var(--gf-safe-r, 0px)); bottom: max(18px, var(--gf-safe-b, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
+#t-right #t-buttons { position: static; pointer-events: auto; }
+#t-right .tm-hud { width: var(--gf-hit, 44px); min-width: 48px; min-height: 48px; padding: 0; display: grid; place-items: center; pointer-events: auto; }
+#t-right .tm-hud .tm-hud-lb, body.touch .tm-hud .tm-hud-lb { display: none; }
+.tm-hud { display: inline-flex; align-items: center; gap: 8px; }
+.tm-hud .gf-ic { flex: none; }
+#hud-right .tm-hud { align-self: flex-end; }
+body.touch #say { max-width: 92vw; }
+@media (orientation: landscape) { body.touch #say { max-width: max(40vw, calc(100vw - 2 * (var(--gf-cluster-w, 168px) + 24px + max(var(--gf-safe-l, 0px), var(--gf-safe-r, 0px))))); } }
+.hud-lb { margin-left: 6px; }
+.jn-hud, .iv-hud { display: inline-flex; align-items: center; justify-content: center; }
+body.touch .hud-lb, #hud.hud-compact .hud-lb { display: none; }
+.tm-ic .gf-ic, .pm-ic .gf-ic { vertical-align: -0.2em; }
+.pm-ic { display: inline-grid; place-items: center; }
+
+/* ---- the look-at card (js/things.js): the photo card + the protagonist's feeling, on the HUD for a few seconds ---- */
+.gf-look { position: fixed; left: 50%; top: max(12%, calc(var(--gf-safe-t, 0px) + 56px)); transform: translate(-50%, -6px); width: min(92vw, 420px); z-index: 12; pointer-events: none; opacity: 0; transition: opacity 0.25s, transform 0.25s;
+  background: var(--gf-hud-surface, rgba(0, 0, 0, 0.72)); color: var(--gf-text, #eee); border: 1px solid var(--gf-border, transparent); border-radius: var(--gf-radius, 10px); padding: var(--gf-space-2, 8px); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.gf-look.show { opacity: 1; transform: translate(-50%, 0); }
+.gf-look .iv-photo { max-height: 28vh; }
+.gf-look .iv-photo.iv-nopic { display: none; }   /* a thing without a picture: just the name and the feeling */
+@media (prefers-reduced-motion: reduce) { .gf-look { transition: none; } }
+
+/* ---- the terminal screen kind (js/terminal-screen.js): title bar + i box come from the window manager ---- */
+.tm-term { display: flex; flex-direction: column; gap: var(--gf-space-3, 12px); min-height: 0; position: relative; }
+.tm-head { display: flex; align-items: center; gap: var(--gf-space-3, 12px); }
+.tm-photo { width: 64px; height: 64px; border-radius: var(--gf-radius, 8px); background-size: cover; background-position: center; border: 1px solid var(--gf-border, transparent); flex: none; }
+.tm-lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--gf-text-dim, #888); margin-left: auto; }
+.tm-lamp.ok { background: var(--gf-ok, #3aa56a); } .tm-lamp.warn, .tm-lamp.bad { background: var(--gf-danger, #c44); }
+.tm-goal { margin: 0; color: var(--gf-text-dim, #999); }
+.tm-lines { margin: 0; padding: var(--gf-space-3, 12px); white-space: pre-wrap; font-family: var(--gf-font-mono, monospace); background: var(--gf-surface-2, rgba(0, 0, 0, 0.25)); color: var(--gf-text, #eee); border: 1px solid var(--gf-border, transparent); border-radius: var(--gf-radius, 8px); max-height: 34vh; overflow: auto; }
+.tm-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(12em, 1fr)); gap: var(--gf-space-2, 8px); }
+.tm-choice { min-height: var(--gf-hit, 44px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; overflow: hidden; text-align: center; }
+.tm-choice small { color: var(--gf-text-dim, #999); font-size: 0.8em; }
+.tm-choice.sel { outline: 2px solid var(--gf-accent, #3a7a5a); }
+.tm-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--gf-border, rgba(255, 255, 255, 0.15)); }
+.tm-bar i { display: block; height: 100%; width: 0; background: var(--gf-accent, #3a7a5a); }
+.tm-confirm { padding: var(--gf-space-3, 12px); border: 1px solid var(--gf-accent, #3a7a5a); border-radius: var(--gf-radius, 8px); background: var(--gf-surface, transparent); }
+.tm-confirm p { margin: var(--gf-space-1, 4px) 0 var(--gf-space-2, 8px); }
+.tm-rel { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gf-space-2, 8px); }
+.tm-relbtn { display: inline-flex; align-items: center; gap: 6px; min-height: var(--gf-hit, 44px); padding: 2px 10px 2px 2px; background: var(--gf-surface, transparent); color: var(--gf-text, #eee); border: 1px solid var(--gf-border, transparent); border-radius: var(--gf-radius, 8px); cursor: pointer; }
+.tm-th { width: 36px; height: 36px; border-radius: 6px; background: var(--gf-surface-2, #333) center / cover; }
+.tm-peek { position: absolute; inset: 0; z-index: 2; overflow: auto; padding: var(--gf-space-4, 16px); background: var(--gf-panel, rgba(0, 0, 0, 0.92)); }
+.tm-peek[hidden], .tm-confirm[hidden], .tm-photo[hidden] { display: none; }
+
+/* hiding (js/monster-std.js): the view darkens at the edges while you are in a hiding place */
+body.gf-hidden #view { filter: brightness(0.7) contrast(1.05); }
+body.gf-hidden #crosshair { opacity: 0.3; }
+
+/* ---- first-load screen (docs/load-flicker.md): a static #boot loader in index.html, one crossfade to the title, key art as a fading layer ---- */
+#boot { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gf-space-3, 12px); color: var(--gf-text-dim, #999);
+  background: radial-gradient(ellipse at 50% 40%, var(--gf-surface-2, #2a2a2a), var(--gf-bg, #000) 70%); font: 0.95rem/1.4 system-ui, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif; letter-spacing: 0.12em; opacity: 1; transition: opacity 0.4s ease; will-change: opacity; }
+#boot.gf-boot-out { opacity: 0; pointer-events: none; }
+.gf-boot-bar { position: relative; width: min(220px, 56vw); height: 2px; overflow: hidden; background: color-mix(in srgb, var(--gf-text-dim, #999) 28%, transparent); }
+.gf-boot-bar::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--gf-accent, #3a7a5a); animation: gf-boot-slide 1.3s ease-in-out infinite; will-change: transform; }
+@keyframes gf-boot-slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .gf-boot-bar::after { animation: none; width: 100%; opacity: 0.5; } #boot { transition: none; } }
+#title.gf-prep .gf-title-box { visibility: hidden; opacity: 0; }
+.gf-title-box { transition: opacity 0.4s ease; }
+.gf-title-art { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 1; transition: opacity 0.5s ease; pointer-events: none; will-change: opacity; }
+.gf-title-art.gf-art-wait { opacity: 0; }
+.gf-title-box { position: relative; }
+/* a short screen (phone landscape): the box scrolls instead of losing its top and bottom (centred with margin:auto, so it never overflows upward) */
+#title > .gf-title-box { margin: auto; }
+.gf-boot-status { min-height: 1.5em; margin: 0; font-size: 0.85em; }
+
+/* ---- HUD slots + toast lane (rule U27, docs/hud-slots.md): one region per HUD part; notifications live in the lane (#hs-tc), below the top stacks ---- */
+#hud-slots { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+#hud-left { display: flex; flex-direction: column; }
+#hud-right { position: absolute; right: max(12px, var(--gf-safe-r, 0px)); top: max(12px, var(--gf-safe-t, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; max-width: 46vw; }
+body.touch #hud-right { top: calc(max(12px, var(--gf-safe-t, 0px)) + 52px); }   /* under the pause menu button (#t-menu, 44px) */
+#hud-right > * { pointer-events: auto; }
+#hs-tc { position: absolute; left: 50%; top: 64px; transform: translateX(-50%);   /* hud-slots.js (layoutHudSlots) places it: translate + --gf-lane-w */ width: var(--gf-lane-w, min(92vw, 520px)); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+.tl-item { position: relative; box-sizing: border-box; max-width: 100%; padding: 7px 12px; border-radius: var(--gf-radius, 8px); border-left: 4px solid var(--gf-accent, #3a7a5a); background: var(--gf-hud-surface); color: var(--gf-text, #23302c); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); text-shadow: 0 1px 2px var(--gf-hud-bg); line-height: 1.5; font-size: 0.92em; overflow-wrap: anywhere; word-break: break-word; max-height: max(3.4em, var(--gf-lane-free, 200px)); overflow: hidden; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; }
+.tl-item .tl-body > small { display: block; font-size: 0.82em; letter-spacing: 0.08em; color: var(--gf-text-dim, #5c6662); }
+.tl-item .tl-count { position: absolute; right: 6px; top: 3px; font-size: 0.75em; font-weight: 700; color: var(--gf-text-dim, #5c6662); }
+/* the look-at card (js/things.js) as a lane item: a compact photo + the name and the feeling */
+.tl-lookcard .iv-photocard { flex-direction: row; align-items: center; }
+.tl-lookcard .iv-photo { width: 84px; flex: none; max-height: 56px; }
+.tl-lookcard .iv-photo.iv-nopic { display: none; }
+.tl-lookcard .iv-voice { margin-top: 4px; }
+/* the pickup card (an item with a photo just taken): the picture large on top, the name and the one line under it */
+.tl-lookcard.tl-pickcard .iv-photocard { flex-direction: column; align-items: stretch; }
+.tl-lookcard.tl-pickcard .iv-photo { width: 280px; max-width: 100%; max-height: 28vh; aspect-ratio: 4 / 3; border-radius: var(--gf-radius, 8px); }
+@media (max-height: 520px) { .tl-lookcard.tl-pickcard .iv-photo { max-width: 180px; } }
+.tl-quest-note, .tl-ok { border-left-color: var(--gf-ok, #2e7a4a); }
+.tl-card { border-left-color: var(--gf-accent-2, #e8a040); }
+.tl-prompt { border-left-color: var(--gf-accent-2, #e8a040); font-weight: 700; }
+.tl-carry-hint { border-left-color: var(--gf-border-strong, #8a8a7a); font-size: 0.85em; color: var(--gf-text, #23302c); }
+.tl-in, .tl-out { opacity: 0; transform: translateY(-6px); }
+.tl-bump { animation: tl-bump 0.3s ease; }
+@keyframes tl-bump { 40% { transform: scale(1.03); } }
+.tl-calm .tl-item, html[data-gf-calm] .tl-item { transition: none; animation: none; }
+@media (prefers-reduced-motion: reduce) { .tl-item { transition: none; animation: none; } }
+/* the interaction prompt: under the crosshair on desktop; on touch it is the first line of the action-cluster column (right above the menu icon and the buttons) */
+#t-right #prompt { position: static; transform: none; align-self: flex-end; max-width: min(56vw, 300px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+@media (orientation: landscape) { #t-right #prompt { position: fixed; left: 50%; top: calc(50% + 22px); transform: translateX(-50%); align-self: auto; max-width: min(44vw, 360px); } }   /* short landscape: no room above the cluster, the prompt stays under the crosshair */
+/* the thought line is at most 4 lines and never grows over the lane / the crosshair. A long line is not cut (feedback 2026-11-01): js/ui.js SayLine
+   shows it as pages of at most 60 characters, one after another, and a line over 44 characters takes the smaller type; the touch stick keeps off the notch */
+#say { max-height: 7.4em; overflow: hidden; }
+#say.long { font-size: 0.9em; line-height: 1.6; padding: 8px 14px; }
+/* touch, landscape: the thought band sits at the bottom between the stick and the action cluster; portrait: above the cluster column (menu icon + prompt + buttons, --gf-cluster-h) */
+body.touch #say { bottom: max(12px, var(--gf-safe-b, 0px)); }
+@media (orientation: portrait) { body.touch #say { bottom: calc(max(18px, var(--gf-safe-b, 0px)) + var(--gf-cluster-h, 236px)); } }
+#t-stick { left: max(22px, var(--gf-safe-l, 0px)); bottom: max(26px, var(--gf-safe-b, 0px)); }
+:root { --gf-cluster-w: 190px; --gf-cluster-h: 236px; }   /* the action cluster's width / height (menu icon + prompt line + buttons): the thought band stays clear of it; a game with other buttons sets them in theme-game.css */
+#t-menu { right: max(12px, var(--gf-safe-r, 0px)); top: max(12px, var(--gf-safe-t, 0px)); }
+/* fear on the body (js/fear-fx.js): the edges close in when the thing is near; above the world, under every HUD part and window */
+#gf-fear { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 38%, rgba(10, 0, 0, 0.55) 72%, rgba(0, 0, 0, 0.92) 100%); }
+/* the ending as a scene (js/ending-scene.js): the picture fills the screen and comes slowly closer; the text stands in front, a line at a time */
+.gf-ending { position: fixed; inset: 0; z-index: 96; background: #050505; color: #f1ece0; overflow: hidden auto; display: flex; align-items: flex-end; justify-content: center; }
+.gf-ending-photo { position: fixed; inset: 0; background: center / cover no-repeat; filter: saturate(0.75) brightness(0.8); animation: gf-end-zoom 40s ease-out both, gf-end-fade 2.4s ease-out both; }
+.gf-ending-shade { position: fixed; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 28%, rgba(0, 0, 0, 0.8) 58%, rgba(0, 0, 0, 0.94) 100%); }
+.gf-ending-text { position: relative; width: min(720px, 100% - 32px); margin: 30vh auto 0; padding: 0 0 max(32px, var(--gf-safe-b, 0px)); display: flex; flex-direction: column; gap: 12px; text-shadow: 0 1px 3px #000, 0 0 18px rgba(0, 0, 0, 0.8); }
+.gf-ending-text > * { margin: 0; opacity: 0; animation: gf-end-in 1.6s ease-out var(--d, 0s) both; }
+.gf-ending-kicker { font-size: 13px; letter-spacing: 0.22em; color: #d9c9a3; }
+.gf-ending-title { font-family: var(--hk-serif, serif); font-size: clamp(26px, 6vw, 40px); font-weight: 600; letter-spacing: 0.08em; }
+.gf-ending-line { font-family: var(--hk-serif, serif); font-size: clamp(15px, 2.4vw, 18px); line-height: 2; }
+.gf-ending-stats { font-size: 13px; color: #bdb5a4; }
+.gf-ending-found { font-size: 13px; color: #bdb5a4; line-height: 1.7; }  /* pair-ok: on the dark shade */
+.gf-ending-found b { color: #f4ecd8; }  /* pair-ok */
+.gf-ending-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px !important; }
+.gf-ending.all .gf-ending-text > *, .gf-ending.still .gf-ending-text > * { animation: none; opacity: 1; }
+.gf-ending.still .gf-ending-photo { animation: none; }
+@keyframes gf-end-zoom { from { transform: scale(1.02); } to { transform: scale(1.16); } }
+@keyframes gf-end-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gf-end-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gf-ending-photo { animation: none; } .gf-ending-text > * { animation: none; opacity: 1; } }

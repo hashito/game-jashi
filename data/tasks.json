@@ -1,0 +1,337 @@
+[
+ {
+  "id": "T_TELESCOPE",
+  "title": "望遠鏡を撮る",
+  "stage": "L1",
+  "room": "CAB_BALC",
+  "station": "S_TELESCOPE",
+  "meaning": "片付けで持ち帰る備品を、一つずつ撮っている。航と取り合いになった望遠鏡も、その一つ。",
+  "hint": "二階の作業室から、南のベランダへ。望遠鏡は手すりの前にある。",
+  "minigame": {
+   "type": "photo-focus",
+   "cfg": {
+    "title": "望遠鏡：レンズを合わせて撮る",
+    "help": "ピント環とズームを合わせて、シャッターを押してください。",
+    "image": "assets/photos/mountain-v4-1.webp"
+   }
+  },
+  "steps": [
+   {
+    "text": "ベランダへ出る",
+    "body": "作業室の南の戸から、ベランダへ出ます。",
+    "done": "look",
+    "emphasis": "station:S_TELESCOPE"
+   },
+   {
+    "text": "望遠鏡を撮る",
+    "body": "望遠鏡を調べると、修司が出かける前に一言かけていきます。",
+    "done": "task"
+   }
+  ]
+ },
+ {
+  "id": "T_SHUTTER",
+  "title": "二階の雨戸を引く",
+  "stage": "L2",
+  "room": "CAB_UP",
+  "station": "S_SHUTTER",
+  "needs": [
+   "T_TELESCOPE"
+  ],
+  "meaning": "窓の外の白い姿と目が合うと、胸が苦しくなる。雨戸を引けば視線が切れる。",
+  "hint": "雨戸の引手は、ベランダの戸のすぐ右。目を閉じる（Q）と、苦しさが引く。",
+  "minigame": {
+   "type": "steady-hand",
+   "cfg": {
+    "title": "雨戸：引手を押さえて、ゆっくり引く",
+    "help": "動く輪の中に、指先を保ってください。外れても、少し戻るだけです。",
+    "sec": 6
+   }
+  },
+  "steps": [
+   {
+    "text": "窓から離れる",
+    "body": "白い姿を見続けないでください。目を閉じる（Q、タッチは目のボタン）と歩くのは遅くなりますが、苦しさが引きます。",
+    "done": "look"
+   },
+   {
+    "text": "雨戸を引く",
+    "body": "戸のすぐ右の引手を調べます。",
+    "done": "task",
+    "emphasis": "station:S_SHUTTER"
+   }
+  ]
+ },
+ {
+  "id": "T_RADIO",
+  "title": "机の無線を合わせる",
+  "stage": "L3",
+  "room": "CAB_HALL",
+  "station": "S_RADIO",
+  "needs": [
+   "T_SHUTTER"
+  ],
+  "meaning": "修司は林道の車へ荷物を積みに出た。無線で、今どこにいるかを聞く。",
+  "hint": "階段を下りて、一階の机。無線機は窓際の端にある。",
+  "minigame": {
+   "type": "tune-radio",
+   "cfg": {
+    "title": "携帯無線：同調つまみ",
+    "help": "つまみを回して、雑音の奥の声を探してください。声が聞こえたら、少し止めます。",
+    "target": 63,
+    "lo": 0,
+    "hi": 100,
+    "unit": "",
+    "width": 5,
+    "hold": 1.2
+   }
+  },
+  "steps": [
+   {
+    "text": "階段を下りる",
+    "body": "二階の奥の階段から、一階へ。",
+    "done": "look"
+   },
+   {
+    "text": "無線を合わせる",
+    "body": "机の無線を調べ、つまみで声を探します。",
+    "done": "task",
+    "emphasis": "station:S_RADIO"
+   }
+  ]
+ },
+ {
+  "id": "T_BOTTLE",
+  "title": "物置でボトルを二本持ち出す",
+  "stage": "L4",
+  "room": "SHED",
+  "station": "S_SHELF",
+  "needs": [
+   "T_RADIO"
+  ],
+  "meaning": "書き置きに、帰り道に備えて持ち出すようにとあった。蓋つきのボトルは、白い姿にかけると怯ませられる。",
+  "hint": "別荘を出て林道を少し下り、西の伐採跡へ。物置は材木の山の向こう。",
+  "minigame": {
+   "type": "sort-items",
+   "cfg": {
+    "title": "物置の棚：持ち出す物を分ける",
+    "help": "蓋つきのボトルを二本だけ、袋へ入れてください。ほかの物は棚に残します。",
+    "bins": [
+     {
+      "id": "bag",
+      "label": "持ち出す袋"
+     },
+     {
+      "id": "shelf",
+      "label": "棚に残す"
+     }
+    ],
+    "items": [
+     {
+      "id": "b1",
+      "label": "蓋つきのボトル",
+      "bin": "bag",
+      "why": "書き置きのとおり、これを二本。"
+     },
+     {
+      "id": "b2",
+      "label": "蓋つきのボトル",
+      "bin": "bag",
+      "why": "書き置きのとおり、これを二本。"
+     },
+     {
+      "id": "boots",
+      "label": "揃えた長靴",
+      "bin": "shelf",
+      "why": "「揃えてある物は崩さない」と書いてあった。"
+     },
+     {
+      "id": "oil",
+      "label": "空の油缶",
+      "bin": "shelf",
+      "why": "空だ。持っていっても役に立たない。"
+     }
+    ]
+   }
+  },
+  "steps": [
+   {
+    "text": "別荘を出る",
+    "body": "玄関から林道へ。白い姿が見えたら、目を閉じるか木の陰へ。",
+    "done": "look"
+   },
+   {
+    "text": "西の物置へ",
+    "body": "伐採跡の奥、材木の山の向こうです。",
+    "done": "look",
+    "emphasis": "station:S_SHELF"
+   },
+   {
+    "text": "棚のボトルを持ち出す",
+    "body": "棚を調べます。",
+    "done": "task"
+   }
+  ]
+ },
+ {
+  "id": "T_BELL",
+  "title": "呼び鐘の音止めを戻す",
+  "stage": "L4",
+  "room": "O_TIMBER_E",
+  "station": "S_BELL",
+  "optional": true,
+  "needs": [
+   "T_RADIO"
+  ],
+  "meaning": "書き置きの余白に「帰る前に、音止めを戻すこと」とあった。鳴らせば、白い姿はその音へ向かう。",
+  "hint": "伐採跡の東、材木の山のそばの木枠に吊ってある。",
+  "minigame": {
+   "type": "timing",
+   "cfg": {
+    "title": "呼び鐘：音止めを差し戻す",
+    "help": "揺れる印が的に重なったときに押してください。",
+    "look": "hammer"
+   }
+  },
+  "steps": [
+   {
+    "text": "呼び鐘を調べる",
+    "body": "音止めを戻すと、鐘はもう鳴りません。戻す前に一度だけ鳴らして、白い姿を引き寄せることもできます。",
+    "done": "task",
+    "emphasis": "station:S_BELL"
+   }
+  ]
+ },
+ {
+  "id": "T_CRANK",
+  "title": "避難小屋で巻上げハンドルを探す",
+  "stage": "L5",
+  "room": "SHELTER",
+  "station": "S_CRANK",
+  "needs": [
+   "T_BOTTLE"
+  ],
+  "meaning": "ゲートを上げる鉄のハンドルは、避難小屋の床にある、と書き置きにあった。",
+  "hint": "林道を南へ下って橋を渡り、沢沿いを東へ。赤い握りが目印。",
+  "minigame": {
+   "type": "search-dark",
+   "cfg": {
+    "title": "避難小屋：暗い床を照らす",
+    "help": "灯りを動かして、赤い握りを探してください。",
+    "image": "assets/photos/creek-memory-v4-2.webp",
+    "marks": [
+     {
+      "x": 0.68,
+      "y": 0.74,
+      "label": "赤い握りのハンドル"
+     }
+    ]
+   }
+  },
+  "steps": [
+   {
+    "text": "橋を渡る",
+    "body": "林道を南へ。沢の橋の赤い紐は、帰りの目印です。",
+    "done": "look"
+   },
+   {
+    "text": "避難小屋へ",
+    "body": "沢沿いを東へ進むと、戸口の灯りが見えます。",
+    "done": "look",
+    "emphasis": "station:S_CRANK"
+   },
+   {
+    "text": "床を照らして探す",
+    "body": "小屋の床を調べます。",
+    "done": "task"
+   }
+  ]
+ },
+ {
+  "id": "T_PHONE",
+  "title": "鳴っている携帯電話を拾う",
+  "stage": "L5",
+  "room": "O_EAST_SM",
+  "station": "S_PHONE",
+  "optional": true,
+  "needs": [
+   "T_BOTTLE"
+  ],
+  "meaning": "圏外のはずの山で、どこかで着信音が鳴っている。",
+  "hint": "避難小屋の裏、泥の中から鳴っている。",
+  "steps": [
+   {
+    "text": "着信音の方へ",
+    "body": "避難小屋の裏手です。",
+    "done": "task",
+    "emphasis": "station:S_PHONE"
+   }
+  ]
+ },
+ {
+  "id": "T_GATE",
+  "title": "林道ゲートを巻き上げる",
+  "stage": "L6",
+  "room": "O_FRONT",
+  "station": "S_GATE",
+  "needs": [
+   "T_CRANK"
+  ],
+  "meaning": "駐車場の手前に、鎖のゲートが下りている。車で出るには、これを上げるしかない。",
+  "hint": "別荘の前の林道を西へ。ゲートの脇の鉄の箱にハンドルを差す。",
+  "minigame": {
+   "type": "pump-gauge",
+   "cfg": {
+    "title": "ゲートの巻上げ箱：ハンドルを回す",
+    "help": "押している間、ハンドルを回します。針を緑の帯に保ってください。上げすぎると、鎖が滑って戻ります。",
+    "sec": 4
+   }
+  },
+  "steps": [
+   {
+    "text": "林道を戻る",
+    "body": "橋を渡って北へ、別荘の前まで戻ります。",
+    "done": "look"
+   },
+   {
+    "text": "ゲートの箱にハンドルを差す",
+    "body": "林道ゲートの脇の鉄の箱を調べます。",
+    "done": "task",
+    "emphasis": "station:S_GATE"
+   }
+  ]
+ },
+ {
+  "id": "T_ENGINE",
+  "title": "車を始動して、山を下りる",
+  "stage": "L7",
+  "room": "O_PARK",
+  "station": "S_CAR",
+  "needs": [
+   "T_GATE"
+  ],
+  "meaning": "修司の車の鍵は、サングラスと一緒に机にあった。エンジンさえかかれば、山を下りられる。",
+  "hint": "ゲートの先の駐車場。運転席の戸が開いている。",
+  "minigame": {
+   "type": "timing",
+   "cfg": {
+    "title": "エンジン：鍵を回す",
+    "help": "針が的に重なったときに押してください。",
+    "look": "needle"
+   }
+  },
+  "steps": [
+   {
+    "text": "駐車場へ",
+    "body": "ゲートをくぐり、灯りの点いた車へ。",
+    "done": "look",
+    "emphasis": "station:S_CAR"
+   },
+   {
+    "text": "エンジンをかける",
+    "body": "運転席を調べます。",
+    "done": "task"
+   }
+  ]
+ }
+]

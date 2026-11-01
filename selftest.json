@@ -1,0 +1,12 @@
+{
+  "autodetect": true,
+  "checks": [
+    {
+      "name": "smoke",
+      "command": "node tools/smoke.mjs",
+      "optional": true,
+      "requires": "browser",
+      "timeoutMs": 240000
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja" data-theme="dark-industrial fog-forest jashi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>邪視 ― 視線の山</title>
+<link rel="stylesheet" href="css/kit.css">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/theme-game.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.min.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<!-- static first-load screen: painted before any script runs, ONE element, crossfaded out by js/kit/game-core.js (docs/load-flicker.md, rule Q11).
+     Web fonts (if the game uses Google Fonts) load async: <link rel="stylesheet" data-gf-fonts href="..." media="print" onload="this.media='all'">. -->
+<div id="boot" class="gf-boot" role="status" aria-live="polite"><div class="gf-boot-bar"></div><span>読み込み中…</span></div>
+<!-- The standard shell (canvas, HUD, title, windows, touch controls) is built by js/kit/game-core.js. -->
+<div class="gf-scanlines"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

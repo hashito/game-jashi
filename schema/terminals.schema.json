@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "terminals.json - the 'terminal' screen kind (js/terminal-screen.js; pure rules js/terminal-data.js)",
+  "type": "object",
+  "required": ["terminals"],
+  "properties": {
+    "terminals": {
+      "type": "array", "uniqueBy": "id",
+      "items": {
+        "type": "object", "required": ["id", "choices"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_:-]+$" }, "title": { "type": "string" }, "room": { "type": "string" }, "goal": { "type": "string" }, "photo": { "type": "string" }, "lamp": { "enum": ["", "ok", "warn", "bad"] },
+          "lines": { "type": "array", "items": { "type": "string" } }, "info": { "type": "string" },
+          "related": { "type": "array", "items": { "type": "string" } },
+          "choices": {
+            "type": "array", "uniqueBy": "id",
+            "items": {
+              "type": "object", "required": ["id", "label"],
+              "properties": {
+                "id": { "type": "string" }, "label": { "type": "string" }, "info": { "type": "string", "description": "plain words, shown in the i box (U29)" },
+                "decision": { "type": "boolean", "description": "select first, then confirm" }, "hold": { "anyOf": [{ "type": "number", "minimum": 0.2, "maximum": 6 }, { "type": "boolean" }], "description": "long press seconds" },
+                "requires": { "type": "object" }, "locked": { "type": "string" }, "set": { "type": "array", "items": { "type": "string" } }, "complete": { "type": "string" },
+                "lines": { "type": "array", "items": { "type": "string" } }, "lamp": { "enum": ["", "ok", "warn", "bad"] }, "close": { "type": "boolean" }, "next": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

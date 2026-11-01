@@ -1,19 +1,27 @@
 {
   "name": "jashi-mountain",
-  "version": "4.3.0",
+  "version": "5.0.0",
   "private": true,
-  "type": "module",
-  "description": "投稿怪談『邪視』をもとにした一人称ホラー探索ゲーム",
+  "description": "投稿怪談『邪視』をもとにした一人称ホラー探索ゲーム（game-kit 3D 標準 1.9 版）",
   "scripts": {
-    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
-    "serve": "node tools/serve.mjs dist",
-    "smoke": "node tools/smoke-guidance.mjs",
-    "media:plan": "node tools/media-queue.mjs media-queue.json",
-    "media:run": "node tools/media-queue.mjs media-queue.json --run",
-    "assets": "node tools/check-production-assets.mjs",
-    "assets:release": "node tools/check-production-assets.mjs --release && node tools/check-runtime-images.mjs",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "check": "node tools/check-game-data.mjs . && node tools/check-plan.mjs data/plan.json --strict",
+    "plan": "node tools/check-plan.mjs data/plan.json --strict",
+    "media": "node tools/check-game-data.mjs . --media",
+    "serve": "node tools/serve.js",
+    "smoke": "node tools/smoke.mjs",
+    "smoke:mobile": "node tools/smoke.mjs --mobile",
+    "stage": "node tools/check-stage.mjs . --tools",
+    "stage:report": "node tools/check-stage.mjs . --tools --report",
+    "selftest": "node tools/selftest-game.mjs",
+    "check:emoji": "node tools/check-no-emoji.mjs js css data game.json index.html --skip-story",
+    "check:pairs": "node tools/check-css-pairs.mjs css/theme-game.css",
+    "check:wording": "node tools/check-wording.mjs js data --skip-story",
+    "check:contrast": "node tools/check-text-contrast.mjs index.html --hooks tools/contrast-hooks/std.mjs --viewport 390x844,1920x1080 --shots shots/contrast",
     "sync-kit": "node ../game-kit/tools/kit-sync.js .",
+    "og": "node tools/make-og.mjs",
     "build": "node tools/build-site.js",
-    "check": "node --check dist/main.js && node --check dist/guidance.js && node --check dist/world.js && node --check dist/audio.js && node --check dist/software-renderer.js && node --check dist/layout.js && node --check dist/narrative.js && node --check dist/survival.js && node --check dist/vhs.js && node --check dist/enemy.js && node --check dist/story.js && node --check dist/creature.js && node --check dist/dialogue.js && node --check dist/gimmicks.js && node --check dist/presence.js && node --check dist/evidence.js && node --check dist/streaming.js && node --check dist/scene-art.js"
+    "check:traps": "node tools/check-traps.mjs .",
+    "check:escape": "node tools/check-escape.mjs ."
   }
 }

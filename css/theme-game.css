@@ -1,0 +1,52 @@
+/* The look of 邪視 ― 視線の山: the kit's fog-forest mood (css/themes.css) with this game's colours from game.json "themeColors"
+   (standard 1.9). Below: only this game's own HUD parts (the mind / body meters, the scythe warning, the closed eyes, the death window). */
+[data-theme~="jashi"] { --js-serif: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", serif; --js-mind: #b9c7b4; --js-body: #c9805f; }
+
+/* the two meters (top left HUD slot) */
+.js-meters { background: var(--gf-panel-soft); border: 1px solid var(--gf-border); border-radius: var(--gf-radius, 4px); padding: 8px 10px; color: var(--gf-text); min-width: 168px; display: flex; flex-direction: column; gap: 5px; }
+.js-meter { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.js-meter span { width: 1.2em; font-family: var(--js-serif); }
+.js-meter b { /* pair-ok */ flex: 1; height: 7px; background: var(--gf-surface-2); border-radius: 4px; overflow: hidden; }
+.js-meter i { /* pair-ok */ display: block; height: 100%; width: 100%; background: var(--js-mind); transition: width 0.2s linear; }
+.js-meter--body i { /* pair-ok */ background: var(--js-body); }
+.js-meters[data-low="1"] .js-meter:first-child i { animation: js-pulse 0.9s ease-in-out infinite; }
+.js-bottles { margin: 2px 0 0; font-size: 12px; color: var(--gf-text-dim); }
+@keyframes js-pulse { 50% { opacity: 0.45; } }
+
+/* the scythe raised: a label at the top centre and the screen edge on its side */
+.js-threat { position: fixed; top: calc(118px + var(--gf-safe-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 45; display: flex; align-items: center; gap: 10px;
+  background: var(--gf-warn-bg); color: var(--gf-warn-text); border: 1px solid var(--gf-warn-line); border-radius: var(--gf-radius, 4px); padding: 8px 14px; font-weight: 700; }
+.js-threat-arrow { font-size: 22px; line-height: 1; color: var(--gf-warn-label); }
+.js-edge { /* pair-ok */ position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+.js-edge[data-side="front"] { box-shadow: inset 0 90px 80px -50px rgba(160, 30, 20, 0.75); }
+.js-edge[data-side="left"] { box-shadow: inset 110px 0 90px -60px rgba(160, 30, 20, 0.75); }
+.js-edge[data-side="right"] { box-shadow: inset -110px 0 90px -60px rgba(160, 30, 20, 0.75); }
+.js-edge[data-side="behind"] { box-shadow: inset 0 -90px 80px -50px rgba(160, 30, 20, 0.75); }
+.js-hit { /* pair-ok */ position: fixed; inset: 0; z-index: 31; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(120, 10, 10, 0.85) 100%); }
+
+/* the eyes closed: two lids and a dark inside */
+.js-lids { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
+.js-lids i { /* pair-ok */ position: absolute; left: 0; right: 0; height: 52%; background: linear-gradient(#050505, #0c0b0a 85%, rgba(12, 11, 10, 0.6)); }
+.js-lids i:first-child { top: 0; }
+.js-lids i:last-child { bottom: 0; transform: scaleY(-1); }
+
+/* looking at it: the edges darken and pulse (fear-fx adds the trembling and the heart) */
+body.js-gazing::after { /* pair-ok */ content: ""; position: fixed; inset: 0; z-index: 28; pointer-events: none; box-shadow: inset 0 0 160px 40px rgba(20, 30, 20, 0.55); animation: js-pulse 1.6s ease-in-out infinite; }
+
+/* a found picture (top) and the face (the death) */
+.js-photo { position: fixed; top: calc(72px + var(--gf-safe-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 40; width: min(420px, calc(100vw - 32px));
+  background: var(--gf-panel); color: var(--gf-text); border: 1px solid var(--gf-border); border-radius: var(--gf-radius, 4px); padding: 8px; }
+.js-photo img { display: block; width: 100%; max-height: 32vh; object-fit: cover; }
+.js-photo p { margin: 6px 2px 0; color: var(--gf-text); font-family: var(--js-serif); font-size: 14px; line-height: 1.7; }
+.js-jump { /* pair-ok */ position: fixed; inset: 0; z-index: 90; background: #000; display: flex; align-items: center; justify-content: center; animation: js-jump 0.8s ease-out both; }
+.js-jump img { height: 100%; max-width: 100%; object-fit: cover; filter: contrast(1.3) brightness(0.85); }
+@keyframes js-jump { 0% { opacity: 0; } 8% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+
+.js-death { display: flex; flex-direction: column; gap: var(--gf-space-3, 12px); color: var(--gf-text); }
+.js-death-kicker { margin: 0; color: var(--gf-accent-2); letter-spacing: 0.2em; font-size: 12px; }
+.js-death-line { margin: 0; font-family: var(--js-serif); line-height: 1.8; }
+.js-death-line b { margin-right: 0.8em; color: var(--gf-text-dim); font-weight: 600; }
+.js-death-text { margin: 0; line-height: 1.8; }
+
+@media (prefers-reduced-motion: reduce) { .js-jump { animation: none; display: none; } body.js-gazing::after, .js-meters[data-low="1"] .js-meter:first-child i { animation: none; } }
+.js-jump[hidden], .js-photo[hidden], .js-threat[hidden], .js-edge[hidden], .js-lids[hidden], .js-hit[hidden], .js-meters[hidden], .js-bottles[hidden] { display: none !important; }

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "items.json - things the player can pick up and examine (U17; U19: the feeling is a separate panel)",
+  "type": "array",
+  "uniqueBy": "id",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "photo",
+      "desc",
+      "why",
+      "feeling",
+      "room",
+      "stage"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]+$"
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "photo": {
+        "type": "string",
+        "description": "image path relative to the game root (checked by check-media); empty only while the picture is not made yet"
+      },
+      "desc": {
+        "type": "string",
+        "minLength": 1,
+        "description": "what it is, plain facts"
+      },
+      "why": {
+        "type": "string",
+        "minLength": 1,
+        "description": "why the player needs it (S6)"
+      },
+      "feeling": {
+        "type": "string",
+        "minLength": 1,
+        "description": "the protagonist's one-line impression, shown in its own panel (U19)"
+      },
+      "room": {
+        "type": "string"
+      },
+      "stage": {
+        "type": "string"
+      },
+      "x": {
+        "type": "number"
+      },
+      "z": {
+        "type": "number"
+      },
+      "tab": {
+        "type": "string"
+      },
+      "start": {
+        "type": "boolean"
+      },
+      "related": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "kind": {
+        "type": "string",
+        "description": "what it is (js/item-kinds.js ITEM_KINDS: key card paper clipboard book photo tag tape talisman bag bottle box phone flashlight tool cloth jar battery): shown as that model, resting on what is under it (standard 1.7)"
+      },
+      "given": {
+        "type": "string",
+        "description": "a task id: not placed in the world; the task gives it when it is done (standard 1.7)"
+      },
+      "y": {
+        "type": "number",
+        "description": "the support height above the room's floor (default: the surface under x, z)"
+      },
+      "scale": {
+        "type": "number",
+        "minimum": 0.2,
+        "maximum": 5
+      }
+    }
+  }
+}

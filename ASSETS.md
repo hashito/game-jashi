@@ -1,5 +1,15 @@
 # 画像制作記録
 
+## 5.0.0 で追加した素材（2026-11-02）
+
+5.0.0 で素材は `dist/assets/` から `assets/` へ移した。下の 4.x の記録にある `dist/assets/...` は、いまは `assets/...` にある。
+
+- `assets/photos/ending-voice.webp`、`ending-witness.webp`（1400×798、WebP 品質88）：ローカルの ComfyUI（SDXL base 1.0、Game-kit `tools/gen_images.py` の2段階生成）で作った。seed は 5001011 と 5001012。プロンプトの要旨は「霧の夜の林道、後部ドアの開いた車、空の後部座席」と「灯油ストーブの灯る小屋、机の封筒とDVカメラ、ストーブの横の長靴」。人物、怪異、文字は入れていない。
+- `assets/items/camera.webp`、`light.webp`（320×240、可逆 WebP）：ゲームの中の3Dモデル（Game-kit の品物 `camera` と `flashlight`）をヘッドレスで撮った。
+- `assets/og-image.png`、`og-image.jpg`：`tools/og.html` を `node tools/make-og.mjs` で撮った（4.2 の森の写真と怪異の顔のテクスチャ）。
+- 資料の写真：長靴・帳面・手鏡には 4.2 の接写写真を使い、ほかの記録には品物の写真（`assets/items/`）を使った。
+
+
 ## v4で追加した生成素材（2026-10-29）
 
 built-in image_genで各素材を別々に生成しました。Pillowによる縮小と形式変換のみを行い、透明な枝葉はPNG、他はWebP品質88で配置しています。元の生成画像は保持しています。

@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "plan.json - floor plan (rooms, corridors, doors, stations). Semantic checks: js/plan-check.js (W16/W17)",
+  "type": "object",
+  "required": [
+    "rooms",
+    "doors",
+    "start",
+    "exits"
+  ],
+  "properties": {
+    "rooms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueBy": "id",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "x",
+          "z",
+          "w",
+          "d"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "w": {
+            "type": "number",
+            "minimum": 0.5
+          },
+          "d": {
+            "type": "number",
+            "minimum": 0.5
+          },
+          "floor": {
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "room",
+              "corridor",
+              "outdoor",
+              "stairs"
+            ]
+          },
+          "safe": {
+            "type": "boolean",
+            "description": "the monster cannot see or touch the player here (js/monster-std.js)"
+          },
+          "floorTex": {
+            "type": "string"
+          },
+          "step": {
+            "enum": ["lino", "wax", "wood", "tatami", "carpet", "tile", "concrete", "gravel", "grass", "dirt", "snow", "mud", "water", "metal", "grating"],
+            "description": "the footstep surface here (js/step-sound.js); default: from floorTex, then kind"
+          },
+          "wallTex": {
+            "type": "string"
+          },
+          "leak": {
+            "type": "number"
+          },
+          "look": {
+            "type": "string",
+            "description": "floor/wall look key understood by the world builder or the texture library"
+          },
+          "type": {
+            "type": "string",
+            "description": "room type (js/room-types.js ROOM_TYPES: washitsu kitchen storage office shop classroom hospital bathroom workshop corridor engawa doma / outdoor: road yard field forest grounds street): default textures, furniture against the walls, the outdoor edge look (standard 1.7)"
+          },
+          "edge": {
+            "enum": [
+              "trees",
+              "hedge",
+              "fence",
+              "stone",
+              "none"
+            ],
+            "description": "outdoor rooms: the look of the room's edges (the colliders stay); none = the game dresses world.edges itself"
+          },
+          "furnish": {
+            "type": "boolean",
+            "description": "false = no automatic furniture for the room type"
+          }
+        }
+      }
+    },
+    "doors": {
+      "type": "array",
+      "uniqueBy": "id",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "a",
+          "b"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "a": {
+            "type": "string"
+          },
+          "b": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number",
+            "minimum": 0.5
+          },
+          "kind": {
+            "enum": [
+              "door",
+              "stairs",
+              "lift",
+              "exit"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "unlock": {
+            "type": "string",
+            "description": "a stages.json unlock key: the door opens once it is unlocked (S19)"
+          },
+          "hint": {
+            "type": "string",
+            "description": "text shown while locked"
+          },
+          "label": {
+            "type": "string",
+            "description": "prompt of a stairs / lift end ([E] ...)"
+          },
+          "ends": {
+            "type": "object",
+            "description": "stairs / lift only: where each end stands and where you arrive when coming from the other end: { a: { x, z, arrive: [x, z], yaw }, b: { ... } } (world-from-plan multi-floor; default = the room's middle)",
+            "properties": {
+              "a": {
+                "type": "object"
+              },
+              "b": {
+                "type": "object"
+              }
+            }
+          },
+          "open": {
+            "type": "boolean",
+            "description": "an opening without a door panel, always open (e.g. between two outdoor areas)"
+          }
+        }
+      }
+    },
+    "stations": {
+      "type": "array",
+      "uniqueBy": "id",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "room"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "room": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "buildings": {
+      "type": "array",
+      "description": "recipes.buildings (js/building.js): { id, kind: house | gate | tree | forest, x, z, rot, w, d, wallH, roof { type gable|shed|flat, pitch, overhang }, doors [{ side, at, w, leaf: fusuma|shoji|glass|wood }], windows, tex { wall, roof, floor, ceiling, bark, bough, post, leaf } (catalog ids) }; forests keep off indoor rooms and houses",
+      "items": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" }, "kind": { "enum": ["house", "gate", "tree", "forest"] } } }
+    },
+    "furniture": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "room",
+          "x",
+          "z",
+          "w",
+          "d"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "recipes.props: a kind of js/recipes-data.js PROP_KINDS"
+          },
+          "rot": {
+            "type": "number"
+          },
+          "args": {
+            "type": "array"
+          },
+          "opts": {
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "room": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "w": {
+            "type": "number"
+          },
+          "d": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "path"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "open": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "hides": {
+      "type": "array",
+      "description": "hiding places for the monster pack (js/monster-std.js): { id, room, x, z, label? }",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "room",
+          "x",
+          "z"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "room": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "description": "plan-check exceptions: { ignore: [codes], why: reason } (e.g. a level without corridors ignores direct-reason, direct-per-room, direct-total, no-corridor)",
+      "properties": {
+        "ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "why": {
+          "type": "string"
+        }
+      }
+    },
+    "start": {
+      "type": "string"
+    },
+    "spawn": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "z": {
+          "type": "number"
+        },
+        "yaw": {
+          "type": "number"
+        }
+      }
+    },
+    "exits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

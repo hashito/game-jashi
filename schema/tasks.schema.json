@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tasks.json - the work the player does. Each task becomes a goal of the progression (id = the flag set when done)",
+  "type": "array",
+  "uniqueBy": "id",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "title",
+      "stage",
+      "room",
+      "meaning"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]+$"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "short task line (a verb phrase)"
+      },
+      "stage": {
+        "type": "string",
+        "description": "level id in stages.json"
+      },
+      "room": {
+        "type": "string"
+      },
+      "station": {
+        "type": "string",
+        "description": "plan.stations id where the player works"
+      },
+      "meaning": {
+        "type": "string",
+        "minLength": 1,
+        "description": "why this is done, in plain words (S7: names nothing the player has not met)"
+      },
+      "needs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "task ids that must be done first"
+      },
+      "optional": {
+        "type": "boolean"
+      },
+      "minigame": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "cfg": {
+            "type": "object"
+          }
+        }
+      },
+      "hint": {
+        "type": "string",
+        "description": "the protagonist's monologue hint when the player is stuck (U23)"
+      },
+      "steps": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "hint": {
+              "type": "string"
+            },
+            "emphasis": {
+              "type": "string",
+              "description": "what to point at in the UI or world (U22/U23)"
+            },
+            "done": {
+              "enum": [
+                "room",
+                "look",
+                "task"
+              ],
+              "description": "when the step counts as done by itself: the player is in the task room | looks at the emphasised object | the task is done. Without it the player taps next"
+            },
+            "body": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "timer": {
+        "type": "object",
+        "required": [
+          "seconds"
+        ],
+        "properties": {
+          "seconds": {
+            "type": "number",
+            "minimum": 0.1
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "description": "a timed task (standard 1.7): it completes by itself after this much play once its stage is current and its needs are done"
+      }
+    }
+  }
+}

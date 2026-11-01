@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "things.json - things the player can look at ([E] examine -> card + thought + journal; js/things.js)",
+  "type": "array",
+  "uniqueBy": "id",
+  "items": {
+    "type": "object",
+    "required": ["id", "room"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[A-Za-z0-9_:-]+$" },
+      "room": { "type": "string" },
+      "position": { "description": "[x, z] in metres, or { x, z, y }", "anyOf": [{ "type": "array", "minItems": 2, "maxItems": 3, "items": { "type": "number" } }, { "type": "object", "properties": { "x": { "type": "number" }, "z": { "type": "number" }, "y": { "type": "number" } } }] },
+      "at": { "type": "array", "description": "legacy name of position", "items": { "type": "number" } },
+      "y": { "type": "number", "description": "height of the spot (default 1.1)" },
+      "label": { "type": "string" },
+      "photo": { "type": "string" },
+      "text": { "anyOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }], "description": "the thought when looked at: one string, or [first look, second look and later]" },
+      "feeling": { "type": "string", "description": "the protagonist's one line (the card's own panel and the journal)" },
+      "size": { "type": "number" },
+      "terminal": { "type": "string", "description": "opens this terminal screen (data/terminals.json) instead of a look card" },
+      "requires": { "type": "object", "properties": { "stage": { "type": "string" }, "flags": { "type": "array", "items": { "type": "string" } }, "tasks": { "type": "array", "items": { "type": "string" } }, "items": { "type": "array", "items": { "type": "string" } }, "looked": { "type": "array", "items": { "type": "string" } } } }
+    }
+  }
+}

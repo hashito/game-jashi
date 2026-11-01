@@ -1,0 +1,182 @@
+/* game-kit 6e0b6f0: css/theme.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit design tokens (docs/standard-3d.md "Theme tokens"). Load AFTER css/kit.css and BEFORE the game's own CSS:
+     <link rel="stylesheet" href="css/kit.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/theme-game.css">
+   Put data-theme on <html> (the legacy kit variables --ink/--paper/--line/--accent... are defined on :root from these):
+     <html data-theme="dark-industrial">  |  "paper-light"  |  "retro-crt"  |  (none = the kit default below)
+   data-theme is a LIST of words (standard 1.1, selectors use ~=): a game's own look sits ON TOP of a standard theme:
+     <html data-theme="dark-industrial mygame">  +  css/theme-game.css:  [data-theme~="mygame"] { --gf-accent: #ffcc4a; }
+   A game adds a theme with ONE css file that overrides tokens:  [data-theme~="my-look"] { --gf-bg: ...; }
+   Rules for kit CSS: never hard-code a colour/size that a token covers; write  var(--gf-surface, var(--old, #fff))  so a
+   game that does not load theme.css looks exactly as before. Tokens only; no selectors for kit classes in this file. */
+:root {
+  /* colour */
+  --gf-bg: #dfe8ea;            /* page / behind the 3D view */
+  --gf-surface: #fffdf6;       /* window and card background */
+  --gf-surface-2: #f2efe4;     /* inset areas, thumbnails, quiet rows */
+  --gf-panel: rgba(252, 250, 244, 0.97);       /* window shell (slightly translucent) */
+  --gf-panel-soft: rgba(255, 253, 246, 0.92);  /* HUD chips */
+  --gf-text: #23302c;
+  --gf-text-dim: #5c6662;
+  --gf-accent: #3a7a5a;
+  --gf-accent-ink: #ffffff;    /* text on an accent-coloured background */
+  --gf-accent-2: #e8a040;      /* second accent (fills, rings, highlights: NOT for text on a light surface, use --gf-goal) */
+  --gf-goal: #8a4e0c;          /* text colour of the current goal / task (AA on --gf-surface and --gf-panel-soft) */
+  --gf-accent-soft: #eaf4ee;   /* selected row / soft accent tint */
+  --gf-highlight: #fff7e6;     /* "look here" tint (current goal, why-needed) */
+  --gf-heading: #2f5e46;       /* window titles, section headings */
+  --gf-accent-hover: #2f6a4c;
+  --gf-border-strong: #8c8472; /* button / control borders */
+  --gf-scrim: rgba(40, 50, 45, 0.28);          /* dim layer behind a window */
+  --gf-danger: #c0502a;
+  --gf-ok: #2e7a4a;
+  --gf-border: #d8d2c2;
+  --gf-overlay: rgba(0, 0, 0, 0.55);           /* modal backdrop */
+  --gf-overlay-strong: rgba(0, 0, 0, 0.72);
+  /* PAIRED tokens for nested blocks (rule U30: a text colour must match the background it is drawn on).
+     Every block that has its own background sets BOTH of its pair, never one: note = 使い方 / why-needed, hint = ヒント, warn = 注意, quote = 引用・書類の抜き書き,
+     voice = 主人公のひとこと, chip = 件数・状態の札, badge = NEW・未読の赤札, code = 数字・コード.  -text = the body text, -label = the small caption inside
+     (also AA), -line = the accent bar / border.  A game changes a pair only as a pair; test/contrast.test.mjs checks text and label >= 4.5 in every theme. */
+  --gf-note-bg: #fff7e6; --gf-note-text: #2b2418; --gf-note-label: #6a4710; --gf-note-line: #a86f10;
+  --gf-hint-bg: #eaf4ee; --gf-hint-text: #1f3a2c; --gf-hint-label: #2f6a4c; --gf-hint-line: #3a7a5a;
+  --gf-warn-bg: #fdece6; --gf-warn-text: #4a1a10; --gf-warn-label: #9a3414; --gf-warn-line: #c0502a;
+  --gf-quote-bg: #f2efe4; --gf-quote-text: #2f2b22; --gf-quote-label: #5c5648; --gf-quote-line: #8c8472;
+  --gf-voice-bg: #eef5f1; --gf-voice-text: #23302c; --gf-voice-label: #3d5a4c; --gf-voice-line: #3a7a5a;
+  --gf-chip-bg: #e6ebdf; --gf-chip-text: #2b3a30;
+  --gf-badge-bg: #b3261e; --gf-badge-text: #ffffff;
+  --gf-code-bg: #ece8dc; --gf-code-text: #2b2b2b;
+  /* shape */
+  --gf-radius: 10px;
+  --gf-radius-lg: 16px;
+  --gf-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  /* spacing scale */
+  --gf-space-1: 4px; --gf-space-2: 8px; --gf-space-3: 12px; --gf-space-4: 16px; --gf-space-5: 24px; --gf-space-6: 32px;
+  /* type */
+  --gf-font: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  --gf-font-mono: ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Noto Sans Mono CJK JP', monospace;
+  --gf-text-sm: 0.85em; --gf-text-md: 1em; --gf-text-lg: 1.2em;
+  --gf-lh: 1.65;
+  /* windows (U12 fixed size, U14 narrow screens, U21 generous margins) */
+  --gf-safe-t: env(safe-area-inset-top, 0px); --gf-safe-r: env(safe-area-inset-right, 0px);
+  --gf-safe-b: env(safe-area-inset-bottom, 0px); --gf-safe-l: env(safe-area-inset-left, 0px);
+  --gf-win-margin: clamp(12px, 3vmin, 32px);   /* gap between a window and the screen edge */
+  --gf-win-pad: var(--gf-space-4);             /* padding inside a window */
+  --gf-win-w: min(1000px, calc(100vw - 2 * var(--gf-win-margin) - var(--gf-safe-l) - var(--gf-safe-r)));
+  --gf-win-h: min(680px, calc(100vh - 2 * var(--gf-win-margin) - var(--gf-safe-t) - var(--gf-safe-b)));
+  --gf-win-w-narrow: min(620px, calc(100vw - 2 * var(--gf-win-margin) - var(--gf-safe-l) - var(--gf-safe-r)));
+  /* touch */
+  --gf-hit: 44px;
+  /* compact HUD (small screens): the top-left column; the open card; room kept free for the touch controls (shell.css) */
+  /* HUD translucency (standard 1.3): HUD parts are --gf-hud-surface (resting alpha), HUD buttons --gf-hud-btn, pressed / hover / focus --gf-hud-surface-active.
+     Text and icons stay opaque; windows (wm-*) stay >= 92%. The player setting (pause menu > HUD の透明度) sets html[data-gf-hud=dense|light]. */
+  --gf-hud-bg: #fffdf6; --gf-hud-alpha: 0.72; --gf-hud-btn-alpha: 0.6; --gf-hud-alpha-active: 0.92;
+  --gf-hud-surface: color-mix(in srgb, var(--gf-hud-bg) calc(var(--gf-hud-alpha) * 100%), transparent);
+  --gf-hud-btn: color-mix(in srgb, var(--gf-hud-bg) calc(var(--gf-hud-btn-alpha) * 100%), transparent);
+  --gf-hud-surface-active: color-mix(in srgb, var(--gf-hud-bg) calc(var(--gf-hud-alpha-active) * 100%), transparent);
+  --gf-hud-compact-w: min(45vw, 240px); --gf-hud-open-w: min(60vw, 340px); --gf-hud-reserve: 170px;
+  /* mini games / terminal screens (task-minigames #mg) */
+  --gf-mg-bg: #0a1410; --gf-mg-bg-2: #0b1810; --gf-mg-line: #2a5a3a; --gf-mg-btn: #12261a; --gf-mg-ink: #d8ffe4;
+  --gf-mg-accent: #46c27a; --gf-mg-warn: #ffcc4a; --gf-mg-dim: #7d9c89; --gf-mg-bad: #ff9a8a;
+  /* the mini game's five marker colours (shape + colour name are always shown too): text-safe on --gf-mg-bg / -bg-2 / -btn of the same theme */
+  --gf-mg-c1: #ff6b5a; --gf-mg-c2: #6db3ff; --gf-mg-c3: #f0d24a; --gf-mg-c4: #4fd283; --gf-mg-c5: #c996f2;
+  /* effects a theme may switch on: scanlines overlay opacity (0 = none) */
+  --gf-scanlines: 0;
+  /* the SVG map (map-svg.js): room kinds, doors, grid */
+  --gf-map-room: #dbe8f4; --gf-map-corridor: #e8e2c8; --gf-map-outdoor: #d6efd0; --gf-map-stairs: #f2d9b8; --gf-map-door: #8a5a00; --gf-map-grid: #eeeeee; --gf-map-grid-2: #cccccc;
+}
+@supports (height: 100dvh) { :root { --gf-win-h: min(680px, calc(100dvh - 2 * var(--gf-win-margin) - var(--gf-safe-t) - var(--gf-safe-b))); } }
+
+/* 届けるな / 应答するな: dark green-black terminals, phosphor green, amber warnings */
+[data-theme~="dark-industrial"] {
+  --gf-hud-bg: #0c1411; --gf-hud-btn-alpha: 0.74;
+  --gf-bg: #05090a; --gf-surface: #101a17; --gf-surface-2: #16241f; --gf-panel: rgba(12, 20, 17, 0.97); --gf-panel-soft: rgba(12, 20, 17, 0.9);
+  --gf-text: #d6ece0; --gf-text-dim: #7f9d8e; --gf-accent: #46c27a; --gf-accent-ink: #05140b; --gf-accent-2: #ffcc4a; --gf-goal: #ffcc4a;
+  --gf-accent-soft: #14301f; --gf-heading: #46c27a; --gf-accent-hover: #5fd690; --gf-border-strong: #3d7a54; --gf-scrim: rgba(0, 0, 0, 0.5); --gf-highlight: #2a2410; --gf-danger: #e0483a; --gf-ok: #46c27a; --gf-border: #2a5a3a;
+  --gf-overlay: rgba(0, 0, 0, 0.7); --gf-overlay-strong: rgba(0, 0, 0, 0.85);
+  --gf-note-bg: #2a2410; --gf-note-text: #f1e6c0; --gf-note-label: #dcbc62; --gf-note-line: #ffcc4a;
+  --gf-hint-bg: #14301f; --gf-hint-text: #d6ece0; --gf-hint-label: #7fd69f; --gf-hint-line: #46c27a;
+  --gf-warn-bg: #3a1511; --gf-warn-text: #ffd9d2; --gf-warn-label: #ff9d8c; --gf-warn-line: #e0483a;
+  --gf-quote-bg: #16241f; --gf-quote-text: #d6ece0; --gf-quote-label: #9dbaaa; --gf-quote-line: #3d7a54;
+  --gf-voice-bg: #101f19; --gf-voice-text: #d6ece0; --gf-voice-label: #93bda6; --gf-voice-line: #46c27a;
+  --gf-chip-bg: #1f3d2c; --gf-chip-text: #d3ecde;
+  --gf-badge-bg: #ff7a6a; --gf-badge-text: #1c0603;
+  --gf-code-bg: #0a1410; --gf-code-text: #d8ffe4;
+  --gf-radius: 6px; --gf-radius-lg: 10px; --gf-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  --gf-font: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --gf-lh: 1.6;
+  --gf-map-room: #243a34; --gf-map-corridor: #2c3a2a; --gf-map-outdoor: #1f3326; --gf-map-stairs: #3a3322; --gf-map-door: #ffcc4a; --gf-map-grid: #14201c; --gf-map-grid-2: #1c2c26;
+}
+/* 未然調書 / 日陰の台帳: warm paper, ink, brick-red accent, serif headings welcome */
+[data-theme~="paper-light"] {
+  --gf-hud-bg: #fffdf6;
+  --gf-bg: #e9e4d6; --gf-surface: #fffdf6; --gf-surface-2: #f3ecda; --gf-panel: rgba(255, 253, 246, 0.98); --gf-panel-soft: rgba(255, 253, 246, 0.94);
+  --gf-text: #2b2620; --gf-text-dim: #5f574c; --gf-accent: #b04e26; --gf-accent-ink: #ffffff; --gf-accent-2: #b08a2e;
+  --gf-accent-soft: #f6e6dc; --gf-heading: #8a3a1a; --gf-accent-hover: #a2481f; --gf-border-strong: #8a7e62; --gf-goal: #7a4a08; --gf-scrim: rgba(40, 30, 20, 0.3); --gf-highlight: #fbf0d2; --gf-danger: #b3261e; --gf-ok: #3b7a4a; --gf-border: #e3dccb;
+  --gf-overlay: rgba(40, 30, 20, 0.5); --gf-overlay-strong: rgba(40, 30, 20, 0.7);
+  --gf-note-bg: #fbf0d2; --gf-note-text: #2b2218; --gf-note-label: #6e4a0c; --gf-note-line: #946c14;
+  --gf-hint-bg: #e8f0e4; --gf-hint-text: #1f3324; --gf-hint-label: #2f6a40; --gf-hint-line: #3b7a4a;
+  --gf-warn-bg: #f9e3dc; --gf-warn-text: #43160e; --gf-warn-label: #962a18; --gf-warn-line: #b3261e;
+  --gf-quote-bg: #f3ecda; --gf-quote-text: #2b2620; --gf-quote-label: #5f574c; --gf-quote-line: #8a7e62;
+  --gf-voice-bg: #f6eadb; --gf-voice-text: #2b2620; --gf-voice-label: #7a3818; --gf-voice-line: #b04e26;
+  --gf-chip-bg: #ece3cb; --gf-chip-text: #2b2620;
+  --gf-badge-bg: #a3201a; --gf-badge-text: #ffffff;
+  --gf-code-bg: #ece3cb; --gf-code-text: #2b2620;
+  --gf-radius: 8px; --gf-radius-lg: 12px; --gf-shadow: 0 8px 30px rgba(60, 40, 20, 0.28);
+  --gf-font: 'Zen Old Mincho', 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --gf-mg-bg: #f6f0df; --gf-mg-bg-2: #fffdf6; --gf-mg-line: #cdbf9c; --gf-mg-btn: #efe6cf; --gf-mg-ink: #2b2620;
+  --gf-mg-accent: #2e6f3d; --gf-mg-warn: #8a4a0c; --gf-mg-dim: #625a4f; --gf-mg-bad: #a3201a;
+  --gf-mg-c1: #b3261e; --gf-mg-c2: #1d5aa8; --gf-mg-c3: #7a5a00; --gf-mg-c4: #1e7040; --gf-mg-c5: #7a359f;
+}
+/* old TV: black glass, green phosphor, monospace, optional scanlines */
+[data-theme~="retro-crt"] {
+  --gf-hud-bg: #021202; --gf-hud-btn-alpha: 0.74;
+  --gf-bg: #000000; --gf-surface: #031203; --gf-surface-2: #082008; --gf-panel: rgba(2, 14, 2, 0.97); --gf-panel-soft: rgba(2, 14, 2, 0.9);
+  --gf-text: #7dff8a; --gf-text-dim: #3fae4d; --gf-accent: #7dff8a; --gf-accent-ink: #001a02; --gf-accent-2: #ffd24a; --gf-goal: #ffd24a;
+  --gf-accent-soft: #0b2c0e; --gf-heading: #7dff8a; --gf-accent-hover: #a6ffae; --gf-border-strong: #2fa13d; --gf-scrim: rgba(0, 0, 0, 0.6); --gf-highlight: #2a2a05; --gf-danger: #ff5a4a; --gf-ok: #7dff8a; --gf-border: #1f7a2a;
+  --gf-overlay: rgba(0, 0, 0, 0.75); --gf-overlay-strong: rgba(0, 0, 0, 0.9);
+  --gf-note-bg: #2a2a05; --gf-note-text: #f2ffb0; --gf-note-label: #ffd24a; --gf-note-line: #ffd24a;
+  --gf-hint-bg: #0b2c0e; --gf-hint-text: #aaffb2; --gf-hint-label: #7dff8a; --gf-hint-line: #3fae4d;
+  --gf-warn-bg: #330c08; --gf-warn-text: #ffd3cc; --gf-warn-label: #ff8a78; --gf-warn-line: #ff5a4a;
+  --gf-quote-bg: #082008; --gf-quote-text: #8dff98; --gf-quote-label: #5fd06c; --gf-quote-line: #1f7a2a;
+  --gf-voice-bg: #031a04; --gf-voice-text: #8dff98; --gf-voice-label: #5fd06c; --gf-voice-line: #7dff8a;
+  --gf-chip-bg: #0f3a14; --gf-chip-text: #b6ffbd;
+  --gf-badge-bg: #ff6a58; --gf-badge-text: #1a0300;
+  --gf-code-bg: #000000; --gf-code-text: #aaffb2;
+  --gf-radius: 2px; --gf-radius-lg: 4px; --gf-shadow: 0 0 24px rgba(60, 255, 90, 0.25);
+  --gf-font: var(--gf-font-mono); --gf-lh: 1.55; --gf-scanlines: 0.18;
+  --gf-mg-bg: #021002; --gf-mg-bg-2: #031a04; --gf-mg-line: #1f7a2a; --gf-mg-btn: #062a08; --gf-mg-ink: #aaffb2;
+  --gf-mg-accent: #7dff8a; --gf-mg-warn: #ffd24a; --gf-mg-dim: #4fc65d; --gf-mg-bad: #ff9a8a;
+  --gf-map-room: #0b2c0e; --gf-map-corridor: #0a2410; --gf-map-outdoor: #072008; --gf-map-stairs: #2a2a05; --gf-map-door: #ffd24a; --gf-map-grid: #062006; --gf-map-grid-2: #0a2c0c;
+}
+
+/* A region that is PAPER inside a dark theme (a document card, the pickup card) or INK inside a light one: put the class on the region and every token below it
+   (text, secondary text, the paired blocks, the legacy --ink / --paper names) switches together, so a nested 使い方 / ヒント block can never keep the outer
+   theme's background while inheriting the region's text colour (rule U30). */
+.gf-paper {
+  --gf-text: #1d1c1a; --gf-text-dim: #4a463d; --gf-heading: #5a3410; --gf-surface: #f1ead4; --gf-surface-2: #e6dcc0; --gf-border: #b7aa86; --gf-border-strong: #7a6f55; --gf-accent: #8a3a1a; --gf-accent-ink: #ffffff; --gf-goal: #6a4208;
+  --gf-note-bg: #fbf0d2; --gf-note-text: #2b2218; --gf-note-label: #6e4a0c; --gf-note-line: #946c14;
+  --gf-hint-bg: #e8f0e4; --gf-hint-text: #1f3324; --gf-hint-label: #2f6a40; --gf-hint-line: #3b7a4a;
+  --gf-warn-bg: #f9e3dc; --gf-warn-text: #43160e; --gf-warn-label: #962a18; --gf-warn-line: #b3261e;
+  --gf-quote-bg: #f6efda; --gf-quote-text: #2b2620; --gf-quote-label: #5f574c; --gf-quote-line: #8a7e62;
+  --gf-voice-bg: #f6eadb; --gf-voice-text: #2b2620; --gf-voice-label: #7a3818; --gf-voice-line: #b04e26;
+  --gf-chip-bg: #e6dcc0; --gf-chip-text: #2b2620; --gf-badge-bg: #a3201a; --gf-badge-text: #ffffff; --gf-code-bg: #e6dcc0; --gf-code-text: #2b2620;
+  --ink: var(--gf-text); --paper: var(--gf-surface); --line: var(--gf-border); --accent: var(--gf-accent); --dim: var(--gf-text-dim);
+  background: var(--gf-surface); color: var(--gf-text);
+}
+.gf-ink {
+  --gf-text: #e8ecea; --gf-text-dim: #a8b4ae; --gf-heading: #ffd96e; --gf-surface: #141a1c; --gf-surface-2: #1c2427; --gf-border: #3a4a50; --gf-border-strong: #5f7078; --gf-accent: #ffcc4a; --gf-accent-ink: #1a1400; --gf-goal: #ffcc4a;
+  --gf-note-bg: #2a2410; --gf-note-text: #f1e6c0; --gf-note-label: #dcbc62; --gf-note-line: #ffcc4a;
+  --gf-hint-bg: #14301f; --gf-hint-text: #d6ece0; --gf-hint-label: #7fd69f; --gf-hint-line: #46c27a;
+  --gf-warn-bg: #3a1511; --gf-warn-text: #ffd9d2; --gf-warn-label: #ff9d8c; --gf-warn-line: #e0483a;
+  --gf-quote-bg: #1c2427; --gf-quote-text: #e8ecea; --gf-quote-label: #a8b4ae; --gf-quote-line: #5f7078;
+  --gf-voice-bg: #182226; --gf-voice-text: #e8ecea; --gf-voice-label: #a8c4b8; --gf-voice-line: #46c27a;
+  --gf-chip-bg: #26333a; --gf-chip-text: #e8ecea; --gf-badge-bg: #ff7a6a; --gf-badge-text: #1c0603; --gf-code-bg: #0a1010; --gf-code-text: #d8ffe4;
+  --ink: var(--gf-text); --paper: var(--gf-surface); --line: var(--gf-border); --accent: var(--gf-accent); --dim: var(--gf-text-dim);
+  background: var(--gf-surface); color: var(--gf-text);
+}
+/* optional scanline veil: add <div class="gf-scanlines"></div> once; invisible unless the theme sets --gf-scanlines */
+.gf-scanlines { position: fixed; inset: 0; z-index: 99999; pointer-events: none; opacity: var(--gf-scanlines);
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0 1px, transparent 1px 3px); }
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more) { .gf-scanlines { display: none; } }
+
+html[data-gf-hud="dense"] { --gf-hud-alpha: 0.9; --gf-hud-btn-alpha: 0.8; --gf-hud-alpha-active: 0.98; }
+html[data-gf-hud="light"] { --gf-hud-alpha: 0.55; --gf-hud-btn-alpha: 0.4; --gf-hud-alpha-active: 0.85; }

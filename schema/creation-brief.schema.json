@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "制作仕様 v1: fps / chat",
+  "$comment": "uniqueBy is a game-kit validation extension. The creation CLI also checks references, reachability and routes.",
+  "oneOf": [{ "$ref": "#/$defs/fps" }, { "$ref": "#/$defs/chat" }],
+  "$defs": {
+    "text": { "type": "string", "minLength": 1, "maxLength": 10000, "pattern": "\\S" },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 60 },
+    "key": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$", "maxLength": 60 },
+    "fps": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "kind", "id", "title", "premise", "goal", "rooms", "ending"],
+      "properties": {
+        "$schema": { "type": "string" }, "version": { "const": 1 }, "kind": { "const": "fps" },
+        "id": { "$ref": "#/$defs/id" }, "title": { "$ref": "#/$defs/text" }, "premise": { "$ref": "#/$defs/text" }, "goal": { "$ref": "#/$defs/text" },
+        "theme": { "enum": ["dark-industrial", "paper-light", "retro-crt"] },
+        "rooms": { "type": "array", "minItems": 2, "maxItems": 6, "uniqueBy": "id", "items": {
+          "type": "object", "additionalProperties": false, "required": ["id", "name", "kit", "task"], "properties": {
+            "id": { "$ref": "#/$defs/key" }, "name": { "$ref": "#/$defs/text" },
+            "kit": { "enum": ["office", "archive", "workshop"] },
+            "task": { "type": "object", "additionalProperties": false, "required": ["title", "why", "type"], "properties": {
+              "title": { "$ref": "#/$defs/text" }, "why": { "$ref": "#/$defs/text" },
+              "type": { "enum": ["dial", "sequence", "align", "tape", "wipe", "cables", "lanes"] }
+            } }
+          }
+        } },
+        "ending": { "type": "object", "additionalProperties": false, "required": ["title", "text"], "properties": {
+          "title": { "$ref": "#/$defs/text" }, "text": { "$ref": "#/$defs/text" }
+        } }
+      }
+    },
+    "chat": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "kind", "id", "title", "description", "intro", "cast", "channel", "scenes", "endings"],
+      "properties": {
+        "$schema": { "type": "string" }, "version": { "const": 1 }, "kind": { "const": "chat" },
+        "id": { "$ref": "#/$defs/id" }, "title": { "$ref": "#/$defs/text" }, "description": { "$ref": "#/$defs/text" },
+        "skin": { "enum": ["line-like", "work-chat", "bbs", "dm-dark"] },
+        "intro": { "type": "object", "additionalProperties": false, "required": ["place", "text"], "properties": {
+          "place": { "$ref": "#/$defs/text" }, "text": { "$ref": "#/$defs/text" }
+        } },
+        "channel": { "$ref": "#/$defs/text" },
+        "cast": { "type": "array", "minItems": 3, "maxItems": 8, "uniqueBy": "name", "items": {
+          "type": "object", "additionalProperties": false, "required": ["name", "role", "voice"], "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 12, "pattern": "^[^\\s:：@\\[\\]{}]+$" },
+            "role": { "$ref": "#/$defs/text" }, "voice": { "$ref": "#/$defs/text" }
+          }
+        } },
+        "scenes": { "type": "array", "minItems": 1, "maxItems": 30, "uniqueBy": "id", "items": {
+          "type": "object", "additionalProperties": false, "required": ["id", "lines"], "properties": {
+            "id": { "$ref": "#/$defs/key" }, "lines": { "$ref": "#/$defs/text" }, "prompt": { "$ref": "#/$defs/text" },
+            "next": { "$ref": "#/$defs/key" }, "ending": { "$ref": "#/$defs/key" },
+            "choices": { "type": "array", "minItems": 1, "maxItems": 4, "uniqueBy": "id", "items": {
+              "type": "object", "additionalProperties": false, "required": ["id", "label", "next"], "properties": {
+                "id": { "$ref": "#/$defs/key" }, "label": { "$ref": "#/$defs/text" }, "next": { "$ref": "#/$defs/key" }
+              }
+            } }
+          }
+        } },
+        "endings": { "type": "array", "minItems": 2, "maxItems": 8, "uniqueBy": "id", "items": {
+          "type": "object", "additionalProperties": false, "required": ["id", "title", "text", "summary"], "properties": {
+            "id": { "$ref": "#/$defs/key" }, "title": { "$ref": "#/$defs/text" }, "text": { "$ref": "#/$defs/text" }, "summary": { "$ref": "#/$defs/text" }
+          }
+        } }
+      }
+    }
+  }
+}

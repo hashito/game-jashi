@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "game.json - the manifest of a standard 3D first-person game",
+  "type": "object",
+  "required": ["id", "title", "version", "theme", "data"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "short key; also the storage key prefix and the GA4 game name" },
+    "title": { "type": "string", "minLength": 1 },
+    "subtitle": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "semver of the game; equals the newest release-notes entry" },
+    "standard": { "type": "string", "description": "the game-kit standard it was built on, e.g. 1.0" },
+    "theme": { "type": "string", "minLength": 1, "description": "data-theme value (a LIST of words): a base dark-industrial | paper-light | retro-crt, a mood theme of css/themes.css (shrine-night, summer-rural, hospital-cold, school-dusk, vhs-tape, snow-silence, deep-water, blood-washi, office-night, candle-room, fog-forest, pencil-diary), and/or the game's own" },
+    "preset": { "type": ["string", "object"], "description": "render-presets preset: horror | dusk | office | zoo ... Or { base, ...overrides } (extendPreset; colours as numbers).", "properties": { "base": { "type": "string" } } },
+    "modules": { "type": "array", "items": { "type": "string" }, "description": "kit modules the game uses (kit.json modules is derived from it)" },
+    "titleImage": { "type": "string", "description": "title screen background image (relative to the game root)" },
+    "controls": { "type": "object", "description": "fov, near, far, eye, step (the default footstep surface, js/step-sound.js: wood tatami gravel snow ...), touch: [{ k: key code, label, id?, cls? }] (the on-screen buttons of the touch UI)" },
+    "renderWhileBooting": { "type": "boolean", "description": "true = the 3D view is drawn every frame while the boot steps run (default: not drawn until booted)" },
+    "quality": { "type": "boolean", "description": "false = no quality tier (default: a tier is chosen once from the device)" },
+    "fx": { "type": ["string", "boolean", "object"], "description": "screen effects (js/fx-std.js): a preset name (old-tv | clean | horror | retro-crt) or { preset, noise, scanlines, vignette, saturation, glitch, dangerTint, mist, exposure }" },
+    "voice": { "type": "boolean", "description": "true = ctx.playVoice(src, 'phone' | 'pa' | 'radio' | 'wall') is available (js/voice-fx.js, rule S15)" },
+    "recipes": { "type": "object", "description": "content recipes switched on: props (plan.furniture kinds), openables, textures (folder of the catalog), ambience { beds } (js/recipes.js)", "properties": { "props": { "type": "boolean" }, "openables": { "type": "boolean" }, "buildings": { "type": "boolean", "description": "plan.buildings[] -> js/building.js houses / trees / forests" }, "textures": { "type": ["string", "boolean"] }, "ambience": { "type": "object", "properties": { "beds": { "type": "array" } } } } },
+    "minigames": { "type": "array", "items": { "type": "string" }, "description": "extra mini game types registered by js/ext (not kit task-minigames types)" },
+    "entry": { "type": "object", "properties": { "html": { "type": "string" }, "main": { "type": "string" } }, "additionalProperties": false },
+    "ext": { "type": "array", "items": { "type": "string" }, "description": "game-specific extension modules, loaded in order; each default-exports (ext, ctx) => void" },
+    "data": {
+      "type": "object",
+      "required": ["plan", "items", "tasks", "stages", "endings", "releaseNotes"],
+      "properties": {
+        "plan": { "type": "string" }, "items": { "type": "string" }, "docs": { "type": "string" }, "tasks": { "type": "string" },
+        "stages": { "type": "string" }, "endings": { "type": "string" }, "releaseNotes": { "type": "string" }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "media": { "type": "object", "properties": { "dir": { "type": "string" }, "catalog": { "type": "string" } }, "additionalProperties": false },
+    "themeColors": { "type": "object", "description": "standard 1.9: a theme made from a few colours (js/theme-make.js makeTheme, every pair AA-fitted), put on top of theme. from: a mood theme to start from", "properties": { "from": { "type": "string" }, "mode": { "enum": ["dark", "light"] }, "bg": { "type": "string" }, "surface": { "type": "string" }, "text": { "type": "string" }, "accent": { "type": "string" }, "accent2": { "type": "string" }, "danger": { "type": "string" }, "ok": { "type": "string" }, "heading": { "type": "string" }, "font": { "type": "string" }, "radius": { "type": "number" }, "scanlines": { "type": "number" } }, "additionalProperties": false },
+    "spotFx": { "description": "standard 1.9: the default 'it saw you' effect for every monster (js/spot-fx.js; monsters.json spotFx wins)" },
+    "music": { "description": "standard 1.9: title music, played after the first click / key on the title and faded out at the start (stage music: stages.json levels[].look.music)", "type": "object", "additionalProperties": false, "properties": { "title": { "type": "string" }, "volume": { "type": "number", "minimum": 0, "maximum": 1 } } },
+    "stationsWhenDone": { "description": "standard 1.9: 'hide' takes a station out of the interactables once all its tasks are done (js/stage-look.js)", "enum": ["keep", "hide"] }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,201 @@
+{
+  "id": "jashi",
+  "title": "邪視 ― 視線の山",
+  "subtitle": "目を合わせずに、日が暮れる前に山を下りる",
+  "version": "5.0.0",
+  "standard": "1.9",
+  "theme": "dark-industrial fog-forest jashi",
+  "themeColors": {
+    "from": "fog-forest",
+    "accent": "#c9b48a",
+    "accent2": "#d8cfb6",
+    "danger": "#d0574a"
+  },
+  "preset": {
+    "base": "dusk",
+    "label": "十二月の夕方の杉林",
+    "toneMapping": "aces",
+    "exposure": 1,
+    "background": 9147274,
+    "fog": {
+      "type": "exp2",
+      "color": 9147274,
+      "density": 0.018
+    },
+    "far": 130,
+    "env": {
+      "kind": "sky",
+      "top": 5923176,
+      "horizon": 10856090,
+      "ground": 2500127,
+      "sun": [
+        16767400,
+        1.4,
+        [
+          -0.6,
+          0.12,
+          -0.7
+        ]
+      ],
+      "intensity": 0.7
+    },
+    "hemi": {
+      "sky": 10134178,
+      "ground": 3025956,
+      "intensity": 0.78
+    },
+    "key": {
+      "type": "dir",
+      "color": 15260096,
+      "intensity": 1.35,
+      "pos": [
+        -12,
+        10,
+        -14
+      ],
+      "shadow": true,
+      "area": 20
+    },
+    "fills": [],
+    "post": {
+      "vignette": 0.5,
+      "grain": 0.05,
+      "bloom": {
+        "strength": 0.25,
+        "threshold": 0.9,
+        "radius": 0.5
+      },
+      "tint": [
+        0.97,
+        0.99,
+        1
+      ],
+      "saturation": 0.72
+    }
+  },
+  "modules": [
+    "game-core",
+    "ext",
+    "schema-check",
+    "game-data",
+    "world-from-plan",
+    "plan-check",
+    "task-minigames",
+    "render-presets",
+    "frame-guard",
+    "controller",
+    "ui",
+    "store",
+    "audio",
+    "progression",
+    "progress-ui",
+    "inventory-ui",
+    "release-notes",
+    "win-manager",
+    "tab-menu",
+    "pause-menu",
+    "journal-ui",
+    "map-svg",
+    "step-guide",
+    "analytics",
+    "character",
+    "motion",
+    "env-props",
+    "props",
+    "prop-geo",
+    "prop-mats",
+    "monster-looks",
+    "texture-library",
+    "building",
+    "outer-walls",
+    "fear-fx",
+    "ending-scene",
+    "step-sound",
+    "spot-fx",
+    "stage-look",
+    "item-kinds",
+    "item-catalog",
+    "mg-library",
+    "mg-frame",
+    "mg-widgets",
+    "mg-photo-focus",
+    "mg-steady-hand",
+    "mg-tune-radio",
+    "mg-sort-items",
+    "mg-timing",
+    "mg-search-dark",
+    "mg-pump-gauge",
+    "mg-hold-breath"
+  ],
+  "minigames": [
+    "photo-focus",
+    "steady-hand",
+    "tune-radio",
+    "sort-items",
+    "timing",
+    "search-dark",
+    "pump-gauge",
+    "hold-breath"
+  ],
+  "itemKinds": [
+    "crank-handle",
+    "rubber-boots"
+  ],
+  "entry": {
+    "html": "index.html",
+    "main": "js/main.js"
+  },
+  "ext": [
+    "js/ext/index.js"
+  ],
+  "data": {
+    "plan": "data/plan.json",
+    "items": "data/items.json",
+    "docs": "data/docs.json",
+    "tasks": "data/tasks.json",
+    "stages": "data/stages.json",
+    "endings": "data/endings.json",
+    "releaseNotes": "data/release-notes.json",
+    "monsters": "data/monsters.json",
+    "things": "data/things.json",
+    "talk": "data/talk.json"
+  },
+  "titleImage": "assets/title-forest-v4-2.webp",
+  "media": {
+    "dir": "assets"
+  },
+  "fx": "old-tv",
+  "recipes": {
+    "props": true,
+    "buildings": true,
+    "textures": "assets/textures/"
+  },
+  "voice": true,
+  "things": true,
+  "controls": {
+    "crouch": true,
+    "flashlight": true,
+    "touch": [
+      {
+        "k": "KeyQ",
+        "label": "目を閉じる",
+        "id": "eyes",
+        "cls": "hold"
+      },
+      {
+        "k": "KeyR",
+        "label": "ボトル",
+        "id": "bottle"
+      }
+    ]
+  },
+  "portraits": {
+    "修司": "assets/portraits/shuji-v4-2.webp"
+  },
+  "spotFx": "dread",
+  "music": {
+    "title": "assets/audio/music-title.mp3",
+    "volume": 0.32
+  },
+  "stationsWhenDone": "hide"
+}

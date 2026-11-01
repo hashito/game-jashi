@@ -1,0 +1,685 @@
+{
+ "rooms": [
+  {
+   "id": "CAB_HALL",
+   "name": "別荘・玄関と無線机",
+   "x": -6,
+   "z": 19,
+   "w": 12,
+   "d": 6.9,
+   "kind": "room",
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "CAB_BED",
+   "name": "別荘・寝室",
+   "x": -3.4,
+   "z": 25.9,
+   "w": 9.4,
+   "d": 3.1,
+   "kind": "room",
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "CAB_ST0",
+   "name": "別荘・階段（一階）",
+   "x": -6,
+   "z": 25.9,
+   "w": 2.6,
+   "d": 3.1,
+   "kind": "stairs",
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall"
+  },
+  {
+   "id": "CAB_UP",
+   "name": "別荘・二階の作業室",
+   "x": -6,
+   "z": 19,
+   "w": 12,
+   "d": 6.9,
+   "kind": "room",
+   "floor": 1,
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "CAB_STORE",
+   "name": "別荘・二階の納戸",
+   "x": -3.4,
+   "z": 25.9,
+   "w": 9.4,
+   "d": 3.1,
+   "kind": "room",
+   "floor": 1,
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "CAB_ST1",
+   "name": "別荘・階段（二階）",
+   "x": -6,
+   "z": 25.9,
+   "w": 2.6,
+   "d": 3.1,
+   "kind": "stairs",
+   "floor": 1,
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall"
+  },
+  {
+   "id": "CAB_BALC",
+   "name": "二階のベランダ",
+   "x": -3,
+   "z": 17,
+   "w": 6,
+   "d": 2,
+   "kind": "room",
+   "floor": 1,
+   "floorTex": "planks_dark",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "SHED",
+   "name": "物置",
+   "x": -22,
+   "z": -5.5,
+   "w": 5,
+   "d": 4.5,
+   "kind": "room",
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "SHELTER",
+   "name": "避難小屋",
+   "x": 13,
+   "z": -18,
+   "w": 6,
+   "d": 5,
+   "kind": "room",
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "O_FRONT",
+   "name": "別荘前の林道",
+   "x": -16,
+   "z": 8,
+   "w": 24,
+   "d": 11,
+   "kind": "outdoor",
+   "floorTex": "gravel",
+   "edge": "none"
+  },
+  {
+   "id": "O_PARK",
+   "name": "駐車場",
+   "x": -34,
+   "z": 12,
+   "w": 18,
+   "d": 17,
+   "kind": "outdoor",
+   "floorTex": "gravel",
+   "edge": "none"
+  },
+  {
+   "id": "O_MID",
+   "name": "林道（中ほど）",
+   "x": -6,
+   "z": -4,
+   "w": 12,
+   "d": 12,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "O_TIMBER_N",
+   "name": "伐採跡（北）",
+   "x": -26,
+   "z": -1,
+   "w": 20,
+   "d": 9,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "O_TIMBER_W",
+   "name": "伐採跡（西）",
+   "x": -26,
+   "z": -16,
+   "w": 4,
+   "d": 15,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  },
+  {
+   "id": "O_TIMBER_S",
+   "name": "伐採跡（物置の裏）",
+   "x": -22,
+   "z": -16,
+   "w": 5,
+   "d": 10.5,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  },
+  {
+   "id": "O_TIMBER_E",
+   "name": "伐採跡（呼び鐘）",
+   "x": -17,
+   "z": -16,
+   "w": 11,
+   "d": 15,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "O_BRIDGE",
+   "name": "沢と橋",
+   "x": -6,
+   "z": -16,
+   "w": 12,
+   "d": 12,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "O_EAST_RET",
+   "name": "沢沿いの戻り道",
+   "x": 6,
+   "z": -4,
+   "w": 8,
+   "d": 12,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  },
+  {
+   "id": "O_EAST_N",
+   "name": "沢沿い（避難小屋の前）",
+   "x": 6,
+   "z": -13,
+   "w": 18,
+   "d": 9,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "O_SOUTH",
+   "name": "林道の奥",
+   "x": -6,
+   "z": -30,
+   "w": 19,
+   "d": 14,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "O_EAST_SM",
+   "name": "避難小屋の裏",
+   "x": 13,
+   "z": -30,
+   "w": 6,
+   "d": 12,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  },
+  {
+   "id": "O_EAST_S",
+   "name": "沢の下手",
+   "x": 19,
+   "z": -30,
+   "w": 7,
+   "d": 17,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  }
+ ],
+ "doors": [
+  {
+   "id": "D_ENTRY",
+   "a": "CAB_HALL",
+   "b": "O_FRONT",
+   "x": 0,
+   "z": 19,
+   "width": 2.4,
+   "label": "別荘の玄関戸",
+   "unlock": "outside",
+   "hint": "修司の声を聞くまで、外に出ない方がいい。机の無線を先に。"
+  },
+  {
+   "id": "D_BED",
+   "a": "CAB_HALL",
+   "b": "CAB_BED",
+   "x": 1.5,
+   "z": 25.9,
+   "width": 1.4,
+   "label": "寝室の引戸",
+   "reason": "a small villa: the bedroom opens off the hall"
+  },
+  {
+   "id": "D_ST0",
+   "a": "CAB_HALL",
+   "b": "CAB_ST0",
+   "x": -4.7,
+   "z": 25.9,
+   "width": 1.4,
+   "label": "階段の下"
+  },
+  {
+   "id": "D_STORE",
+   "a": "CAB_UP",
+   "b": "CAB_STORE",
+   "x": 4.3,
+   "z": 25.9,
+   "width": 1.4,
+   "label": "二階の納戸の引戸",
+   "reason": "a small villa: the store opens off the workroom"
+  },
+  {
+   "id": "D_ST1",
+   "a": "CAB_UP",
+   "b": "CAB_ST1",
+   "x": -4.7,
+   "z": 25.9,
+   "width": 1.4,
+   "label": "階段の上"
+  },
+  {
+   "id": "D_BALC",
+   "a": "CAB_UP",
+   "b": "CAB_BALC",
+   "x": 0,
+   "z": 19,
+   "width": 1.6,
+   "label": "ベランダの戸",
+   "reason": "the balcony opens off the workroom"
+  },
+  {
+   "id": "ST_CABIN",
+   "a": "CAB_ST0",
+   "b": "CAB_ST1",
+   "width": 1.4,
+   "kind": "stairs",
+   "unlock": "downstairs",
+   "hint": "先に、窓の雨戸を閉めた方がいい。",
+   "ends": {
+    "a": {
+     "x": -4.7,
+     "z": 28.55,
+     "arrive": [
+      -4.7,
+      26.8
+     ],
+     "yaw": 0
+    },
+    "b": {
+     "x": -4.7,
+     "z": 28.55,
+     "arrive": [
+      -4.7,
+      26.8
+     ],
+     "yaw": 0
+    }
+   }
+  },
+  {
+   "id": "D_SHED",
+   "a": "SHED",
+   "b": "O_TIMBER_N",
+   "x": -19.5,
+   "z": -1,
+   "width": 1.6,
+   "label": "物置の引戸",
+   "unlock": "shed",
+   "hint": "物置の鍵は、書き置きと一緒に机にあるはずだ。"
+  },
+  {
+   "id": "D_SHELTER",
+   "a": "SHELTER",
+   "b": "O_EAST_N",
+   "x": 16,
+   "z": -13,
+   "width": 1.6,
+   "label": "避難小屋の引戸",
+   "unlock": "shelter",
+   "hint": "小屋の戸は閉まっている。先に物置の支度を。"
+  },
+  {
+   "id": "D_GATE",
+   "a": "O_FRONT",
+   "b": "O_PARK",
+   "x": -16,
+   "z": 16,
+   "width": 3.6,
+   "label": "林道ゲート",
+   "unlock": "gate",
+   "hint": "鎖のゲートが下りている。巻上げの箱にハンドルを差して上げる。",
+   "reason": "the forest road gate (a chain bar, lifted by the crank)"
+  },
+  {
+   "id": "G_FRONT_MID",
+   "a": "O_FRONT",
+   "b": "O_MID",
+   "x": 0,
+   "z": 8,
+   "width": 8,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_FRONT_TIMBER",
+   "a": "O_FRONT",
+   "b": "O_TIMBER_N",
+   "x": -11,
+   "z": 8,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_MID_TIMBER",
+   "a": "O_MID",
+   "b": "O_TIMBER_N",
+   "x": -6,
+   "z": 3,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_MID_BRIDGE",
+   "a": "O_MID",
+   "b": "O_BRIDGE",
+   "x": 0,
+   "z": -4,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_MID_EAST",
+   "a": "O_MID",
+   "b": "O_EAST_RET",
+   "x": 6,
+   "z": 2,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_TN_TW",
+   "a": "O_TIMBER_N",
+   "b": "O_TIMBER_W",
+   "x": -24,
+   "z": -1,
+   "width": 4,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_TN_TE",
+   "a": "O_TIMBER_N",
+   "b": "O_TIMBER_E",
+   "x": -11,
+   "z": -1,
+   "width": 8,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_TW_TS",
+   "a": "O_TIMBER_W",
+   "b": "O_TIMBER_S",
+   "x": -22,
+   "z": -11,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_TS_TE",
+   "a": "O_TIMBER_S",
+   "b": "O_TIMBER_E",
+   "x": -17,
+   "z": -11,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_TE_BRIDGE",
+   "a": "O_TIMBER_E",
+   "b": "O_BRIDGE",
+   "x": -6,
+   "z": -12,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_BRIDGE_EAST",
+   "a": "O_BRIDGE",
+   "b": "O_EAST_N",
+   "x": 6,
+   "z": -8,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_EASTRET_N",
+   "a": "O_EAST_RET",
+   "b": "O_EAST_N",
+   "x": 10,
+   "z": -4,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_BRIDGE_SOUTH",
+   "a": "O_BRIDGE",
+   "b": "O_SOUTH",
+   "x": 0,
+   "z": -16,
+   "width": 8,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_SOUTH_SM",
+   "a": "O_SOUTH",
+   "b": "O_EAST_SM",
+   "x": 13,
+   "z": -24,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_SM_S",
+   "a": "O_EAST_SM",
+   "b": "O_EAST_S",
+   "x": 19,
+   "z": -24,
+   "width": 6,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_EN_ES",
+   "a": "O_EAST_N",
+   "b": "O_EAST_S",
+   "x": 22,
+   "z": -13,
+   "width": 4,
+   "open": true,
+   "reason": "outdoors: the trail goes on (no wall between the strips)"
+  }
+ ],
+ "stations": [
+  {
+   "id": "S_TELESCOPE",
+   "room": "CAB_BALC",
+   "x": -1.9,
+   "z": 17.6,
+   "label": "望遠鏡"
+  },
+  {
+   "id": "S_SHUTTER",
+   "room": "CAB_UP",
+   "x": 1.4,
+   "z": 19.5,
+   "label": "雨戸の引手"
+  },
+  {
+   "id": "S_RADIO",
+   "room": "CAB_HALL",
+   "x": 2.7,
+   "z": 24.6,
+   "label": "机の無線"
+  },
+  {
+   "id": "S_SHELF",
+   "room": "SHED",
+   "x": -20.4,
+   "z": -4.9,
+   "label": "物置の棚"
+  },
+  {
+   "id": "S_BELL",
+   "room": "O_TIMBER_E",
+   "x": -12.7,
+   "z": -6,
+   "label": "林業用の呼び鐘"
+  },
+  {
+   "id": "S_CRANK",
+   "room": "SHELTER",
+   "x": 15.4,
+   "z": -17.2,
+   "label": "小屋の床"
+  },
+  {
+   "id": "S_PHONE",
+   "room": "O_EAST_SM",
+   "x": 17.6,
+   "z": -23,
+   "label": "泥の中の携帯電話"
+  },
+  {
+   "id": "S_GATE",
+   "room": "O_FRONT",
+   "x": -14.6,
+   "z": 13.6,
+   "label": "ゲートの巻上げ箱"
+  },
+  {
+   "id": "S_CAR",
+   "room": "O_PARK",
+   "x": -25.6,
+   "z": 22.6,
+   "label": "叔父の車"
+  }
+ ],
+ "hides": [
+  {
+   "id": "H_LOGS",
+   "room": "O_TIMBER_E",
+   "x": -15.2,
+   "z": -8.6,
+   "label": "材木の陰"
+  },
+  {
+   "id": "H_STONES",
+   "room": "O_SOUTH",
+   "x": 9.7,
+   "z": -20,
+   "label": "沢の大岩の陰"
+  },
+  {
+   "id": "H_SHELF",
+   "room": "SHED",
+   "x": -18.2,
+   "z": -4.6,
+   "label": "物置の棚の陰"
+  },
+  {
+   "id": "H_HUT",
+   "room": "SHELTER",
+   "x": 17.8,
+   "z": -17.2,
+   "label": "小屋の隅の毛布"
+  },
+  {
+   "id": "H_CLOSET",
+   "room": "CAB_BED",
+   "x": 5.2,
+   "z": 28.2,
+   "label": "寝室の押入れ"
+  },
+  {
+   "id": "H_CAR",
+   "room": "O_PARK",
+   "x": -21,
+   "z": 26.5,
+   "label": "車の陰"
+  }
+ ],
+ "routes": [
+  {
+   "id": "mountain_loop",
+   "path": [
+    "O_SOUTH",
+    "O_BRIDGE",
+    "O_TIMBER_E",
+    "O_TIMBER_N",
+    "O_MID",
+    "O_EAST_RET",
+    "O_EAST_N",
+    "O_EAST_S",
+    "O_EAST_SM",
+    "O_SOUTH"
+   ]
+  }
+ ],
+ "start": "CAB_UP",
+ "spawn": {
+  "x": 0.65,
+  "z": 23.2,
+  "yaw": 0
+ },
+ "exits": [
+  "O_PARK"
+ ],
+ "checks": {
+  "ignore": [
+   "direct-total",
+   "no-corridor",
+   "direct-per-room",
+   "exits-few"
+  ],
+  "why": "a villa and huts on a mountain: rooms open on the trail and on each other, there are no hallways; the only way off the mountain is the car in the parking lot"
+ }
+}
