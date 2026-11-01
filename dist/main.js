@@ -42,7 +42,7 @@ const HOLD_HINT_KEY='jashi-mountain-hold-hint-v1';
 let shelter=createShelterState(),dragHints=0,lastDragHint=-999,holdHintShown=!!read(HOLD_HINT_KEY,false);
 let searchGuidance=new SearchGuidance(),lastObjectiveId=null;
 let examined=new Set(),doorPressure=null;
-const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false,leashUntil:0});
+const freshFlags=()=>({seen:false,downstairs:false,glasses:false,key:false,note:false,bottle:false,crank:false,photo:false,phone:false,gate:false,hunt:false,firstAttack:false,phoneHint:false,bridge:false,shutterClosed:false,shutterUsed:false,radioTuned:false,bellUsed:false,uncleLeft:false,leashUntil:0});
 const textHTML=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
 const paragraphs=arr=>(arr||[]).map(t=>`<p>${textHTML(t)}</p>`).join('');
 const button=(action,label,secondary=false)=>`<button type="button" data-action="${action}"${secondary?' class="secondary"':''}>${label}</button>`;
@@ -271,7 +271,7 @@ function restore(s){
   examined=restoreEvidence(s.examined);doorPressure=null;
   sound.start();flags={...freshFlags(),...s.flags};collected=new Set(s.collected||[]);completed=new Set(s.completed||[]);scares=new Set(s.scares||[]);stats={repels:0,escapes:0,...s.stats};
   if(s.v===3&&s.story.stage>=3)flags.radioTuned=true;
-  mechanisms=createMechanisms(s.mechanisms);companionState=flags.seen?'away':'present';radioActive=false;dialoguePaused=false;
+  mechanisms=createMechanisms(s.mechanisms);companionState=flags.seen||flags.uncleLeft?'away':'present';radioActive=false;dialoguePaused=false;
   player={...s.player};enemy=createEnemyState(REVEAL_POINT,s.enemy);monster=enemy.position;story=createStoryState(s.story);yaw=s.yaw||0;pitch=clamp(s.pitch||0,-1.2,1.2);time=s.time;
   world.restoreDoors?.(s.doors,[player]);
   survival={...createSurvival(),...s.survival,phase:'idle',phaseTime:0,stun:0,dead:false,hit:0,cooldown:2};
@@ -291,13 +291,18 @@ function restore(s){
   faceRoute();
   syncWorld();tape.clear();if(activeSpeech&&speechTime>0)dialogueView.show(activeSpeech,{remaining:speechTime,total:speechTotal,queued:speechQueue.length});else dialogueView.hide();checkpoint=s;started=true;mode='play';$('panel').hidden=true;$('scope-sequence').hidden=true;document.body.dataset.screen='play';document.body.dataset.scene='explore';lockPointer();toast('記録から再開しました');
 }
+// unplayed lines of these beats go to the log (they no longer fit what is happening)
+function flushBeats(beats){
+  const pre=l=>beats.includes(l.beat);
+  for(const line of speechQueue.filter(pre))conversation.push({...line,time:Math.floor(time)});
+  speechQueue=speechQueue.filter(l=>!pre(l));if(activeSpeech&&pre(activeSpeech)){activeSpeech=null;speechTime=0;}
+}
 function startTelescope(){
   if(flags.seen||mode!=='play')return;
   freezeInput();scope={phase:0,elapsed:0,total:0,entered:-1,startedAt:time};mode='scope';document.body.dataset.scene='scope';$('panel').hidden=true;$('scope-sequence').hidden=false;$('subtitle').hidden=true;$('interaction').hidden=true;
   dialoguePaused=false;companionState='leaving';
   document.exitPointerLock?.();
-  for(const line of speechQueue.filter(l=>l.beat==='opening'))conversation.push({...line,time:Math.floor(time)});
-  speechQueue=speechQueue.filter(l=>l.beat!=='opening');if(activeSpeech?.beat==='opening'){activeSpeech=null;speechTime=0;}
+  flushBeats(['opening','uncleLeave']);
   sound.start();showScopeBeat();
 }
 function showScopeBeat(){
@@ -414,6 +419,8 @@ function interact(){
   }
   if(id==='telescope'){
     if(flags.seen){say('私','レンズには、もう触らない。');return;}
+    // the uncle says where he goes and walks out first (he must not just vanish while I look through the lens)
+    if(!flags.uncleLeft){flags.uncleLeft=true;companionState='leaving';flushBeats(['opening']);talk('uncleLeave',true);toast('修司さんは荷物を抱えて、階段を下りていった。もう一度調べると、望遠鏡を覗く。',5200);saveCheckpoint();return;}
     startTelescope();return;
   }
   if(id==='shutter'){

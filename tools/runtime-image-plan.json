@@ -28,6 +28,13 @@
       "maxBytes": 61440
     },
     {
+      "source": "dist/assets/textures/granite-rock.webp",
+      "output": "dist/assets/textures/granite-rock-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440
+    },
+    {
       "source": "dist/assets/textures/cedar-bough-v4.png",
       "output": "dist/assets/textures/cedar-bough-v4-2.webp",
       "maxDimension": 384,

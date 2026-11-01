@@ -19,10 +19,10 @@
         409,
         409
       ],
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/textures/cedar-bark.webp",
@@ -42,10 +42,10 @@
         512,
         512
       ],
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/textures/weathered-wood.webp",
@@ -65,10 +65,33 @@
         512,
         512
       ],
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
+    },
+    {
+      "source": "dist/assets/textures/granite-rock.webp",
+      "output": "dist/assets/textures/granite-rock-v4-2.webp",
+      "maxDimension": 512,
+      "quality": 68,
+      "maxBytes": 61440,
+      "sourceSha256": "f19aeb53eada042ea021dee1a9d649ac8c2adab8b7d050904b14833fe30f7235",
+      "sourceBytes": 363680,
+      "sourceSize": [
+        1024,
+        1024
+      ],
+      "sha256": "293e49c665c68372e1b499d94d015742c215965512be834a9f38407c5cd2ee61",
+      "bytes": 51478,
+      "size": [
+        512,
+        512
+      ],
+      "sourceAlpha": false,
+      "alpha": false,
+      "sourceRecord": "ASSETS.md (historical generation record)",
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/textures/cedar-bough-v4.png",
@@ -88,10 +111,10 @@
         307,
         307
       ],
+      "sourceAlpha": true,
       "alpha": true,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": true
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/title-forest.webp",
@@ -111,10 +134,10 @@
         1280,
         720
       ],
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/portraits/shuji-v4.webp",
@@ -134,10 +157,10 @@
         256,
         256
       ],
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/textures/monster-face-v4.webp",
@@ -157,10 +180,10 @@
         640,
         640
       ],
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "ASSETS.md (historical generation record)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/glasses.png",
@@ -180,10 +203,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/note.png",
@@ -203,10 +226,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/bottle.png",
@@ -226,10 +249,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/crank.png",
@@ -249,10 +272,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/photo.png",
@@ -272,10 +295,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/phone.png",
@@ -295,10 +318,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/radio.png",
@@ -318,10 +341,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/bell.png",
@@ -341,10 +364,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/telescope.png",
@@ -364,10 +387,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/boots.png",
@@ -387,10 +410,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/ledger.png",
@@ -410,10 +433,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/cassette.png",
@@ -433,10 +456,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/mirror.png",
@@ -456,10 +479,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/ribbon.png",
@@ -479,10 +502,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/toy.png",
@@ -502,10 +525,10 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     },
     {
       "source": "dist/assets/items/tag.png",
@@ -525,16 +548,17 @@
         240
       ],
       "quality": 100,
+      "sourceAlpha": false,
       "alpha": false,
       "sourceRecord": "tools/make-item-images.mjs (in-game 3D model render)",
-      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels.",
-      "sourceAlpha": false
+      "processing": "Size/format/compression only; source file retained. Lossless thumbnails have identical decoded RGBA pixels; resized alpha masks are preserved exactly."
     }
   ],
   "excludedFromBuild": [
     "assets/textures/forest-floor.webp",
     "assets/textures/cedar-bark.webp",
     "assets/textures/weathered-wood.webp",
+    "assets/textures/granite-rock.webp",
     "assets/textures/cedar-bough-v4.png",
     "assets/title-forest.webp",
     "assets/portraits/shuji-v4.webp",

@@ -22,7 +22,7 @@ test('the shipped world keeps a minority of the complete terrain resident and re
   assert.equal(stats.pendingChunks,0);assert.ok(stats.residentInstances<stats.totalInstances*.8,JSON.stringify(stats));
   assert.ok(terrain.filter(c=>c.object).length<terrain.length*.4,'unneeded distant terrain has no geometry');
   assert.ok(terrainAt(SPAWN).some(c=>c.object),'the floor directly under the player is loaded');
-  assert.equal(world.forest.boughs.count,world.forest.trees.length*15);
+  const full=world.forest.trees.length*15;assert.ok(world.forest.boughs.count<full&&world.forest.boughs.count>full-40,'15 boughs a tree, less the few that would reach into a building (v4.3)');
   assert.ok(world.forest.boughs.meshes.every(mesh=>mesh.geometry.type==='PlaneGeometry'&&mesh.material.alphaTest>0));
   t.diagnostic(`Spawn visual allocation: ${stats.residentInstances}/${stats.totalInstances} decorative instances; ${terrain.filter(c=>c.object).length}/${terrain.length} terrain tiles; ${stats.residentChunks} chunks.`);
 });

@@ -184,3 +184,14 @@ built-in image_genで各素材を別々に生成しました。Pillowによる�
 14枚の写真は合計833,606バイト。掲示・写真8点は各512px、怪異の肌・布・鉄・木4点は各384pxで合計137,486バイト。怪異材質は3枚目の2×2シートで制作し、正確なプロンプトと切り出し矩形をscene-artのブリーフ・個別記録へ保存した。生成物の利用は生成サービスの適用条件に従い、新たなCC0権利表明はしない。
 
 標準game-kitへは怪異4点と森林4点の圧縮済みWebPを同一バイトで保存。各素材に本ゲーム・原本・変換設定・SHA-256を記録し、写真と物語本文は移さない。
+
+## v4.3 岩のテクスチャ（2026-11-01）
+
+森の大岩（`createRocks`）は単色の灰色で、灯りが当たると白いドームのように見えていた。花崗岩の質感を付けた。
+
+- 原本：`dist/assets/textures/granite-rock.webp`（1024 × 1024、継ぎ目なし加工済み、ビルドから除外）
+- 配信：`dist/assets/textures/granite-rock-v4-2.webp`（512 × 512、`assets/runtime-images.json` に記録）
+- 制作：ローカルの ComfyUI（FLUX.1-dev fp8、24 steps、seed 4419051）。継ぎ目処理は八尺様の `tools/media/post-images.py` の `seamless(xy)` を使用。外部・有料サービスは使っていない。
+- 生成プロンプト：
+
+> Extreme close-up texture of one continuous flat face of a single weathered grey granite rock, uniform rough grainy stone surface with fine speckles, a few thin hairline cracks, small faint patches of dull green moss and pale lichen, no separate stones, no pebbles, no edges, no gaps, orthographic, fills the whole frame evenly, soft overcast light, photographic, no text

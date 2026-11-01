@@ -84,6 +84,8 @@ export class MountainWorld {
     this.boughMaterial=mat('#d7dfd2',{map:this.boughTexture,side:THREE.DoubleSide,alphaTest:.18,roughness:1});
     wood.map=this.woodTexture;wood.bumpMap=this.woodTexture;wood.bumpScale=.025;wood.needsUpdate=true;
     bark.map=this.barkTexture;bark.bumpMap=this.barkTexture;bark.bumpScale=.035;bark.needsUpdate=true;
+    // v4.3: the boulders had a flat untextured colour and read as white domes under the lamp; granite grain (local FLUX, seamless)
+    this.rockTexture=load('granite-rock',[2,2]);stone.map=this.rockTexture;stone.bumpMap=this.rockTexture;stone.bumpScale=.05;stone.needsUpdate=true;
     this.floorMaterial=mat('#b5b7aa',{map:this.floorTexture,bumpMap:this.floorTexture,bumpScale:.03,vertexColors:true});
     this.pathMaterial=mat('#f1dfb6',{map:this.floorTexture,roughness:.92});
     this.trailMaterials={road:mat('#b9b7a8',{map:this.floorTexture}),timber:mat('#c7ad88',{map:this.floorTexture}),creek:mat('#a9b8ae',{map:this.floorTexture})};
@@ -122,9 +124,14 @@ export class MountainWorld {
     // Branch records are grouped by their tree root; only nearby GPU meshes exist.
 
     const dummy=new THREE.Object3D(),axis=new THREE.Vector3(0,1,0),direction=new THREE.Vector3();
+    // v4.3: a bough reaches up to ~3.9 m but trunks keep only 1.4 m from a building, so boughs went through the cabin walls into the
+    // stairwell and the upper room. A bough whose reach crosses a building (or the balcony) is left out; the rand sequence is unchanged.
+    const keepOut=[...BUILDINGS.map(b=>({minX:b.x-b.w/2-.3,maxX:b.x+b.w/2+.3,minZ:b.z-b.d/2-.3,maxZ:b.z+b.d/2+.3})),{minX:BALCONY.minX-.3,maxX:BALCONY.maxX+.3,minZ:BALCONY.minZ-.3,maxZ:BALCONY.maxZ+.3}];
+    const intoBuilding=(x,z,a,reach)=>{for(let k=1;k<=5;k++){const px=x+Math.cos(a)*reach*k/5,pz=z+Math.sin(a)*reach*k/5;if(keepOut.some(o=>px>o.minX&&px<o.maxX&&pz>o.minZ&&pz<o.maxZ))return true;}return false;};
     trees.forEach((t,i)=>{const y=terrainY(t.x,t.z);dummy.position.set(t.x,y+t.h/2,t.z);dummy.scale.set(t.r,t.h,t.r);dummy.rotation.set((rand()-.5)*.012,t.angle,(rand()-.5)*.012);dummy.updateMatrix();trunkRecords.push(instanceRecord(dummy.matrix,t));
       for(let tier=0;tier<5;tier++)for(let side=0;side<3;side++){
         const a=t.angle+side*Math.PI*2/3+tier*.71,length=(2.6-tier*.39)*(.86+rand()*.25),height=t.h*(.38+tier*.125),droop=.35+rand()*.25;
+        if(intoBuilding(t.x,t.z,a,length*1.35))continue;
         dummy.position.set(t.x,y+height,t.z);
         dummy.scale.set(length*1.35,1.52-tier*.16,1);dummy.rotation.set(.05,-a,-.16-tier*.025);dummy.updateMatrix();boughRecords.push(instanceRecord(dummy.matrix,t));
         if(tier<2){direction.set(Math.cos(a)*length,-droop*1.5,Math.sin(a)*length);dummy.position.set(t.x+direction.x*.45,y+height+direction.y*.45,t.z+direction.z*.45);dummy.quaternion.setFromUnitVectors(axis,direction.clone().normalize());dummy.scale.set(1,direction.length(),1);dummy.updateMatrix();branchRecords.push(instanceRecord(dummy.matrix,t));}
@@ -141,7 +148,9 @@ export class MountainWorld {
   }
   createRocks(){
     const rocks=[[-6,-4,1.8],[7,1,2.1],[-7,-21,2.2],[9,-24,1.9],[-12,10,1.5],[25.4,-8.5,2],[-26,5,2.2],[9,13,1.7],[-6,-30,2],[27,10,2.5]];
-    rocks.forEach(([x,z,s])=>{const m=this.mesh(new THREE.DodecahedronGeometry(s,1),stone,x,terrainY(x,z)+s*.48,z);m.scale.set(1,.8,.9);m.rotation.set(.2,rand()*6,.1);m.castShadow=true;this.obstacle(x,z,s*1.65,s*1.6,s*1.2);});
+    // v4.3: a lumpy boulder, not a smooth dome (deterministic per vertex position, so the rand sequence is unchanged)
+    const lumpy=(s,k)=>{const g=new THREE.DodecahedronGeometry(s,1),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),n=Math.sin(x*3.1+k)*Math.cos(z*2.7-k)+Math.sin(y*4.3+x*1.7+k*2)*.6,f=1+n*.11+(y<0?-.08:0);p.setXYZ(i,x*f,y*f*(y>0?.86:1),z*f);}g.computeVertexNormals();return g;};
+    rocks.forEach(([x,z,s],i)=>{const m=this.mesh(lumpy(s,i*1.37),stone,x,terrainY(x,z)+s*.48,z);m.scale.set(1,.8,.9);m.rotation.set(.2,rand()*6,.1);m.castShadow=true;this.obstacle(x,z,s*1.65,s*1.6,s*1.2);});
     // A low fallen trunk offers a recognizable woodland landmark.
     const trunk=this.mesh(new THREE.CylinderGeometry(.42,.54,9,8),bark,11,terrainY(11,5)+.6,5);trunk.rotation.z=Math.PI/2;trunk.rotation.y=.32;this.obstacle(11,5,8,1.1,1.3);
     // Rock banks make the playable boundary legible before collision stops you.

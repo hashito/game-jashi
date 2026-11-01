@@ -202,6 +202,11 @@ export const DIALOGUE = {
     { speaker: '修司', channel: '対面', location: '別荘・二階', text: '望遠鏡の台まで撮っておいて。先に林道の荷物を運ぶ。済んだら下の机も頼む。' },
     { speaker: '私', text: '航と取り合いになったやつだ。レンズだけ、確かめておく。' },
   ],
+  // the first time the telescope is used: the uncle tells me where he goes, then walks out (he is on the radio from here on)
+  uncleLeave: [
+    { speaker: '修司', channel: '対面', location: '別荘・二階', text: 'じゃあ、先に林道の車へ荷物を積んでくる。何かあったら無線で呼べ。すぐそこだ。' },
+    { speaker: '私', text: 'わかった。望遠鏡を撮ったら、下の机もやっておく。' },
+  ],
   encounter: [
     { speaker: '私', text: 'こっちを見た。顔の真ん中に、縦の目が……胸が、苦しい。' },
     { speaker: '修司（無線）', text: '窓から離れろ。そばの雨戸を引けるか。無理なら、そのまま階段へ。' },

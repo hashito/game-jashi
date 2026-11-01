@@ -91,7 +91,7 @@ async function harness() {
   function encounter() {
     click('start'); click('begin');
     run(`Object.assign(player,{x:${LANDMARKS.telescope.x},z:${LANDMARKS.telescope.z + .45},level:1});yaw=0;pitch=0;`);
-    assert.equal(run('findTarget()?.id'), 'telescope'); press('KeyE'); release('KeyE');
+    assert.equal(run('findTarget()?.id'), 'telescope'); press('KeyE'); release('KeyE'); assert.equal(run('flags.uncleLeft'), true); press('KeyE'); release('KeyE');
     for (let t = 0; t < narrative.TELESCOPE_SCENES.reduce((n, s) => n + s.duration, 0) + .3; t += .05) frame();
     assert.equal(run('mode'), 'play'); assert.equal(run('flags.seen'), true);
   }

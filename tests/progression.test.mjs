@@ -175,7 +175,7 @@ async function harness({ boot = true, storage = new Map(), failWorld = false } =
   function pickup(id) { use(id); if (run('mode') === 'panel') click('close-panel'); }
   function fresh() { click('start'); assert.equal(run('panelKind'), 'intro'); click('begin'); assert.equal(run('mode'), 'play'); }
   function encounter() {
-    use('telescope'); assert.equal(run('mode'), 'scope');
+    use('telescope'); assert.equal(run('mode'), 'play'); assert.equal(run('flags.uncleLeft'), true); use('telescope'); assert.equal(run('mode'), 'scope');
     advance(narrative.TELESCOPE_SCENES.reduce((sum, beat) => sum + beat.duration, 0) + .2);
     assert.equal(run('mode'), 'play'); assert.equal(run('flags.seen'), true);
   }
@@ -273,6 +273,8 @@ test('the upstairs telescope reveals three timed beats and pauses without skippi
   assert.notEqual(h.run('findTarget()?.id'), 'glasses', 'the downstairs desk cannot be used from above');
   h.press('KeyE'); h.release('KeyE');
   assert.equal(h.run('flags.glasses'), false);
+  h.use('telescope');
+  assert.equal(h.run('mode'), 'play', 'first the uncle says where he goes');
   h.use('telescope');
   assert.equal(h.run('mode'), 'scope');
   assert.equal(h.run('scope.phase'), 0);
