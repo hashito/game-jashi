@@ -1,5 +1,5 @@
 {
-  "about": "邪視の画面点検（tools/review-shots.mjs）。通常の順路の要所、順番を外れた行動（早すぎる階段・戸、死亡）、結末3種。実時間で見る場面は qa なし（?debug=1）。",
+  "about": "邪視の画面点検（tools/review-shots.mjs）。通常の順路の要所、順番を外れた行動（早すぎる梯子・戸、死亡）、結末3種。実時間で見る場面は qa なし（?debug=1）。",
   "runs": [
     {
       "name": "route",
@@ -52,6 +52,28 @@
             "floor": 1,
             "yaw": 3.14159,
             "pitch": 0
+          },
+          "shot": true
+        },
+        {
+          "name": "ladder-from-below",
+          "at": {
+            "x": -3.6,
+            "z": 26.4,
+            "floor": 0,
+            "yaw": 2.5,
+            "pitch": 0.25
+          },
+          "shot": true
+        },
+        {
+          "name": "ladder-hatch-from-above",
+          "at": {
+            "x": -3.5,
+            "z": 26.6,
+            "floor": 1,
+            "yaw": 2.4,
+            "pitch": -0.55
           },
           "shot": true
         },

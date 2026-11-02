@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/interior-finish.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit dc6b159: js/interior-finish.js — edit in game-kit and run tools/kit-sync.js */
 // One look for the inside of old Japanese buildings (standard 1.8), on top of what world-from-plan builds:
 //   - tatami laid as mats (1.8 x 0.9 m, staggered rows) with the dark cloth border (heri) on the long sides, over the weave texture
 //   - a board ceiling instead of the flat white one (the pendant no longer burns a white spot into it), softer pendants
@@ -53,7 +53,7 @@ export function finishInterior({ world, plan, tex }, o = {}) {
     if (!lib) return;
     const has = (id) => { try { return !!lib.entry(id); } catch { return false; } };
     if (has('wood_dark')) { const m = lib.material('wood_dark', { triplanar: 0.8 }); wood.map = m.map; wood.color.set(0x8a7560); wood.needsUpdate = true; }
-    if (K.ceiling && has(K.ceiling)) { const m = lib.material(K.ceiling, { triplanar: 1.2 }); m.color.set(K.ceilTint); for (const r of rooms) { const c = world.group.getObjectByName(`ceil:${r.id}`); if (c) c.material = m; } }
+    if (K.ceiling && has(K.ceiling)) { const m = lib.material(K.ceiling, { triplanar: 1.2 }); m.color.set(K.ceilTint); for (const r of rooms) for (const c of world.group.children) if (c.name === `ceil:${r.id}` || c.name === `ceil:${r.id}:part`) c.material = m; }   // :part = the ceiling round a stair opening (1.10)
     // lintels: the thin unnamed boxes world-from-plan puts above the doors, inside one of these rooms' walls
     const inRoom = (x, z) => rooms.find((r) => x > r.x - 0.2 && x < r.x + r.w + 0.2 && z > r.z - 0.2 && z < r.z + r.d + 0.2);
     world.group.traverse((m) => {

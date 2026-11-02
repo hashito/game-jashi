@@ -1,5 +1,5 @@
 {
-  "kit": "3557bda",
+  "kit": "dc6b159",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -112,7 +112,9 @@
     "check-stage.mjs",
     "check-escape.mjs",
     "build-site.js",
-    "check-traps.mjs"
+    "check-traps.mjs",
+    "smoke.mjs",
+    "review-shots.mjs"
   ],
   "hashes": {
     "js\\kit\\game-core.js": "e331ab9f2cb7",
@@ -144,7 +146,7 @@
     "js\\kit\\audio.js": "6bbf00df9f42",
     "js\\kit\\audio-at.js": "85440435d84e",
     "js\\kit\\task-minigames.js": "41492f5b2250",
-    "js\\kit\\world-from-plan.js": "0c26b36ae804",
+    "js\\kit\\world-from-plan.js": "5e73d8f96d6a",
     "js\\kit\\interact-select.js": "b4675956490c",
     "js\\kit\\room-types.js": "a99c6dc37499",
     "js\\kit\\win-manager.js": "1fcca24c2190",
@@ -180,7 +182,7 @@
     "js\\kit\\things.js": "c605564a5d40",
     "js\\kit\\terminal-screen.js": "4d9bfeca69fa",
     "js\\kit\\voice-fx.js": "40b5126973a8",
-    "js\\kit\\recipes.js": "f529d45aada2",
+    "js\\kit\\recipes.js": "8c5d9d723d70",
     "js\\kit\\props.js": "66e90a399e13",
     "js\\kit\\prop-batch.js": "c5fa6b1cd894",
     "js\\kit\\env-props.js": "cc164232ed7a",
@@ -207,7 +209,7 @@
     "tools/serve.js": "383ea74a3e8f",
     "tools/cdp.mjs": "af1bdae10667",
     "tools/check-plan.mjs": "47e5e6ef000f",
-    "tools/check-game-data.mjs": "06340d5b6f27",
+    "tools/check-game-data.mjs": "6f5272065585",
     "tools/check-select-range.mjs": "8888b85efcf9",
     "tools/selftest-game.mjs": "f045088bcaf8",
     "tools/check-text-contrast.mjs": "65626afb9f68",
@@ -216,7 +218,7 @@
     "tools/check-wording.mjs": "fba8646626fe",
     "tools/check-stage.mjs": "f23c43fd8df1",
     "tools/check-escape.mjs": "e02864475501",
-    "tools/kit-features.cjs": "8851a4ef328e",
+    "tools/kit-features.cjs": "1ab84029d4f2",
     "js\\kit\\building.js": "81b12f396b1e",
     "js\\kit\\outer-walls.js": "114f94921936",
     "js\\kit\\fear-fx.js": "1df2962a4146",
@@ -231,9 +233,11 @@
     "js\\kit\\mg-search-dark.js": "bce1b548875e",
     "js\\kit\\mg-pump-gauge.js": "98b1ef88d80a",
     "js\\kit\\mg-hold-breath.js": "46ce4c13418d",
-    "js\\kit\\interior-finish.js": "15b7ce5a8120",
+    "js\\kit\\interior-finish.js": "8a2515743cd5",
     "tools/check-traps.mjs": "4390617a5164",
-    "tools/build-site.js": "2743c81000d9"
+    "tools/build-site.js": "2743c81000d9",
+    "tools/smoke.mjs": "0fb6ac716f86",
+    "tools/review-shots.mjs": "0607446e3242"
   },
   "textures": []
 }

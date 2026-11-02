@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/recipes.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit dc6b159: js/recipes.js — edit in game-kit and run tools/kit-sync.js */
 // The recipes of the standard, switched on from game.json "recipes" (standard 1.5; pure side + docs in js/recipes-data.js):
 //   props       plan.furniture[] { kind, x, z, rot, args, opts } -> js/props.js / js/env-props.js objects in the world, with colliders
 //   openables   props with userData.drawers (lockers, fridges, cabinets): [E] opens / closes, the state is saved (ext.openables)
@@ -62,7 +62,7 @@ export async function installRecipes(ctx, cfg = {}) {
       const has = (id) => { try { return !!tex.entry(id); } catch { return false; } };   // a texture the game did not copy is skipped (the others still apply)
       for (const r of plan.rooms || []) {
         const L = roomLook(r);
-        if (L.floorTex && has(L.floorTex)) { const m = world.group.getObjectByName(`floor:${r.id}`); if (m) m.material = tex.material(L.floorTex, { size: [r.w, r.d] }); }
+        if (L.floorTex && has(L.floorTex)) for (const m of world.group.children) { if (m.name === `floor:${r.id}`) m.material = tex.material(L.floorTex, { size: [r.w, r.d] }); else if (m.name === `floor:${r.id}:part`) { const g = m.geometry.parameters; m.material = tex.material(L.floorTex, { size: [g.width, g.depth] }); } }   // :part = the floor round a stairwell (1.10)
         if (L.wallTex && has(L.wallTex) && r.kind !== 'outdoor') world.group.traverse((o) => { if ((o.name && o.name.startsWith(`wall:${r.id}:`)) || (o.userData.lintel && o.userData.lintel.room === r.id)) o.material = tex.material(L.wallTex, { triplanar: true }); });   // the lintel above a door too (jashi 5.0: it stayed the plain palette colour)
       }
     } catch (e) { console.warn(`recipes.textures: ${e.message}`); }

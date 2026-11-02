@@ -1,4 +1,3 @@
-/* game-kit 35b680a: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -141,8 +140,8 @@ export function buildWorld(plan, o = {}) {
       const l = new THREE.PointLight(0xfff1d6, Math.min(30, 4 + r.w * r.d * 0.12), Math.max(r.w, r.d) * 1.8, 1.6);
       l.position.set(cx, ly, cz); l.name = `lamp:${r.id}`; group.add(l);
       const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.18, 16, 1, true), m('shade', 0x3a3530)); shade.material.side = THREE.DoubleSide; shade.position.set(cx, ly + 0.12, cz); shade.name = `lampshade:${r.id}`; group.add(shade);
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), mats.bulb ||= new THREE.MeshStandardMaterial({ color: 0xfff4dc, emissive: 0xffe0a8, emissiveIntensity: 2 })); bulb.position.set(cx, ly + 0.04, cz); group.add(bulb);
-      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, H - 0.6 - 0.2 + 0.1, 4), m('cord', 0x1a1a1a)); cord.position.set(cx, (ly + 0.2 + y0 + H) / 2, cz); group.add(cord);
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), mats.bulb ||= new THREE.MeshStandardMaterial({ color: 0xfff4dc, emissive: 0xffe0a8, emissiveIntensity: 2 })); bulb.position.set(cx, ly + 0.04, cz); bulb.name = `lampbulb:${r.id}`; group.add(bulb);
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.6 - 0.2 + 0.1, 4), m('cord', 0x1a1a1a)); cord.position.set(cx, (ly + 0.2 + y0 + H) / 2, cz); cord.name = `lampcord:${r.id}`; group.add(cord);   // from the ceiling to the shade (it was H long and hung to eye level)
     }
     roomsById.set(r.id, { room: r, y: y0, cx, cz, slots: 0 });
   }
@@ -195,7 +194,84 @@ export function buildWorld(plan, o = {}) {
 
   // stairs / lifts: a block at each end, [E] to go to the other floor
   const stairM = mat(0x3a3f44, { emissive: 0x1a3a2a, emissiveIntensity: 0.4 });
-  const stairs = new Map();
+  // a stair end drawn as stairs (standard 1.10): going up, a steep flight along the room to its far wall, climbing through a dark opening in
+  // the ceiling; going down, a dark stairwell in the floor with a railing round it and the top nosing. The flight runs from the room's centre
+  // towards the end point (or ends.<a|b>.dir: n / s / e / w) and stops at the wall. hit: an invisible box over it (the [E] target and the collider)
+  const treadM = m('stair-tread', 0x5a4636), riserM = m('stair-riser', 0x3b2e24), railM = m('stair-rail', 0x2c2420), wellM = new THREE.MeshBasicMaterial({ color: 0x050505 });
+  const hitM = new THREE.MeshBasicMaterial({ visible: false });
+  function stairFlight(R, ex, ez, dir, up, y0, arrive, kind = 'ladder') {
+    const cx = R.x + R.w / 2, cz = R.z + R.d / 2, dx0 = ex - cx, dz0 = ez - cz;
+    const D = dir || (Math.abs(dx0) > Math.abs(dz0) ? (dx0 > 0 ? 'e' : 'w') : (dz0 >= 0 ? 's' : 'n'));
+    const v = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[D] || [0, 1], alongX = v[0] !== 0;
+    const span = alongX ? R.w : R.d, wall = alongX ? (v[0] > 0 ? R.x + R.w : R.x) : (v[1] > 0 ? R.z + R.d : R.z);
+    const arr = arrive || [cx, cz + 1.2], arrU = alongX ? arr[0] : arr[1], sg = alongX ? v[0] : v[1];
+    const room = Math.abs(wall - 0.06 * sg - (arrU + sg * 0.5));   // the flight starts half a metre past where a player arrives (never on top of them)
+    const ladder = kind !== 'flight', L = ladder ? 0.9 : Math.max(1.0, Math.min(3.2, span - 1.0, room)), W = ladder ? 0.8 : 1.2;
+    const far = wall - (alongX ? v[0] : v[1]) * 0.06, near = far - (alongX ? v[0] : v[1]) * L;   // along the axis
+    const mid = (near + far) / 2, side = alongX ? ez : ex;
+    const at = (u, w, y) => (alongX ? [u, y, w] : [w, y, u]);   // u along the flight, w across
+    const look = new THREE.Group(); look.name = 'stair-flight';
+    const add = (geo, mt, u, w, y, ry = 0) => { const o = new THREE.Mesh(geo, mt); o.position.set(...at(u, w, y)); o.rotation.y = ry; o.castShadow = true; o.receiveShadow = true; look.add(o); return o; };
+    const sz = (lu, lw, h) => (alongX ? new THREE.BoxGeometry(lu, h, lw) : new THREE.BoxGeometry(lw, h, lu));
+    const sgn = alongX ? v[0] : v[1];
+    if (ladder) {
+      // a ladder against the wall, up through a hatch (feedback 2026-11-02 「普通階段逆じゃない？ハシゴの方が良いかも」): its foot and its head are
+      // at the same place on both floors, so it fits a plan whose two ends arrive at the same spot (a straight flight cannot)
+      const rise = K.floorH, footU = far - sgn * 0.62, headU = far - sgn * 0.14, yTop = up ? y0 + rise + 1.0 : y0 + 1.0, yFoot = up ? y0 : y0 - rise;
+      const len = Math.hypot(headU - footU, yTop - yFoot), ang = Math.atan2(headU - footU, yTop - yFoot), midU = (footU + headU) / 2;
+      const tilt = (o) => { if (alongX) o.rotation.z = -ang; else o.rotation.x = ang; return o; };
+      for (const sw of [-1, 1]) tilt(add(sz(0.06, 0.07, len), railM, midU, side + sw * 0.25, (yFoot + yTop) / 2));   // the two rails
+      const lo = up ? y0 : y0 - 0.9;   // downstairs the whole ladder; upstairs the rungs seen in the hatch
+      for (let y = yFoot + 0.28; y < yTop - 0.1; y += 0.28) { if (y < lo) continue; const t = (y - yFoot) / (yTop - yFoot); add(sz(0.045, 0.5, 0.045), treadM, footU + (headU - footU) * t, side, y); }
+      if (!up) {
+        add(sz(L, W, 0.012), wellM, mid, side, y0 + 0.012).name = 'stair-well';   // the hatch (removed when the floor is opened over the ladder below)
+        for (const [u, sw] of [[near, -1], [far, -1], [far, 1], [near, 1]]) add(sz(0.06, 0.06, 0.95), railM, u, side + sw * (W / 2 + 0.04), y0 + 0.475);
+        for (const sw of [-1, 1]) add(sz(L, 0.05, 0.05), railM, mid, side + sw * (W / 2 + 0.04), y0 + 0.93);   // a rail each side; the room side stays open to step on
+      }
+    } else if (up) {
+      const rise = K.floorH, n = Math.max(8, Math.round(rise / 0.24)), stepH = rise / n, stepD = L / n;
+      for (let i = 0; i < n; i++) {
+        const y = y0 + stepH * (i + 1);   // all the way to the upper floor: seen through the opening cut in the ceiling (抜け感)
+        const u = near + sgn * stepD * (i + 0.5);
+        add(sz(stepD + 0.02, W, 0.04), treadM, u, side, y - 0.02);                   // tread
+        add(sz(0.02, W, stepH), riserM, u - sgn * stepD / 2, side, y - stepH / 2);    // riser
+      }
+      const run = Math.hypot(L, rise), ang = Math.atan2(rise, L);
+      for (const sw of [-1, 1]) {   // stringers and a handrail on the open side
+        const g = add(sz(run, 0.05, 0.22), riserM, mid, side + sw * (W / 2 + 0.025), y0 + rise / 2);
+        if (alongX) g.rotation.z = sgn * ang; else g.rotation.x = -sgn * ang;
+      }
+      const hr = add(sz(run, 0.05, 0.05), railM, mid, side - (W / 2 + 0.05), y0 + rise / 2 + 0.9); if (alongX) hr.rotation.z = sgn * ang; else hr.rotation.x = -sgn * ang;
+    } else {
+      add(sz(L, W, 0.012), wellM, mid, side, y0 + 0.012).name = 'stair-well';            // the stairwell (removed when the floor is opened over a flight below)
+      add(sz(0.06, W, 0.05), treadM, far - sgn * 0.03, side, y0 + 0.03);                    // the top nosing: the flight below climbs to the wall, so its top is there
+      for (let i = 1; i <= 3; i++) add(sz(0.04, W - 0.06, 0.012), riserM, far - sgn * (0.18 * i), side, y0 + 0.02).name = 'stair-well';   // the next treads, dim in the dark
+      const posts = [[near + sgn * 0.05, -1], [far, -1], [far, 1], [near + sgn * 0.05, 1]];
+      for (const [u, sw] of posts) add(sz(0.06, 0.06, 0.95), railM, u, side + sw * (W / 2 + 0.06), y0 + 0.475);
+      for (const sw of [-1, 1]) add(sz(L, 0.05, 0.05), railM, mid, side + sw * (W / 2 + 0.06), y0 + 0.93);
+      add(sz(0.05, W + 0.12, 0.05), railM, far, side, y0 + 0.93);
+    }
+    const hit = new THREE.Mesh(sz(L, W, up && !ladder ? 2.0 : up ? 1.8 : 0.9), hitM); hit.position.set(...at(mid, side, y0 + (up ? 1.0 : 0.45)));
+    // the room's pendant hangs off the flight, over where the player arrives (its cord must not run through the steps)
+    const lampU = near - sgn * 0.45;
+    for (const k of ['lamp', 'lampshade', 'lampbulb', 'lampcord']) { const o = group.getObjectByName(`${k}:${R.id}`); if (o) { if (alongX) o.position.x = lampU; else o.position.z = lampU; } }
+    const u0 = Math.min(near, far), u1 = Math.max(near, far), rect = alongX ? { x0: u0, x1: u1, z0: side - W / 2, z1: side + W / 2 } : { x0: side - W / 2, x1: side + W / 2, z0: u0, z1: u1 };
+    return { look, hit, rect };
+  }
+  // open a ceiling / floor slab (a box named `name`) over rect: the slab is rebuilt as the pieces around the hole
+  function cutSlab(name, rect) {
+    const o = group.getObjectByName(name); if (!o || !o.geometry || !o.geometry.parameters) return false;
+    const { width: w, height: h, depth: dd } = o.geometry.parameters, X0 = o.position.x - w / 2, X1 = o.position.x + w / 2, Z0 = o.position.z - dd / 2, Z1 = o.position.z + dd / 2;
+    const x0 = Math.max(X0, rect.x0), x1 = Math.min(X1, rect.x1), z0 = Math.max(Z0, rect.z0), z1 = Math.min(Z1, rect.z1);
+    if (x1 - x0 < 0.2 || z1 - z0 < 0.2) return false;
+    for (const [a0, a1, b0, b1] of [[X0, x0, Z0, Z1], [x1, X1, Z0, Z1], [x0, x1, Z0, z0], [x0, x1, z1, Z1]]) {
+      if (a1 - a0 < 0.01 || b1 - b0 < 0.01) continue;
+      const p = new THREE.Mesh(new THREE.BoxGeometry(a1 - a0, h, b1 - b0), o.material); p.position.set((a0 + a1) / 2, o.position.y, (b0 + b1) / 2);
+      p.receiveShadow = o.receiveShadow; p.name = `${name}:part`; group.add(p);
+    }
+    group.remove(o); return true;
+  }
+  const stairs = new Map(), flights = new Map();
   for (const d of plan.doors || []) {
     const a = byId.get(d.a), b = byId.get(d.b);
     if (!a || !b || !(d.kind === 'stairs' || d.kind === 'lift' || (a.floor || 0) !== (b.floor || 0))) continue;
@@ -203,8 +279,11 @@ export function buildWorld(plan, o = {}) {
     const mkEnd = (from, to, key) => {
       const E = (d.ends && d.ends[key]) || {}, F = roomsById.get(from.id), T = roomsById.get(to.id);
       const ex = E.x ?? F.cx, ez = E.z ?? F.cz, y0 = F.y;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 0.6), stairM);
-      mesh.position.set(ex, y0 + 1.0, ez); mesh.name = `stairs:${d.id}:${key}`;
+      const up = (T.room.floor || 0) > (from.floor || 0);
+      const flight = d.kind === 'lift' ? null : stairFlight(F.room, ex, ez, E.dir, up, y0, E.arrive, d.look);   // a ladder, or a flight with look: 'flight' (feedback 2026-11-02 "階段は階段に"), lifts keep the box
+      const mesh = flight ? flight.hit : new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 0.6), stairM);
+      if (flight) { group.add(flight.look); flights.set(`${d.id}:${up ? 'up' : 'down'}`, { ...flight, room: from.id }); } else mesh.position.set(ex, y0 + 1.0, ez);
+      mesh.name = `stairs:${d.id}:${key}`;
       const arrive = (d.ends && d.ends[key === 'a' ? 'b' : 'a'] && d.ends[key === 'a' ? 'b' : 'a'].arrive) || [T.cx, T.cz + 1.2];
       mesh.userData.interact = { kind: 'stairs', id: d.id, label: d.label || (d.kind === 'lift' ? 'エレベーターに乗る' : (T.room.floor || 0) > (from.floor || 0) ? '上の階へ' : '下の階へ'), to: { x: arrive[0], z: arrive[1], floor: to.floor || 0, yaw: ((d.ends && d.ends[key === 'a' ? 'b' : 'a']) || {}).yaw ?? 0 }, locked, hint: d.hint || '', unlock: d.unlock || '' };
       group.add(mesh); interactables.push(mesh);
@@ -212,6 +291,16 @@ export function buildWorld(plan, o = {}) {
       stairs.set(`${d.id}:${key}`, mesh);
     };
     mkEnd(a, b, 'a'); mkEnd(b, a, 'b');
+    // 抜け感 (feedback 2026-11-02 「階段の抜け感を表現して」): where the upper end's stairwell lies over the lower flight, the lower room's ceiling and
+    // the upper room's floor are opened over the flight, so the steps are seen climbing into the room above and the well looks down onto them
+    const fl = flights.get(`${d.id}:up`), fw = flights.get(`${d.id}:down`);
+    if (fl && fw) {
+      const r1 = fl.rect, r2 = fw.rect, ix = Math.max(0, Math.min(r1.x1, r2.x1) - Math.max(r1.x0, r2.x0)), iz = Math.max(0, Math.min(r1.z1, r2.z1) - Math.max(r1.z0, r2.z0));
+      if (ix * iz > 0.6 * (r1.x1 - r1.x0) * (r1.z1 - r1.z0)) {
+        const opened = cutSlab(`ceil:${fl.room}`, r1) | cutSlab(`floor:${fw.room}`, r1);
+        if (opened) fw.look.children.filter((o) => o.name === 'stair-well').forEach((o) => fw.look.remove(o));
+      }
+    }
   }
 
   // bounds and spawn

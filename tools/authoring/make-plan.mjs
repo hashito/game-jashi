@@ -9,10 +9,10 @@ const rooms = [
   // the villa: ground floor (hall with the radio desk, bedroom, stairwell) and upper floor (workroom, store, stairwell, balcony)
   R('CAB_HALL', '別荘・玄関と無線机', -6, 19, 12, 6.9, { floorTex: 'planks_dark', wallTex: 'panel_wood_wall', step: 'wood' }),
   R('CAB_BED', '別荘・寝室', -3.4, 25.9, 9.4, 3.1, { floorTex: 'planks_dark', wallTex: 'panel_wood_wall', step: 'wood' }),
-  R('CAB_ST0', '別荘・階段（一階）', -6, 25.9, 2.6, 3.1, { kind: 'stairs', floorTex: 'planks_dark', wallTex: 'panel_wood_wall' }),
+  R('CAB_ST0', '別荘・梯子（一階）', -6, 25.9, 2.6, 3.1, { kind: 'stairs', floorTex: 'planks_dark', wallTex: 'panel_wood_wall' }),
   R('CAB_UP', '別荘・二階の作業室', -6, 19, 12, 6.9, { floor: 1, floorTex: 'planks_dark', wallTex: 'panel_wood_wall', step: 'wood' }),
   R('CAB_STORE', '別荘・二階の納戸', -3.4, 25.9, 9.4, 3.1, { floor: 1, floorTex: 'planks_dark', wallTex: 'panel_wood_wall', step: 'wood' }),
-  R('CAB_ST1', '別荘・階段（二階）', -6, 25.9, 2.6, 3.1, { floor: 1, kind: 'stairs', floorTex: 'planks_dark', wallTex: 'panel_wood_wall' }),
+  R('CAB_ST1', '別荘・梯子（二階）', -6, 25.9, 2.6, 3.1, { floor: 1, kind: 'stairs', floorTex: 'planks_dark', wallTex: 'panel_wood_wall' }),
   R('CAB_BALC', '二階のベランダ', -3, 17, 6, 2, { floor: 1, floorTex: 'planks_dark', wallTex: 'panel_wood_wall', step: 'wood' }),
   // the shed (timber yard) and the evacuation hut (creek)
   R('SHED', '物置', -22, -5.5, 5, 4.5, { floorTex: 'planks_grey_old', wallTex: 'panel_wood_wall', step: 'wood' }),
@@ -37,9 +37,9 @@ const OPEN = (id, a, b, x, z, width) => D(id, a, b, x, z, width, { open: true, r
 const doors = [
   D('D_ENTRY', 'CAB_HALL', 'O_FRONT', 0, 19, 2.4, { label: '別荘の玄関戸', unlock: 'outside', hint: '修司の声を聞くまで、外に出ない方がいい。机の無線を先に。' }),
   D('D_BED', 'CAB_HALL', 'CAB_BED', 1.5, 25.9, 1.4, { label: '寝室の引戸', reason: 'a small villa: the bedroom opens off the hall' }),
-  D('D_ST0', 'CAB_HALL', 'CAB_ST0', -4.7, 25.9, 1.4, { label: '階段の下' }),
+  D('D_ST0', 'CAB_HALL', 'CAB_ST0', -4.7, 25.9, 1.4, { label: '梯子の下' }),
   D('D_STORE', 'CAB_UP', 'CAB_STORE', 4.3, 25.9, 1.4, { label: '二階の納戸の引戸', reason: 'a small villa: the store opens off the workroom' }),
-  D('D_ST1', 'CAB_UP', 'CAB_ST1', -4.7, 25.9, 1.4, { label: '階段の上' }),
+  D('D_ST1', 'CAB_UP', 'CAB_ST1', -4.7, 25.9, 1.4, { label: '梯子の上' }),
   D('D_BALC', 'CAB_UP', 'CAB_BALC', 0, 19, 1.6, { label: 'ベランダの戸', reason: 'the balcony opens off the workroom' }),
   { id: 'ST_CABIN', a: 'CAB_ST0', b: 'CAB_ST1', width: 1.4, kind: 'stairs', unlock: 'downstairs', hint: '下りる前に、二階でやることが残っている。ベランダの望遠鏡を撮って、外から見えないように雨戸を閉めてから下りよう。',
     ends: { a: { x: -4.7, z: 28.55, arrive: [-4.7, 26.8], yaw: 0 }, b: { x: -4.7, z: 28.55, arrive: [-4.7, 26.8], yaw: 0 } } },   // the stair block against the back wall: room in front of it to stand and select (W18)

@@ -107,7 +107,7 @@ export default function story(ext, shared) {
     if (!st.uncleGone) {
       await talk('uncleLeave', { title: '二階の作業室' });
       st.uncleGone = true; applyStage(); snd.steps({ gain: 0.4 });
-      say('叔父の足音が階段を下りて、玄関の戸が閉まった。', 4);
+      say('叔父の足音が梯子を下りて、玄関の戸が閉まった。', 4);
       await wait(0.6);
     }
     await scopeScene();   // the 4.x scene: no mini game, the lens zooms in by itself (feedback 2026-11-02)

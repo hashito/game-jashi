@@ -64,7 +64,7 @@ if (fs.existsSync(path.join(dir, 'kit.json'))) {
   try { features = (await import('node:module')).createRequire(import.meta.url)('./kit-features.cjs'); } catch { /* a game whose tools folder has no kit-features.cjs: not checked */ }
   for (const f of features) {
     if (!f.when(game)) continue;
-    for (const m of [...f.modules, ...(f.dynamic ? f.dynamic(game) : [])]) if (!fs.existsSync(path.join(dir, dest, `${m}.js`))) errors.push(`game.json uses "${f.id}" but ${dest}/${m}.js is missing: run node ../game-kit/tools/kit-sync.js .`);
+    for (const m of [...(f.modules || []), ...(f.dynamic ? f.dynamic(game) : [])]) if (!fs.existsSync(path.join(dir, dest, `${m}.js`))) errors.push(`game.json uses "${f.id}" but ${dest}/${m}.js is missing: run node ../game-kit/tools/kit-sync.js .`);
   }
 }
 if (flag('json')) console.log(JSON.stringify({ errors, warns }, null, 1));
