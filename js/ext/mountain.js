@@ -149,6 +149,28 @@ export function dressMountain(ctx) {
     const leaf = box(1.7, 2.2, 0.05, M.plank, 0, 1.1, 0, s); for (let i = -2; i <= 2; i++) box(0.03, 2.2, 0.06, M.weathered, i * 0.34, 0, 0.01, leaf);   // the battens ride on the leaf (left on the frame they read as bars across the open door)
     box(3.6, 0.08, 0.12, M.weathered, 0.9, 2.26, 0, s); box(3.6, 0.04, 0.12, M.weathered, 0.9, 0.02, 0, s);
     api.parts.shutter = { leaf, t: 0, target: 0 }; leaf.position.x = 1.8; }
+  // the balcony door (feedback 2026-11-02 "ベランダへのドアももう少しデザイン"): a glazed sliding door in a wooden frame instead of the plain
+  // panel. The standard panel stays as the collider and the [E] target (invisible); this leaf slides along the room side of the wall when it opens
+  { const bd = world.doors.get('D_BALC');
+    if (bd && bd.mesh) {
+      bd.mesh.material = new THREE.MeshBasicMaterial({ visible: false });
+      const W = bd.def.width || 1.6, H = 2.2, frameM = mat(0x3e3127, { map: M.plank.map }), z = 19.12;
+      const casing = named('balcony-casing'); casing.position.set(0, balcY, z + 0.02);   // the fixed frame round the opening
+      box(0.1, H + 0.1, 0.06, frameM, -W / 2 - 0.05, (H + 0.1) / 2, 0, casing); box(0.1, H + 0.1, 0.06, frameM, W / 2 + 0.05, (H + 0.1) / 2, 0, casing);
+      box(W + 0.2, 0.1, 0.06, frameM, 0, H + 0.05, 0, casing); box(W + 0.2, 0.03, 0.2, M.weathered, 0, 0.015, -0.1, casing);   // head and threshold
+      for (const sx of [-1, 1]) box(0.08, H + 0.06, 0.04, frameM, sx * (W / 2 + 0.04), (H + 0.06) / 2, -0.23, casing);   // jambs on the balcony face (behind the amado's track)
+      const leaf = named('balcony-door'); leaf.position.set(0, balcY, z);
+      const st = 0.07, kick = 0.5, rail = 0.07;
+      box(st, H, 0.05, frameM, -W / 2 + st / 2, H / 2, 0, leaf); box(st, H, 0.05, frameM, W / 2 - st / 2, H / 2, 0, leaf);   // stiles
+      box(W, rail, 0.05, frameM, 0, H - rail / 2, 0, leaf); box(W, kick, 0.045, frameM, 0, kick / 2, 0, leaf); box(W - 0.3, kick - 0.16, 0.05, M.plank, 0, kick / 2, 0, leaf);   // kick panel with a raised board              // top rail, wooden kick panel
+      box(W - st * 2, 0.05, 0.05, frameM, 0, kick + 0.025, 0, leaf);                                                         // rail over the panel
+      const gy0 = kick + 0.05, gy1 = H - rail, gh = gy1 - gy0;
+      box(W - st * 2, gh, 0.012, new THREE.MeshStandardMaterial({ color: 0xa9bcbe, roughness: 0.35, metalness: 0, transparent: true, opacity: 0.28, depthWrite: false }), 0, gy0 + gh / 2, 0, leaf).castShadow = false;   // matte enough not to glint with the room lamps                                      // the glass
+      box(0.035, gh, 0.04, frameM, 0, gy0 + gh / 2, 0, leaf); box(W - st * 2, 0.035, 0.04, frameM, 0, gy0 + gh * 0.55, 0, leaf);   // mullions: four panes
+      box(0.025, 0.22, 0.03, M.brass, -W / 2 + st + 0.06, 1.05, 0.035, leaf);                                                 // the pull (room side)
+      api.parts.balconyDoor = { leaf, door: bd, t: 0, W };
+    }
+  }
   // the radio desk (hall, east end) and the note table (by the stairs)
   { const d = P.desk({}, 1.8, 0.7, 0.76); d.position.set(3.3, 0, 24.75); G.add(d); solid(d);
     const r = named('radio-set'); r.position.set(2.7, 0.76, 24.7);
@@ -253,6 +275,7 @@ export function dressMountain(ctx) {
   // the outside of the walls (W1): weathered boards on every face that looks out (after the recipes painted the rooms)
   api.ready = texReady.then(() => dressOuterWalls(ctx, M.weathered)).catch(() => 0);
   api.update = (dt, t) => {
+    const bdp = api.parts.balconyDoor; if (bdp) { bdp.t += ((bdp.door.isOpen ? 1 : 0) - bdp.t) * Math.min(1, dt * 3); bdp.leaf.position.x = -(bdp.W - 0.12) * bdp.t; }   // slides west, away from the amado
     const s = api.parts.shutter; if (s) { s.t += (s.target - s.t) * Math.min(1, dt * 1.6); s.leaf.position.x = 1.8 * (1 - s.t); }
     if (api.parts.carRing) api.parts.carRing.material.opacity = 0.22 + 0.2 * (0.5 + 0.5 * Math.sin(t * 3));
     if (api.parts.phoneScreen) { const on = Math.sin(t * 6) > -0.2; api.parts.phoneLight.intensity = on ? 1.4 : 0.2; api.parts.phoneScreen.material.color.setHex(on ? 0x9fd2ff : 0x223344); }
