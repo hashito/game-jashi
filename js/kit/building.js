@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/building.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 35b680a: js/building.js — edit in game-kit and run tools/kit-sync.js */
 // Buildings and trees of the standard (2026-11-01). The games built houses and roofs by hand (roof x15, house, hut, tree in
 // hasshaku, kotoribako, jashi, heiengo, arakawa, whitepigeon, miru-fusha, yakkyoku), and the same faults came back:
 //   - a roof slab tilted into place dips its own thickness below the wall top at the wall line: tiles show INSIDE the rooms
@@ -289,9 +289,35 @@ export function tree(o = {}) {
   return g;
 }
 
+// a group's meshes merged into one geometry per material (world matrices applied; position / normal / uv kept): [{ geometry, material, name }].
+// For instancing a many-part prop (a tree, a fence post) with a few draw calls. From game-jashi 5.0.
+export function mergeByMaterial(group) {
+  group.updateMatrixWorld(true);   // the parts' own matrices (never rendered yet: still identity otherwise)
+  const byMat = new Map();
+  group.traverse((m) => {
+    if (!m.isMesh) return;
+    const g = m.geometry.clone().applyMatrix4(m.matrixWorld), ng = g.index ? g.toNonIndexed() : g;
+    if (!byMat.has(m.material)) byMat.set(m.material, []);
+    byMat.get(m.material).push(ng);
+  });
+  return [...byMat].map(([material, list], i) => {
+    const out = new THREE.BufferGeometry();
+    for (const name of ['position', 'normal', 'uv']) {
+      if (!list.every((g) => g.attributes[name])) continue;
+      const n = list[0].attributes[name].itemSize, arr = new Float32Array(list.reduce((sum, g) => sum + g.attributes[name].array.length, 0));
+      let at = 0; for (const g of list) { arr.set(g.attributes[name].array, at); at += g.attributes[name].array.length; }
+      out.setAttribute(name, new THREE.BufferAttribute(arr, n));
+    }
+    out.computeBoundingSphere();
+    return { geometry: out, material, name: material.name || `part${i}` };
+  });
+}
+
 // many trees. o: { area: { minX, maxX, minZ, maxZ }, n, seed, kind | kinds: [..], h: [min, max], keepOut: [rects] (houses, roads, paths:
 // no trunk inside a rect grown by `gap`, and no bough reaches into one), gap (0.6), spacing (1.7), mats }
 // Trees whose reach touches a keep-out rect are built one by one with their boughs trimmed; the rest are instanced (3 variants a kind).
+// near: 'skip' (from game-jashi 5.0) leaves those trees out instead, so a big forest is only instanced meshes (keepReach adds a margin, 0.35).
+// The instances are merged by material: a few draw calls a variant, not one per bough.
 // Returns a Group; userData.colliders = trunks (world), userData.trees = [{ x, z, h, kind }].
 export function forest(o = {}) {
   const A = o.area || { minX: -20, maxX: 20, minZ: -20, maxZ: 20 }, R = rng(o.seed ?? 7), kinds = o.kinds || [o.kind || 'cedar'], [h0, h1] = o.h || [9, 16];
@@ -303,6 +329,7 @@ export function forest(o = {}) {
   }
   const near = (t) => rects.some((r) => x2(t, r) < treeReach(t));
   const x2 = (t, r) => Math.hypot(Math.max(r.minX - t.x, 0, t.x - r.maxX), Math.max(r.minZ - t.z, 0, t.z - r.maxZ));
+  if (o.near === 'skip') { const m = o.keepReach ?? 0.35; for (let i = trees.length - 1; i >= 0; i--) if (rects.some((r) => x2(trees[i], r) < treeReach(trees[i]) + m)) trees.splice(i, 1); }
   const groups = new Map();
   for (const t of trees) {
     if (near(t)) {
@@ -314,9 +341,8 @@ export function forest(o = {}) {
   }
   for (const [k, list] of groups) {
     const [kind, v] = k.split(':'), proto = tree({ kind, h: 12, seed: 100 + Number(v), mats: o.mats });
-    proto.updateMatrixWorld(true);   // the parts' own matrices (never rendered yet: still identity otherwise, the boughs lay on the ground)
-    for (const m of proto.children) {
-      const im = new THREE.InstancedMesh(m.geometry.clone().applyMatrix4(m.matrix), m.material, list.length);
+    for (const m of mergeByMaterial(proto)) {
+      const im = new THREE.InstancedMesh(m.geometry, m.material, list.length);
       list.forEach((t, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(t.x, 0, t.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.ry), new THREE.Vector3(1, t.h / 12, 1))));
       im.instanceMatrix.needsUpdate = true; im.castShadow = true; im.computeBoundingSphere(); im.name = `forest:${k}:${m.name}`; out.add(im);
     }

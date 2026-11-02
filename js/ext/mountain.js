@@ -146,7 +146,7 @@ export function dressMountain(ctx) {
     const tube = cyl(0.07, 0.055, 0.9, M.white, 0, 1.32, -0.05, 14, t); tube.rotation.x = Math.PI / 2 + 0.12; cyl(0.075, 0.075, 0.05, M.black, 0, 1.27, -0.5, 14, t).rotation.x = Math.PI / 2 + 0.12; }
   // the amado: a wooden leaf beside the balcony door that slides across it when T_SHUTTER is done (W5)
   { const s = named('shutter'); s.position.set(0, balcY, 18.86);   // outside the wall line (z 19), on the balcony side
-    const leaf = box(1.7, 2.2, 0.05, M.plank, 0, 1.1, 0, s); for (let i = -2; i <= 2; i++) box(0.03, 2.2, 0.06, M.weathered, i * 0.34, 1.1, 0.01, s);
+    const leaf = box(1.7, 2.2, 0.05, M.plank, 0, 1.1, 0, s); for (let i = -2; i <= 2; i++) box(0.03, 2.2, 0.06, M.weathered, i * 0.34, 0, 0.01, leaf);   // the battens ride on the leaf (left on the frame they read as bars across the open door)
     box(3.6, 0.08, 0.12, M.weathered, 0.9, 2.26, 0, s); box(3.6, 0.04, 0.12, M.weathered, 0.9, 0.02, 0, s);
     api.parts.shutter = { leaf, t: 0, target: 0 }; leaf.position.x = 1.8; }
   // the radio desk (hall, east end) and the note table (by the stairs)
@@ -191,6 +191,11 @@ export function dressMountain(ctx) {
     const B = named('bridge'); B.position.set(0.8, 0, -10.2);
     box(3.4, 0.14, 4.2, M.plank, 0, 0.3, 0, B); for (const x of [-1.65, 1.65]) { box(0.1, 0.9, 4.2, M.weathered, x, 0.75, 0, B); for (const z of [-2, 0, 2]) box(0.12, 1.1, 0.12, M.bark, x, 0.55, z, B); }
     const knot = cyl(0.03, 0.03, 0.5, M.red, 2.4, 1.02, 1.2, 6); knot.rotation.z = 0.3; }
+  // the work tag's wire (N_TAG hangs from it at x -10, z -13): two stakes and a wire, so the tag is not in mid-air
+  { const w = named('tag-wire'); w.position.set(-10, 0, -13);
+    for (const x of [-0.95, 0.95]) box(0.1, 1.75, 0.1, M.bark, x, 0.875, 0, w);
+    const wire = cyl(0.008, 0.008, 1.9, M.iron, 0, 1.62, 0, 4, w); wire.rotation.z = Math.PI / 2;
+    const hook = cyl(0.006, 0.006, 0.12, M.iron, 0, 1.56, 0, 4, w); void hook; }
   // ---------------------------------------------------------------- the forestry bell
   { const b = named('bell-frame'); b.position.set(-12.7, 0, -6.6);
     for (const x of [-0.7, 0.7]) box(0.14, 2.6, 0.14, M.bark, x, 1.3, 0, b);

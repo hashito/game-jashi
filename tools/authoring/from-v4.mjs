@@ -30,7 +30,7 @@ const roomAt = (x, z) => (ROOM_AT.find(([, rx, rz, w, d]) => x >= rx && x <= rx 
 const STAGE = { note: 'L3', photo: 'L5', boots: 'L4', ledger: 'L5', cassette: 'L2', mirror: 'L2', ribbon: 'L5', toy: 'L5', tag: 'L4' };
 const KIND = { boots: 'rubber-boots', ledger: 'book', cassette: 'cassette', mirror: 'hand-mirror', ribbon: 'red-string', toy: 'bell', tag: 'tag', note: 'paper', photo: 'photo' };
 const POS = { note: [-2.2, 24, 0.8], photo: [17.1, -16.1, 0.8], ...Object.fromEntries(N.LORE_PLACEMENTS ? [] : []) };
-const L = { boots: [-20, -2, 0.02], ledger: [14.5, -16, 0.9], cassette: [-2.25, 27, 0.86], mirror: [3.6, 27, 0.82], ribbon: [3, -9, 1.0], toy: [18, -25.5, 0.02], tag: [-10, -13, 1.4] };
+const L = { boots: [-20, -2, 0.02], ledger: [14.85, -15.95, 0.8], cassette: [-2.25, 27.6, 0.84], mirror: [3.6, 27.1, 0.8], ribbon: [2.45, -9.4, 1.2], toy: [18, -25.5, 0.02], tag: [-10, -13, 1.38] };   // on the table / tansu / side table, tied on the bridge rail, hung on the wire
 // a record without its own picture shows the 4.2 close-up of it, else the 3D model's item photo
 const DOC_PHOTO = { boots: P + 'boots-detail-v4-2.webp', ledger: P + 'ledger-detail-v4-2.webp', mirror: P + 'mirror-detail-v4-2.webp', note: 'assets/items/note.webp', cassette: 'assets/items/cassette.webp', ribbon: 'assets/items/ribbon.webp', toy: 'assets/items/toy.webp', tag: 'assets/items/tag.webp' };
 const docs = [];

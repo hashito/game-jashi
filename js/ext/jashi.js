@@ -123,7 +123,7 @@ export function makeJashi(o = {}) {
     s.userData = { a: i * 2.39996, r: 0.3 + (i % 4) * 0.12, y: 0.15 + (i / 14) * 2.5, k: 0.9 + (i % 3) * 0.35, ph: i * 0.7, base: 0.12 + (i % 5) * 0.022 }; s.renderOrder = 4; haze.add(s); puffs.push(s);
   }
   const S = { t: 0, walk: 0, jaw: 0 };
-  const update = (dt, { speed = 0, look = null, pose = {} } = {}) => {
+  const update = (dt, { speed = 0, look = null, pose = {}, headMax = 1.2, headRate = 5 } = {}) => {   // headMax: how far the head turns from the body (the telescope's turn uses ~2.7)
     S.t += dt; const t = S.t;
     // gait: long slow strides, the torso leaning forward when it hunts
     S.walk += dt * (0.8 + speed * 1.15);
@@ -141,7 +141,7 @@ export function makeJashi(o = {}) {
       const wp = new THREE.Vector3(); P.head.getWorldPosition(wp);
       const yaw = Math.atan2(look.x - wp.x, look.z - wp.z) - root.rotation.y;
       let d = yaw; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2;
-      P.head.rotation.y += (clamp(d, -1.2, 1.2) - P.head.rotation.y) * Math.min(1, dt * 5);
+      P.head.rotation.y += (clamp(d, -headMax, headMax) - P.head.rotation.y) * Math.min(1, dt * headRate);
       P.head.rotation.z = Math.sin(t * 0.9) * 0.1 + 0.18;
     } else { P.head.rotation.y *= 1 - Math.min(1, dt * 2); P.head.rotation.z = Math.sin(t * 0.9) * 0.08; }
     // soft tissue (4.x updateCreatureDetails): breath, the gasp of the attack, the rare slow blink, the throat
@@ -151,7 +151,9 @@ export function makeJashi(o = {}) {
     P.jaw.rotation.z = -0.16 + Math.sin(t * 1.7) * 0.025 + gasp * 0.12;
     const ph = (t + 2.3) % 9.7, blink = ph < 0.42 ? Math.sin(ph / 0.42 * Math.PI) * 0.86 : 0;
     P.ocular.scale.y = 1 - blink * 0.77; P.upperLid.position.y = 0.115 - blink * 0.13; P.lowerLid.position.y = 0.115 + blink * 0.07;
-    P.pupil.scale.x = 1 + gasp * 0.35; P.throat.scale.y = 1 + Math.sin(t * 2.05) * 0.07 + gasp * 0.22;
+    P.upperLid.scale.y = 1 - blink * 0.62; P.lowerLid.scale.y = 1 - blink * 0.32;
+    // these two are scaled balls: keep their base scale (pupil x 0.013, throat y 0.1), or the pupil becomes a 2 m disc and the throat a spike
+    P.pupil.scale.x = 0.013 * (1 + gasp * 0.35); P.throat.scale.y = 0.1 * (1 + Math.sin(t * 2.05) * 0.07 + gasp * 0.22);
     for (const s of puffs) {
       const u = s.userData, rise = (t * 0.12 + u.ph * 0.4) % 1;
       s.position.set(Math.cos(u.a + t * 0.15) * u.r, u.y + rise * 0.35, Math.sin(u.a + t * 0.15) * u.r * 0.8);

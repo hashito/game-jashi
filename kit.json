@@ -1,5 +1,5 @@
 {
-  "kit": "6e0b6f0",
+  "kit": "96bae95",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -115,7 +115,7 @@
     "check-traps.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "a88814ad4f86",
+    "js\\kit\\game-core.js": "a474b7fd2d95",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -132,7 +132,7 @@
     "js\\kit\\render-budget.js": "640b01d42e86",
     "js\\kit\\controller.js": "7de2ad5c9bd7",
     "js\\kit\\ui.js": "dd558be29425",
-    "js\\kit\\toast-lane.js": "47791f91744e",
+    "js\\kit\\toast-lane.js": "859d066623ff",
     "js\\kit\\gf-test.js": "60c9d2530682",
     "js\\kit\\hud-slots.js": "424758828926",
     "js\\kit\\progression.js": "96f97a34574b",
@@ -144,7 +144,7 @@
     "js\\kit\\audio.js": "6bbf00df9f42",
     "js\\kit\\audio-at.js": "85440435d84e",
     "js\\kit\\task-minigames.js": "41492f5b2250",
-    "js\\kit\\world-from-plan.js": "2c15cd7ec085",
+    "js\\kit\\world-from-plan.js": "0c26b36ae804",
     "js\\kit\\interact-select.js": "b4675956490c",
     "js\\kit\\room-types.js": "a99c6dc37499",
     "js\\kit\\win-manager.js": "1fcca24c2190",
@@ -217,7 +217,7 @@
     "tools/check-stage.mjs": "f23c43fd8df1",
     "tools/check-escape.mjs": "e02864475501",
     "tools/kit-features.cjs": "bec15dc7bfb7",
-    "js\\kit\\building.js": "fd84b993553f",
+    "js\\kit\\building.js": "81b12f396b1e",
     "js\\kit\\outer-walls.js": "114f94921936",
     "js\\kit\\fear-fx.js": "1df2962a4146",
     "js\\kit\\mg-library.js": "df478308dd48",

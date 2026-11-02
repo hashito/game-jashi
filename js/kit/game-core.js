@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 96bae95: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.9.0';
+export const CORE_VERSION = '1.9.2';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -177,7 +177,7 @@ export function createGame(cfg) {
   ctx.isTouch = inputMode.touch; ctx.input = inputMode.mode;
   // HUD slots + toast lane (rule U27, docs/hud-slots.md): one region per HUD part; every short notification is an item of the lane (top centre, below the top stacks)
   const slots = ensureHudSlots(hud);
-  const lane = ctx.lane = new ToastLane({ el: slots.lane, calm: () => ctx.calm || document.documentElement.hasAttribute('data-gf-calm'), fit: () => { layoutHudSlots(); return laneFree(); }, onChange: scheduleHudLayout });
+  const lane = ctx.lane = new ToastLane({ el: slots.lane, paused: () => !!((ctx.wm && ctx.wm.isOpen) || (ctx.ui && ctx.ui.open)), calm: () => ctx.calm || document.documentElement.hasAttribute('data-gf-calm'), fit: () => { layoutHudSlots(); return laneFree(); }, onChange: scheduleHudLayout });
   ctx.registerHudPart = registerHudPart;
   registerHudPart('prompt', { slot: 'prompt' });
   if ($('t-menu')) registerHudPart('pause-menu', { slot: 'tr', order: -20, move: false });
@@ -369,8 +369,10 @@ export function createGame(cfg) {
     if (ctx.qa) return true;
     const host = document.createElement('div'); host.id = 'mg-custom'; host.className = 'gf-overlay'; body.appendChild(host);
     fp.release();
-    try { return !!(await custom.mount(host, mgDef.cfg || {}, ctx)); } finally { host.remove(); }
+    try { return !!(await custom.mount(host, { title: task.title, help: task.hint || '', ...(mgDef.cfg || {}) }, ctx)); } finally { host.remove(); }
   }
+  // a task's own run() can open a mini game in the middle of its story (talk, then the mini game, then more talk): resolves true when it was done
+  ctx.runMinigame = (task, mgDef = task && task.minigame) => (mgDef ? runMinigame(task, mgDef) : Promise.resolve(true));
 
   // ---- tasks ----
   ctx.levelIndex = (stage) => prog.levels.findIndex((l) => l.id === stage);
@@ -396,7 +398,7 @@ export function createGame(cfg) {
   };
   ctx.startTask = async (id) => {
     const task = taskById.get(id), ok = ctx.canStart(task);
-    if (ok !== true) return ui.say(esc(ok));
+    if (ok !== true) return ui.say(esc(ok), 5, { urgent: true });
     bus.emit('task:start', { id });
     const reg = ext.reg.task.get(id) || {};
     const mgDef = reg.minigame || task.minigame;
@@ -431,15 +433,17 @@ export function createGame(cfg) {
 
   // ---- interaction ----
   const builtin = {
-    door: { prompt: (o) => { const d = world.doors.get(o.id); return d.isOpen ? '' : d.locked() ? lockedLabel('扉', '鍵がかかっている') : '[E] 扉を開ける'; },
-      run: (o) => { const d = world.doors.get(o.id); if (d.open()) { sound('door'); state.doors.push(o.id); bus.emit('door:open', { id: o.id }); } else if (d.locked()) { ui.say(esc(d.def.hint || prog.lockText(d.def.unlock) || 'いまは開きません。鍵や手がかりを探してみましょう。')); bus.emit('door:locked', { id: o.id, unlock: d.def.unlock }); } } },
+    door: { prompt: (o) => { const d = world.doors.get(o.id); return d.isOpen ? '' : d.locked() ? `[E] ${lockedLabel('扉', '鍵がかかっている')}` : '[E] 扉を開ける'; },   // [E] on a locked door says why (its hint)
+      run: (o) => { const d = world.doors.get(o.id); if (d.open()) { sound('door'); state.doors.push(o.id); bus.emit('door:open', { id: o.id }); } else if (d.locked()) { ui.say(esc(d.def.hint || prog.lockText(d.def.unlock) || 'いまは開きません。鍵や手がかりを探してみましょう。'), 5, { urgent: true }); /* the answer to [E]: at once, not after a queued line */ bus.emit('door:locked', { id: o.id, unlock: d.def.unlock }); } } },
     station: { prompt: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); return t ? `[E] ${t.title}` : o.label || '（いまは何もない）'; },
       run: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); if (!t) { const open = tasks.find((x) => x.station === o.id && !state.tasks.includes(x.id)); return ui.say(esc(open ? ctx.canStart(open) : 'ここでの作業は、もう終わっています。')); } return ctx.startTask(t.id); } },
     item: { prompt: (o) => `[E] 拾う：${items.find((i) => i.id === o.id).name}`,
       run: (o) => { const it = items.find((i) => i.id === o.id); remove('item', o.id); state.inv.push(o.id); sound('pickup'); if (it.photo) lane.push({ kind: 'card', cls: 'tl-lookcard tl-pickcard', key: `pickup:${it.id}`, ttl: 6000, html: viewItemHtml({ photo: it.photo, title: `入手：${it.name}` }) }); else ui.toast(`入手：${esc(it.name)}`); ui.say(esc(it.feeling));   /* an item with a photo shows its picture card (the feeling stays in the thought band) */ bus.emit('item:pickup', { id: o.id }); ctx.save(); checkEndings(); } },
     doc: { prompt: (o) => `[E] 読む：${docs.find((d) => d.id === o.id).title}`,
       run: (o) => { const d = docs.find((x) => x.id === o.id); if (!state.docsRead.includes(o.id)) state.docsRead.push(o.id); sound('paper'); wm.open('doc', { title: d.title, size: 's', render: (el) => { el.innerHTML = `${d.photo ? `<img class="gf-doc-img" src="${esc(d.photo)}" alt="">` : ''}${d.text.split('\n').map((p) => `<p>${esc(p)}</p>`).join('')}${d.feeling ? `<p class="iv-feel">${esc(d.feeling)}</p>` : ''}`; } }); bus.emit('doc:read', { id: o.id }); ctx.save(); } },
-    stairs: { prompt: (o) => (o.locked && o.locked() ? lockedLabel(o.label || '階段', 'いまは使えません') : `[E] ${o.label || '階段を使う'}`), run: (o) => ctx.useStairs(o) },
+    // locked stairs say why (the plan's hint, else the progression's lock text) and stay shut: [E] gives the reason in the thought band (1.9.1)
+    stairs: { prompt: (o) => (o.locked && o.locked() ? `[E] ${lockedLabel(o.label || '階段', 'いまは使えません')}` : `[E] ${o.label || '階段を使う'}`),
+      run: (o) => { if (o.locked && o.locked()) { ui.say(esc(o.hint || prog.lockText(o.unlock) || 'いまは、この階段を使えません。先に、いまの目標を進めましょう。'), 6, { urgent: true }); bus.emit('stairs:locked', { id: o.id, unlock: o.unlock }); return; } ctx.useStairs(o); } },
   };
   function remove(kind, id) { const m = pickups.get(`${kind}:${id}`); if (!m) return; m.visible = false; world.group.remove(m); const i = world.interactables.indexOf(m); if (i >= 0) world.interactables.splice(i, 1); pickups.delete(`${kind}:${id}`); }
   ctx.removePickup = remove;
@@ -724,7 +728,7 @@ export function createGame(cfg) {
     target = ctx.target = state.started && !blocked() ? pickNow() : null;
     const h = target && handlerOf(target.kind);
     let text = h ? (h.prompt ? h.prompt(target, ctx) : '') : '';
-    if (ctx.input === 'pad') text = text.replace(/[E]/g, '[A]');   // the key hint follows the device in use
+    if (ctx.input === 'pad') text = text.replace(/\[E\]/g, '[A]'); else if (ctx.isTouch) text = text.replace(/\[E\] ?/g, 'タップ：');   // the key hint follows the device in use (touch: tap the thing, W18)
     const pe = $('prompt'); if (pe.dataset.t !== text) { pe.dataset.t = text; if (/<[a-z]/i.test(text)) pe.innerHTML = text; else pe.textContent = text; }
     $('crosshair').classList.toggle('on', !!text); $('crosshair').classList.toggle('aim', !!text);
     for (const m of monsters) m.inst && m.inst.update && m.inst.update(dt, ctx);

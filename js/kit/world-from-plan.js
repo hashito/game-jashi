@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 35b680a: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -206,7 +206,7 @@ export function buildWorld(plan, o = {}) {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 0.6), stairM);
       mesh.position.set(ex, y0 + 1.0, ez); mesh.name = `stairs:${d.id}:${key}`;
       const arrive = (d.ends && d.ends[key === 'a' ? 'b' : 'a'] && d.ends[key === 'a' ? 'b' : 'a'].arrive) || [T.cx, T.cz + 1.2];
-      mesh.userData.interact = { kind: 'stairs', id: d.id, label: d.label || (d.kind === 'lift' ? 'エレベーターに乗る' : (T.room.floor || 0) > (from.floor || 0) ? '上の階へ' : '下の階へ'), to: { x: arrive[0], z: arrive[1], floor: to.floor || 0, yaw: ((d.ends && d.ends[key === 'a' ? 'b' : 'a']) || {}).yaw ?? 0 }, locked };
+      mesh.userData.interact = { kind: 'stairs', id: d.id, label: d.label || (d.kind === 'lift' ? 'エレベーターに乗る' : (T.room.floor || 0) > (from.floor || 0) ? '上の階へ' : '下の階へ'), to: { x: arrive[0], z: arrive[1], floor: to.floor || 0, yaw: ((d.ends && d.ends[key === 'a' ? 'b' : 'a']) || {}).yaw ?? 0 }, locked, hint: d.hint || '', unlock: d.unlock || '' };
       group.add(mesh); interactables.push(mesh);
       colliders.push({ box: new THREE.Box3().setFromObject(mesh), off: false });
       stairs.set(`${d.id}:${key}`, mesh);

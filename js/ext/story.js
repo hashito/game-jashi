@@ -9,7 +9,6 @@
 // Conversations use the one standard window (ctx.talk / ctx.choose); thoughts use the thought band (ctx.monologue).
 import * as THREE from 'three';
 import { useMinigames } from '../kit/mg-library.js';
-import photoFocus from '../kit/mg-photo-focus.js';
 import steadyHand from '../kit/mg-steady-hand.js';
 import tuneRadio from '../kit/mg-tune-radio.js';
 import sortItems from '../kit/mg-sort-items.js';
@@ -54,8 +53,9 @@ export default function story(ext, shared) {
     if (!GUIDE[key]) return guideChain;
     guideChain = guideChain.then(async () => {
       while (ctx.wm && ctx.wm.isOpen && !ctx.qa) await new Promise((r) => setTimeout(r, 300));
-      if (ctx.voiceLine) ctx.voiceLine(`assets/audio/guide-${key}.wav`, 'radio');
-      say(`修司（無線）「${GUIDE[key]}」`, 7);
+      const here = !st.uncleGone && lvl() === 0;   // before he leaves he is in the room: his own voice, not the radio
+      if (ctx.voiceLine) ctx.voiceLine(`assets/audio/guide-${key}.wav`, here ? null : 'radio');
+      say(`修司${here ? '' : '（無線）'}「${GUIDE[key]}」`, 7);
       await wait(6.5);
     });
     return guideChain;
@@ -63,7 +63,7 @@ export default function story(ext, shared) {
   const wait = (sec) => new Promise((r) => setTimeout(r, (ctx.qa ? 0.05 : sec) * 1000));
 
   const MGX = useMinigames(ext, [
-    [photoFocus, { type: 'photo-focus' }], [steadyHand, { type: 'steady-hand' }],
+    [steadyHand, { type: 'steady-hand' }],
     [tuneRadio, { type: 'tune-radio', hooks: { sound: (k, c, v) => snd && snd.radioStatic(k !== 'ok' && k !== 'done', typeof v === 'number' ? v : 0) } }],
     [sortItems, { type: 'sort-items' }], [timing, { type: 'timing' }], [searchDark, { type: 'search-dark' }], [pumpGauge, { type: 'pump-gauge', hooks: { sound: () => snd && snd.chain() } }],
     [holdBreath, { type: 'hold-breath', hooks: { sound: (k) => { if (!snd) return; if (k === 'near' || k === 'step') snd.steps({ gain: 0.8 }); if (k === 'fail') snd.breath(); } } }],
@@ -89,7 +89,7 @@ export default function story(ext, shared) {
   });
 
   // a picture at the top of the screen for a moment (U14: things above, thoughts below)
-  function flashPhoto(src, caption, sec = 2.4) {
+  function flashPhoto(src, caption, sec = 5) {   // long enough to read the caption (feedback: pictures changed too fast)
     const el = document.getElementById('js-photo'); if (!el) return;
     el.innerHTML = `<img src="${esc(src)}" alt="">${caption ? `<p>${esc(caption)}</p>` : ''}`;
     el.hidden = false; clearTimeout(flashPhoto.t); flashPhoto.t = setTimeout(() => { el.hidden = true; }, sec * 1000);
@@ -110,7 +110,8 @@ export default function story(ext, shared) {
       say('叔父の足音が階段を下りて、玄関の戸が閉まった。', 4);
       await wait(0.6);
     }
-    return playMG(task);
+    await scopeScene();   // the 4.x scene: no mini game, the lens zooms in by itself (feedback 2026-11-02)
+    return true;
   }, onDone: async () => {
     await talk('telescope', { title: '望遠鏡' });
     snd.sting(); fear.kick(0.6);
@@ -163,11 +164,59 @@ export default function story(ext, shared) {
   }
   ext.registerInteract('js-bell', { prompt: () => (done('T_BELL') ? '[E] 鐘を鳴らす（音の方へ誘う）' : ''), run: () => { if (done('T_BELL')) { ringBell(); say('鐘が鳴った。今のうちに、木の陰へ。', 4); } } });
 
+  // ---------------------------------------------------------------- the telescope (4.x TELESCOPE_SCENES): three beats, 17 s, the lens zooms in
+  // by itself; something moves between the cedars, a white back with a sickle, then only the head turns to the window. Nothing to press.
+  const SCOPE = [
+    { eyebrow: '二階のベランダ ／ 望遠鏡', title: '木の間に、動くもの。', text: '鳥かと思って、少しだけレンズを動かした。', sec: 5, fov: [30, 13] },
+    { eyebrow: '録画中', title: 'まだ、誰かいる。', text: '白い背中。手には草刈りの鎌のようなもの。声をかける前に、顔を確かめようと思った。', sec: 6, fov: [13, 7] },
+    { eyebrow: '映像の乱れ', title: '頭だけが、こちらを向く。', text: '肩はまだ揺れている。顔だけが、窓の方へ向き始めた。', sec: 6, fov: [7, 3.6] },
+  ];
+  const REVEAL = { x: 3.2, z: -6.5 };   // on the trail below, between the cedars, seen from the balcony
+  function scopeScene() {
+    if (!F) return Promise.resolve();
+    const cam = ctx.camera, fov0 = cam.fov, eye = { x: -1.9, z: 18.35 };
+    st.scope = true; ctx.blockers.push(scopeBlock); ctx.fp.release();
+    ctx.teleport({ x: eye.x, z: eye.z, floor: 1, yaw: 0 });
+    let el = document.getElementById('js-scope');
+    if (!el) { document.body.insertAdjacentHTML('beforeend', '<div id="js-scope" class="js-scope" hidden><div class="js-scope-lens"></div><div class="js-scope-rec">● REC <span></span></div><div class="js-scope-card"><p class="js-scope-eyebrow"></p><h2 class="js-scope-title"></h2><p class="js-scope-text"></p><p class="js-scope-count"></p><div class="js-scope-bar"><i></i></div></div></div>'); el = document.getElementById('js-scope'); }
+    const q = (c) => el.querySelector(c), total = SCOPE.reduce((n, b) => n + b.sec, 0);
+    const scope = ctx.scene.getObjectByName('telescope'); if (scope) scope.visible = false;   // we look through it: its own body must not fill the lens
+    el.hidden = false; F.root.visible = true; document.body.classList.add('js-scoping');   // the thought band and the HUD stay out of the lens
+    return new Promise((done) => {
+      let i = -1, tb = 0, tt = 0, last = performance.now();
+      const beat = (k) => { i = k; tb = 0; const b = SCOPE[k]; q('.js-scope-eyebrow').textContent = b.eyebrow; q('.js-scope-title').textContent = b.title; q('.js-scope-text').textContent = b.text; q('.js-scope-count').textContent = `0${k + 1} / 03`; if (k === 1) snd.sting(); if (k === 2) { fear.kick(0.5); ctx.fx && ctx.fx.glitch && ctx.fx.glitch(0.25, 0.4); } };
+      beat(0);
+      const frame = (now) => {
+        const dt = Math.min(0.1, (now - last) / 1000) * (ctx.qa ? 40 : 1); last = now; tb += dt; tt += dt;
+        const b = SCOPE[i], k = Math.min(1, tb / b.sec), ease = k * k * (3 - 2 * k);
+        // the figure: walking across the trail, then still with its back to the villa, then the head turning (the body does not)
+        const away = Math.atan2(REVEAL.x - eye.x, REVEAL.z - eye.z);   // facing away from the balcony
+        if (i === 0) { F.root.position.set(REVEAL.x - 2.2 + k * 2.2, 0, REVEAL.z); F.root.rotation.y = Math.PI / 2; }
+        else { F.root.position.set(REVEAL.x, 0, REVEAL.z); F.root.rotation.y += (away - F.root.rotation.y) * Math.min(1, dt * 3); }
+        F.update(dt, { speed: i === 0 ? 1.1 : 0, look: i === 2 ? cam.position : null, headMax: 2.7, headRate: 0.55, pose: {} });
+        // the lens follows the head and zooms in by itself
+        turnTo(F.root.position.x, i === 0 ? 1.7 : 2.25, F.root.position.z, 1);
+        cam.fov = b.fov[0] + (b.fov[1] - b.fov[0]) * ease; cam.updateProjectionMatrix();
+        q('.js-scope-bar i').style.width = `${Math.min(100, (tt / total) * 100)}%`;
+        q('.js-scope-rec span').textContent = `00:00:${String(Math.floor(tt)).padStart(2, '0')}`;
+        if (tb >= b.sec) { if (i < SCOPE.length - 1) beat(i + 1); else { finish(); return; } }
+        requestAnimationFrame(frame);
+      };
+      const finish = () => {
+        cam.fov = fov0; cam.updateProjectionMatrix(); el.hidden = true; document.body.classList.remove('js-scoping'); F.root.visible = false; st.scope = false; if (scope) scope.visible = true;
+        const at = ctx.blockers.indexOf(scopeBlock); if (at >= 0) ctx.blockers.splice(at, 1);
+        snd.sting(); fear.kick(0.8); done();
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+  const scopeBlock = () => !!st.scope;
+
   // ---------------------------------------------------------------- the figure before the radio, and in the mirror (the scripted one)
   function mirrorFigure() {
     if (!F) return; const cam = ctx.camera; const dir = new THREE.Vector3(); cam.getWorldDirection(dir);
     F.root.position.set(cam.position.x - dir.x * 7, 0, cam.position.z - dir.z * 7); F.root.rotation.y = Math.atan2(cam.position.x - F.root.position.x, cam.position.z - F.root.position.z);
-    F.root.visible = true; st.mirror = true; flashPhoto('assets/photos/mountain-v4-1.webp', 'ミラーの中。白い姿が、車の後ろに立っていた。', 1.6); snd.sting(); fear.kick(1);
+    F.root.visible = true; st.mirror = true; flashPhoto('assets/photos/mountain-v4-1.webp', 'ミラーの中。白い姿が、車の後ろに立っていた。', 4); snd.sting(); fear.kick(1);
     setTimeout(() => { if (F) F.root.visible = false; st.mirror = false; }, ctx.qa ? 50 : 1500);
   }
   // L2-L3: it stands in the front yard and looks up at the villa. Looked at the first time: it tilts its head, comes two steps, and is
@@ -175,6 +224,7 @@ export default function story(ext, shared) {
   function updateWatcher(dt) {
     const i = lvl(), on = (i === 1 || i === 2) && !done('T_RADIO') && !st.mirror;
     if (!F) return;
+    if (st.scope) { shared.scripted = null; return; }   // the telescope scene drives F itself
     if (!on) { if (!st.mirror) F.root.visible = false; shared.scripted = null; return; }
     const cam = ctx.camera;
     if (st.watchT < 0) { F.root.visible = true; F.root.position.set(WATCH.x, 0, WATCH.z); }
@@ -195,10 +245,11 @@ export default function story(ext, shared) {
     if (dying) return; dying = true; st.deaths++;
     c.bus.emit('player:dead', { reason });
     snd.sting();
-    const text = reason === 'gaze' ? '目を合わせ続けてしまった。目を閉じる（Q）か、木や壁を間に入れれば、心は戻る。' : reason === 'scythe' ? '鎌は三度で倒れる。振り上げたら、画面の縁が示す向きの反対へ離れる。ボトル（R）で怯ませることもできる。' : '山の中で、倒れた。';
-    const lines = (T.death || []).map((l) => `<p class="js-death-line"><b>${esc(l.who)}</b>${esc(l.text)}</p>`).join('');
-    const show = () => c.wm.open('death', { title: 'そらせない', size: 's', locked: true, render: (el) => {
-      el.innerHTML = `<div class="js-death"><p class="js-death-kicker">THE EYE WAS STILL OPEN</p>${lines}<p class="js-death-text">${esc(text)}</p><div class="js-choices"><button type="button" class="btn primary" data-retry>この段階からやり直す</button></div></div>`;
+    const kq = c.isTouch ? '「目を閉じる」ボタン' : '目を閉じる（Q）', kr = c.isTouch ? '「ボトル」ボタン' : 'ボトル（R）';   // the advice names the control the player has
+    const text = reason === 'gaze' ? `目を合わせ続けてしまった。${kq}か、木や壁を間に入れれば、心は戻る。` : reason === 'scythe' ? `鎌は三度で倒れる。振り上げたら、画面の縁が示す向きの反対へ離れる。${kr}で怯ませることもできる。` : '山の中で、倒れた。';
+    const scy = reason === 'scythe', lines = ((scy && T.deathScythe) || T.death || []).map((l) => `<p class="js-death-line"><b>${esc(l.who)}</b>${esc(l.text)}</p>`).join('');
+    const show = () => c.wm.open('death', { title: scy ? '振り下ろされた' : 'そらせない', size: 's', locked: true, render: (el) => {
+      el.innerHTML = `<div class="js-death">${c.calm ? '' : '<img class="js-death-img" src="assets/textures/monster-face-v4-2.webp" alt="">'}<p class="js-death-kicker">${scy ? 'THE BLADE CAME DOWN' : 'THE EYE WAS STILL OPEN'}</p>${lines}<p class="js-death-text">${esc(text)}</p><div class="js-choices"><button type="button" class="btn primary" data-retry>この段階からやり直す</button></div></div>`;
       const b = el.querySelector('[data-retry]'); b.onclick = () => { c.wm.close(); }; setTimeout(() => b.focus(), 30);
     }, onClose: () => {
       dying = false; gaze.reset({ grace: 5 }); fear.reset(); applyStage();
@@ -207,7 +258,7 @@ export default function story(ext, shared) {
       c.ui.toast(`第${STAGE_NAMES[lvl()]}段階の区切りから、やり直します。`);
     } });
     const el = document.getElementById('js-jump');
-    if (el && !c.calm) { el.hidden = false; setTimeout(() => { el.hidden = true; show(); }, 800); } else show();
+    if (el && !c.calm) { el.hidden = false; setTimeout(() => { el.hidden = true; show(); }, c.qa ? 50 : 2400); } else show();   // the face stays 2.4 s, then the same face heads the window
   } });
   ext.registerScreen('ending', { keepSave: false, open: (c, e) => {
     const sec = Math.round(st.played), chains = completedChains(c.state.docsRead), recs = Object.values(CHAINS).flat().filter((d) => c.state.docsRead.includes(d)).length;
@@ -267,14 +318,14 @@ export default function story(ext, shared) {
   ext.on('game:start', async ({ resume }) => {
     dying = false; st.watchT = -1; gaze.reset(); applyStage();
     if (!resume) { await talk('opening', { title: '山の別荘', last: '片付けを始める' }); guide('telescope'); }
-    else say(`第${STAGE_NAMES[lvl()]}段階から再開した。Tab で手帳、M で地図を開ける。`, 5);
+    else say(`第${STAGE_NAMES[lvl()]}段階から再開した。${ctx.isTouch ? "右上のメニューから手帳と地図を開ける" : "Tab で手帳、M で地図を開ける"}。`, 5);
   });
   ext.on('stage:up', () => {
     applyStage();
     const i = lvl();
     const G = [null, null, 'radio', 'bottle', 'crank', 'gate', 'car'][i];
     if (G && i !== 3 && i !== 5) setTimeout(() => guide(G), 900);
-    if (i === 1) setTimeout(() => say('窓の外に、まだいる。目を合わせると胸が苦しい。Q で目を閉じられる。', 7), 1200);
+    if (i === 1) setTimeout(() => say(`窓の外に、まだいる。目を合わせると胸が苦しい。${ctx.isTouch ? '「目を閉じる」ボタン' : 'Q'}で目を閉じられる。`, 7), 1200);
     if (i === 3) setTimeout(() => guide('bottle').then(() => say('外では、白い姿が林道を歩いている。目を合わせず、木の陰を選んで。', 6)), 1500);
     if (i === 5) setTimeout(() => guide('gate').then(() => say('橋を渡って、南から戻る。', 4)), 1200);
     if (i === 6) setTimeout(() => say('ゲートが上がった。駐車場の車まで。', 4), 800);
@@ -307,7 +358,7 @@ export default function story(ext, shared) {
     if (run && lvl() === 1 && shared.scripted && !st.seenWatch && document.body.classList.contains('js-gazing')) {
       st.seenWatch = true; st.watchT = 0; snd.sting(); fear.kick(0.9); c.fx && c.fx.glitch && c.fx.glitch(0.3, 0.3);
       lookAt = { x: F.root.position.x, y: 2.3, z: F.root.position.z, t: 1.4 };
-      setTimeout(() => talk('encounter', { title: '窓の向こう' }), 900);
+      setTimeout(() => talk('encounter', { title: '窓の向こう' }), 3200);   // after it has looked and stepped closer: the window must not cover the moment it notices you
     }
     if (lookAt) { turnTo(lookAt.x, lookAt.y, lookAt.z, Math.min(1, dt * 4)); if ((lookAt.t -= dt) <= 0) lookAt = null; }
     // L3: a knock on the front door while you are downstairs and the radio is not yet tuned (H4)

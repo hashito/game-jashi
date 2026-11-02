@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/toast-lane.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 35b680a: js/toast-lane.js — edit in game-kit and run tools/kit-sync.js */
 // Toast lane (rule U27, docs/hud-slots.md): ONE place for every short notification, so it never lands on the clock, the sensors or the menu.
 // The lane is the top-centre HUD slot (#hs-tc): hud-slots.js puts it BELOW the taller of the top stacks that it would touch and keeps it above the
 // prompt / action cluster. Everything that used to be its own floating box (toasts, side-job notes, pick-up cards, "carrying" hint, "click to return")
@@ -154,6 +154,7 @@ export class ToastLane {
     this.timer = setInterval(() => {
       const t = Date.now(), dt = Math.min(t - this.last, 1000); this.last = t;
       if (document.hidden) return;   // a hidden tab does not age the notes: the player must see them
+      if (this.o.paused && this.o.paused()) return;   // nor does a window over the screen (a talk opened right after a pick-up hid its card until it was gone)
       if (this.model.tick(dt).length) this.render();
       if (!this.model.items.some((i) => i.ttl > 0)) { clearInterval(this.timer); this.timer = 0; }
     }, 200);
