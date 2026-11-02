@@ -1,4 +1,4 @@
-/* game-kit b995134: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 244cbc9: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.3';
+export const CORE_VERSION = '1.10.4';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -434,12 +434,18 @@ export function createGame(cfg) {
 
   // ---- interaction ----
   const builtin = {
-    door: { prompt: (o) => { const d = world.doors.get(o.id); return d.isOpen ? '' : d.locked() ? `[E] ${lockedLabel('扉', '鍵がかかっている')}` : '[E] 扉を開ける'; },   // [E] on a locked door says why (its hint)
-      run: (o) => { const d = world.doors.get(o.id); if (d.open()) { sound('door'); state.doors.push(o.id); bus.emit('door:open', { id: o.id }); } else if (d.locked()) { ui.say(esc(d.def.hint || prog.lockText(d.def.unlock) || 'いまは開きません。鍵や手がかりを探してみましょう。'), 5, { urgent: true }); /* the answer to [E]: at once, not after a queued line */ bus.emit('door:locked', { id: o.id, unlock: d.def.unlock }); } } },
+    door: { prompt: (o) => { const d = world.doors.get(o.id); return d.isOpen ? (d.def.closable ? '[E] 扉を閉める' : '') : d.locked() ? `[E] ${lockedLabel('扉', '鍵がかかっている')}` : '[E] 扉を開ける'; },   // [E] on a locked door says why (its hint)
+      run: (o) => { const d = world.doors.get(o.id);
+        if (d.isOpen && d.def.closable) {   // standard 1.10.4: a closable door shuts again (never on the player standing in the doorway)
+          const b = new THREE.Box3().setFromObject(d.mesh).expandByScalar(0.3), p = camera.position;
+          if (p.x > b.min.x && p.x < b.max.x && p.z > b.min.z && p.z < b.max.z) { ui.say('戸口から一歩離れると閉められます。', 3, { urgent: true }); return; }
+          d.close(); sound('door'); const k = state.doors.indexOf(o.id); if (k >= 0) state.doors.splice(k, 1); bus.emit('door:close', { id: o.id }); ctx.save(); return;
+        }
+        if (d.open()) { sound('door'); state.doors.push(o.id); bus.emit('door:open', { id: o.id }); } else if (d.locked()) { ui.say(esc(d.def.hint || prog.lockText(d.def.unlock) || 'いまは開きません。鍵や手がかりを探してみましょう。'), 5, { urgent: true }); /* the answer to [E]: at once, not after a queued line */ bus.emit('door:locked', { id: o.id, unlock: d.def.unlock }); } } },
     station: { prompt: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); return t ? `[E] ${t.title}` : o.label || '（いまは何もない）'; },
       run: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); if (!t) { const open = tasks.find((x) => x.station === o.id && !state.tasks.includes(x.id)); return ui.say(esc(open ? ctx.canStart(open) : 'ここでの作業は、もう終わっています。')); } return ctx.startTask(t.id); } },
     item: { prompt: (o) => `[E] 拾う：${items.find((i) => i.id === o.id).name}`,
-      run: (o) => { const it = items.find((i) => i.id === o.id); remove('item', o.id); state.inv.push(o.id); sound('pickup'); if (it.photo) lane.push({ kind: 'card', cls: 'tl-lookcard tl-pickcard', key: `pickup:${it.id}`, ttl: 6000, html: viewItemHtml({ photo: it.photo, title: `入手：${it.name}` }) }); else ui.toast(`入手：${esc(it.name)}`); ui.say(esc(it.feeling));   /* an item with a photo shows its picture card (the feeling stays in the thought band) */ bus.emit('item:pickup', { id: o.id }); ctx.save(); checkEndings(); } },
+      run: (o) => { const it = items.find((i) => i.id === o.id); remove('item', o.id); state.inv.push(o.id); sound('pickup'); ctx.lastPickup = { it, at: Date.now() }; if (it.photo) lane.push({ kind: 'card', cls: 'tl-lookcard tl-pickcard', key: `pickup:${it.id}`, ttl: 6000, html: viewItemHtml({ photo: it.photo, title: `入手：${it.name}` }) }); else ui.toast(`入手：${esc(it.name)}`); ui.say(esc(it.feeling));   /* an item with a photo shows its picture card (the feeling stays in the thought band) */ bus.emit('item:pickup', { id: o.id }); ctx.save(); checkEndings(); } },
     doc: { prompt: (o) => `[E] 読む：${docs.find((d) => d.id === o.id).title}`,
       run: (o) => { const d = docs.find((x) => x.id === o.id); if (!state.docsRead.includes(o.id)) state.docsRead.push(o.id); sound('paper'); wm.open('doc', { title: d.title, size: 's', render: (el) => { el.innerHTML = `${d.photo ? `<img class="gf-doc-img" src="${esc(d.photo)}" alt="">` : ''}${d.text.split('\n').map((p) => `<p>${esc(p)}</p>`).join('')}${d.feeling ? `<p class="iv-feel">${esc(d.feeling)}</p>` : ''}`; } }); bus.emit('doc:read', { id: o.id }); ctx.save(); } },
     // locked stairs say why (the plan's hint, else the progression's lock text) and stay shut: [E] gives the reason in the thought band (1.9.1)
@@ -638,7 +644,18 @@ export function createGame(cfg) {
   ctx.systems = systems;
   ctx.monologue = (text, sec = 2.2, o) => ui.say(esc(text), sec, o);   // the protagonist's thought line (U23); monster hints ("走れ") go through it
   // the conversation window and the choice (js/talk-ui.js, standard 1.7): ctx.talk(lines | 'key of data/talk.json', o), ctx.choose({ who, text, options })
-  { const T = createTalk({ wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), said: (L) => ui.sayLine.remember(`<span class="who">${esc(L.who || '')}</span>${esc(L.text || '')}`), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.talk = T.talk; ctx.choose = T.choose; }
+  { const T = createTalk({ wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), said: (L) => ui.sayLine.remember(`<span class="who">${esc(L.who || '')}</span>${esc(L.text || '')}`), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.choose = T.choose;
+    // a talk that opens right after a pick-up (the item finished a task, the story answers it) used to cover the item card at once: the player
+    // never read what they had picked up. Such a talk now starts with the item itself (picture, name, desc) as its first page, read at the player's pace.
+    ctx.talk = (src, o = {}) => {
+      const p = ctx.lastPickup; ctx.lastPickup = null;
+      const lines = typeof src === 'string' ? (data.talk && data.talk[src]) || [] : src || [];
+      if (!p || Date.now() - p.at > 8000 || o.pickup === false || !lines.length) return T.talk(src, o);
+      lane.clear('card');
+      const it = p.it, first = { who: '入手', text: `${it.name}${it.desc ? `
+${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
+      return T.talk([first, ...lines], o);
+    }; }
   // 言葉の記録 (feedback 2026-11-02 「思ったことや会話が流れる」): every thought and spoken line since the start, newest first, in the menu;
   // L opens it, and on a phone a tap on the thought band does
   // 言葉の記録: id 'saylog', so a game's own 'log' tab (urakawa / shiogaeri 手帳) is not replaced

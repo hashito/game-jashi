@@ -205,7 +205,7 @@ export function dressMountain(ctx) {
     addCol(-9.95, -7.05, -9.65, -3.75, 0, 2.15);
     const stone = (x, z, s, k = [1, 0.8, 1]) => { const m = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 1), M.granite); m.position.set(x, s * k[1] * 0.75, z); m.scale.set(...k); m.rotation.set(rnd(), rnd() * 6, rnd()); m.castShadow = true; G.add(m); return m; };
     stone(11.6, -20, 1.25, [1.1, 1.1, 0.9]); stone(12.6, -19.2, 0.7); stone(10.9, -21, 0.55);
-    addCol(10.6, -21, 12.8, -19, 0, 1.9);
+    addCol(10.6, -21, 12.92, -19, 0, 1.9);   // up to the hut-side boundary: no 12 cm squeeze between the boulder and the wall (a player was shut in there, 2026-11-02)
     for (let i = 0; i < 18; i++) { const x = -6 + rnd() * 12, z = -11.2 + (rnd() - 0.5) * 2.4; if (Math.abs(x - 0.8) > 2.2) stone(x, z, 0.18 + rnd() * 0.3, [1, 0.6, 1]); }
   }
   // ---------------------------------------------------------------- the creek and the bridge (the red string on its rail)

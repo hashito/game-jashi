@@ -1,5 +1,5 @@
 {
-  "kit": "b995134",
+  "kit": "244cbc9",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -118,7 +118,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "420e27b8743e",
+    "js\\kit\\game-core.js": "76e3f8ca9543",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -133,7 +133,7 @@
     "js\\kit\\talk-ui.js": "8a99fa74569b",
     "js\\kit\\render-presets.js": "5fbf24fe6100",
     "js\\kit\\render-budget.js": "640b01d42e86",
-    "js\\kit\\controller.js": "7de2ad5c9bd7",
+    "js\\kit\\controller.js": "db0b8e956ca6",
     "js\\kit\\ui.js": "c9aee98bd348",
     "js\\kit\\toast-lane.js": "859d066623ff",
     "js\\kit\\gf-test.js": "60c9d2530682",
@@ -147,7 +147,7 @@
     "js\\kit\\audio.js": "6bbf00df9f42",
     "js\\kit\\audio-at.js": "85440435d84e",
     "js\\kit\\task-minigames.js": "41492f5b2250",
-    "js\\kit\\world-from-plan.js": "47b2ebcf5616",
+    "js\\kit\\world-from-plan.js": "f6fe6f328932",
     "js\\kit\\interact-select.js": "b4675956490c",
     "js\\kit\\room-types.js": "a99c6dc37499",
     "js\\kit\\win-manager.js": "1fcca24c2190",
@@ -172,7 +172,7 @@
     "js\\kit\\things-data.js": "3aabd0a31ea1",
     "js\\kit\\terminal-data.js": "a9ec2af2abe1",
     "js\\kit\\recipes-data.js": "19af60d3dd45",
-    "js\\kit\\monster-std.js": "b9ed579abb02",
+    "js\\kit\\monster-std.js": "78fbc48529d0",
     "js\\kit\\monster-nav.js": "8593abb398ca",
     "js\\kit\\monster-looks.js": "084272543168",
     "js\\kit\\character.js": "9c8eb0e6e73a",
@@ -189,7 +189,7 @@
     "js\\kit\\env-props.js": "cc164232ed7a",
     "js\\kit\\texture-library.js": "3270ec79ed80",
     "js\\kit\\text-contrast.js": "0f2a95264e07",
-    "css/kit.css": "4fcec263213e",
+    "css/kit.css": "1532448e0908",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
     "css\\shell.css": "22de577a41c7",
@@ -238,7 +238,7 @@
     "tools/check-traps.mjs": "4390617a5164",
     "tools/build-site.js": "2743c81000d9",
     "tools/smoke.mjs": "3d4da51af2a6",
-    "tools/review-shots.mjs": "0607446e3242",
+    "tools/review-shots.mjs": "5498ba6d5e1c",
     "js\\kit\\flavor.js": "1e4371c2baf8"
   },
   "textures": []

@@ -101,6 +101,7 @@
   {
    "id": "SHELTER",
    "name": "避難小屋",
+   "shutHide": true,
    "x": 13,
    "z": -18,
    "w": 6,
@@ -365,6 +366,7 @@
    "width": 1.6,
    "look": "slide",
    "label": "避難小屋の引戸",
+   "closable": true,
    "unlock": "shelter",
    "hint": "小屋の戸は閉まっている。先に物置の支度を。"
   },

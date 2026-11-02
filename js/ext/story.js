@@ -344,6 +344,9 @@ export default function story(ext, shared) {
   });
   ext.on('item:pickup', ({ id }) => { if (id === 'I_GLASSES') setTimeout(() => talk(done('T_RADIO') ? 'glasses' : 'earlyGlasses', { title: 'サングラス' }), 300); });
   ext.on('doc:read', ({ id }) => onDoc(id));
+  // the hut's sliding door shuts again from inside (plan: closable, the room shutHide): with it drawn, the figure outside cannot see you
+  ext.on('door:open', ({ id }) => { if (id === 'D_SHELTER' && !st.hutTold) { st.hutTold = true; setTimeout(() => say('この引戸は、中から閉められる。', 4), 900); } });
+  ext.on('door:close', ({ id }) => { if (id === 'D_SHELTER' && ctx.state.room === 'SHELTER') ctx.monologue('戸を閉めた。ここなら、外から見えない。', 4, { urgent: true }); });
   ext.on('task:start', ({ id }) => { if (id === 'T_RADIO') snd.radioStatic(true, 0); });
   ext.on('task:abort', ({ id }) => { if (id === 'T_RADIO') snd.radioStatic(false); });
   ext.on('jashi:first-hit', () => talk('firstAttack', { title: '鎌' }));

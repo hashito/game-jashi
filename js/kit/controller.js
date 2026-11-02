@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/controller.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 244cbc9: js/controller.js — edit in game-kit and run tools/kit-sync.js */
 // First-person controller: pointer lock + mouse look, WASD / arrows + Shift to run, a touch stick and
 // swipe-to-look for phones, circle-vs-box collisions, footstep callbacks.
 // Extracted from ひだまり薬局 (game-yakkyoku, js/game.js); the same scheme runs 未然調書 and the police game.
@@ -163,24 +163,51 @@ export class FirstPersonController {
     }
   }
 
-  // push the point out of every solid box (a circle of `radius` against boxes, in x/z)
+  // push the point out of every solid box (a circle of `radius` against boxes, in x/z). A few passes, so two boxes close together cannot
+  // push the player into each other; a centre already inside a box goes out the nearest side (before 1.10.4 it stayed and walked through
+  // thin walls: in 邪視 a squeeze between a boulder and the hut wall put the player inside the locked hut)
+  solid(c) { const b = c.box; return !c.off && !(b.max.y < this.floorY + 0.15 || b.min.y > this.floorY + this.o.eye); }
   collide(p) {
     const R = this.o.radius;
-    for (const c of this.colliders) {
-      if (c.off) continue;
-      const b = c.box;
-      if (b.max.y < this.floorY + 0.15 || b.min.y > this.floorY + this.o.eye) continue;
-      const cx = Math.max(b.min.x, Math.min(p.x, b.max.x));
-      const cz = Math.max(b.min.z, Math.min(p.z, b.max.z));
-      const dx = p.x - cx;
-      const dz = p.z - cz;
-      const d2 = dx * dx + dz * dz;
-      if (d2 < R * R) {
-        const d = Math.sqrt(d2) || 1e-4;
-        p.x += (dx / d) * (R - d);
-        p.z += (dz / d) * (R - d);
+    for (let pass = 0; pass < 4; pass++) {
+      let pushed = false;
+      for (const c of this.colliders) {
+        if (!this.solid(c)) continue;
+        const b = c.box;
+        if (p.x > b.min.x && p.x < b.max.x && p.z > b.min.z && p.z < b.max.z) {
+          const out = [[b.min.x - R - p.x, 0], [b.max.x + R - p.x, 0], [0, b.min.z - R - p.z], [0, b.max.z + R - p.z]].sort((u, v) => Math.abs(u[0] + u[1]) - Math.abs(v[0] + v[1]))[0];
+          p.x += out[0]; p.z += out[1]; pushed = true; continue;
+        }
+        const cx = Math.max(b.min.x, Math.min(p.x, b.max.x));
+        const cz = Math.max(b.min.z, Math.min(p.z, b.max.z));
+        const dx = p.x - cx;
+        const dz = p.z - cz;
+        const d2 = dx * dx + dz * dz;
+        if (d2 < R * R - 1e-6) {
+          const d = Math.sqrt(d2) || 1e-4;
+          p.x += (dx / d) * (R - d);
+          p.z += (dz / d) * (R - d);
+          pushed = true;
+        }
       }
+      if (!pushed) break;
     }
+  }
+  // true when the step a -> b runs through a solid box (the passes settled a squeeze on the far side of a thin wall)
+  crosses(a, b) {
+    const dx = b.x - a.x, dz = b.z - a.z;
+    for (const c of this.colliders) {
+      if (!this.solid(c)) continue;
+      const x = c.box; if (a.x > x.min.x && a.x < x.max.x && a.z > x.min.z && a.z < x.max.z) continue;   // started inside (a spawn, a teleport): let it out
+      let t0 = 0, t1 = 1, hit = true;
+      for (const [o, d, lo, hi] of [[a.x, dx, x.min.x, x.max.x], [a.z, dz, x.min.z, x.max.z]]) {
+        if (Math.abs(d) < 1e-9) { if (o <= lo || o >= hi) { hit = false; break; } continue; }
+        let u = (lo - o) / d, v = (hi - o) / d; if (u > v) [u, v] = [v, u];
+        t0 = Math.max(t0, u); t1 = Math.min(t1, v); if (t0 >= t1) { hit = false; break; }
+      }
+      if (hit) return true;
+    }
+    return false;
   }
 
   update(dt) {
@@ -202,6 +229,7 @@ export class FirstPersonController {
       const before = p.clone();
       p.add(v);
       this.collide(p);
+      if (this.crosses(before, p)) p.copy(before);   // never through a wall: a step the pushes carried across a box is not taken
       if (this.o.extraCollide) this.o.extraCollide(p, this); // a game's own walls (a walk grid, a custom world)
       const b = this.o.bounds;
       if (b) {

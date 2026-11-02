@@ -1,0 +1,65 @@
+{
+ "game": "jashi-mountain",
+ "commit": "1c51e9f",
+ "date": "2026-11-02T12:22:42.823Z",
+ "node": "v24.11.1",
+ "total": 7,
+ "pass": 5,
+ "fail": 0,
+ "warn": 2,
+ "skip": 0,
+ "ms": 280670,
+ "results": [
+  {
+   "name": "smoke",
+   "status": "pass",
+   "ms": 50229,
+   "optional": true,
+   "command": "node tools/smoke.mjs"
+  },
+  {
+   "name": "npm test",
+   "status": "pass",
+   "ms": 72909,
+   "optional": false,
+   "command": "npm test --silent"
+  },
+  {
+   "name": "check-game-data",
+   "status": "pass",
+   "ms": 1187,
+   "optional": false,
+   "command": "node tools/check-game-data.mjs ."
+  },
+  {
+   "name": "check-plan",
+   "status": "pass",
+   "ms": 265,
+   "optional": false,
+   "command": "node tools/check-plan.mjs data/plan.json --strict"
+  },
+  {
+   "name": "check-text-contrast",
+   "status": "warn",
+   "ms": 391,
+   "detail": "usage: check-text-contrast.mjs <url|file> [--theme a,b] [--viewport 390x844,1920x1080] [--hooks f.mjs] [--shots DIR] [--json f] [--min 4.5] [--warn]",
+   "optional": true,
+   "command": "node tools/check-text-contrast.mjs"
+  },
+  {
+   "name": "check-select-range",
+   "status": "warn",
+   "ms": 154978,
+   "detail": "select-range: could not drive the page: timeout: (() => { const G = (window.game || window.__game); return !!G && (G.started); })()",
+   "optional": true,
+   "command": "node tools/check-select-range.mjs"
+  },
+  {
+   "name": "check-no-emoji",
+   "status": "pass",
+   "ms": 632,
+   "optional": true,
+   "command": "node tools/check-no-emoji.mjs"
+  }
+ ]
+}

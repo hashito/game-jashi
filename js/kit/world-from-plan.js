@@ -1,4 +1,4 @@
-/* game-kit 9a50101: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 244cbc9: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -228,9 +228,10 @@ export function buildWorld(plan, o = {}) {
     const api = {
       def: d, mesh, col, look: L.G, isOpen: false,
       locked: () => !!d.unlock && !isUnlocked(d.unlock),
-      open() { if (api.isOpen || api.locked()) return false; api.isOpen = true; mesh.visible = false; col.off = true; anim.to = 1; return true; },
+      open() { if (api.isOpen || api.locked()) return false; api.isOpen = true; mesh.visible = !!d.closable; col.off = true; anim.to = 1; return true; },
       close() { api.isOpen = false; mesh.visible = true; col.off = false; anim.to = 0; },
       snap() { anim.t = anim.to; pose(anim); },   // jump to the end (a restored save)
+      // a door with "closable": true keeps its [E] target while open: [E] 扉を閉める shuts it again (a hut to hide in)
     };
     doorAnims.push(anim);
     doors.set(d.id, api);

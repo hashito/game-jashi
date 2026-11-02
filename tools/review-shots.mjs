@@ -64,7 +64,8 @@ for (const run of plan.runs) {
       if (s.eval && s.beforeStart) await p.eval(`(async () => { const g = window.__game; ${s.eval} })()`);
       if (s.start !== false && !(await p.eval('!!(window.__game.state.started)'))) {
         if (s.name === 'title' && s.shot) { await sleep(s.wait || 800); await p.shot(path.join(out, `${run.name}-title.jpg`)); report.push(`- **title**: ![](${run.name}-title.jpg)`); n++; continue; }
-        await p.eval("(() => { const b = document.getElementById('start-btn'); b.scrollIntoView({ block: 'center' }); b.click(); })()"); await p.waitFor('__game.state.started', 15000); await sleep(1200);
+        await p.eval("(() => { const b = document.getElementById('start-btn'); b.scrollIntoView({ block: 'center' }); b.click(); })()"); for (let i = 0; i < 20 && !(await p.eval('!!__game.state.started')); i++) { await sleep(150); await p.eval("(() => { const go = [...document.querySelectorAll('#controls-go, [id$=\"-go\"]')].find((b) => b.offsetWidth); if (go) return go.click(); const e = document.getElementById('controls'); if (e && !e.classList.contains('hidden') && getComputedStyle(e).display !== 'none') e.click(); })()"); }   /* a game's own start card (miru-delivery #controls) */
+        await p.waitFor('__game.state.started', 15000); await sleep(1200);
       }
       const r = await p.eval(`(async () => { const g = window.__game, rv = window.__rv; let note = '';
         ${s.close === false ? '' : 'await rv.closeAll();'}
