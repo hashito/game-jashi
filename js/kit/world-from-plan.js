@@ -1,4 +1,4 @@
-/* game-kit 244cbc9: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -411,19 +411,26 @@ function candidatesOf(camera, interactables, reach) {
 }
 const blockedBy = (colliders, eye) => (cand) => {
   // a wall (a tall collider box) that the line from the eye to the thing's visible surface enters more than 10 cm before the surface hides it
-  // (a terminal mounted on the near face of a wall is entered at the surface itself: not hidden)
-  const e = [eye.x, eye.y, eye.z], q = [Math.max(cand.min[0], Math.min(e[0], cand.max[0])), Math.max(cand.min[1], Math.min(e[1], cand.max[1])), Math.max(cand.min[2], Math.min(e[2], cand.max[2]))];
-  const dx = q[0] - e[0], dy = q[1] - e[1], dz = q[2] - e[2], L = Math.hypot(dx, dy, dz);
-  if (L < 0.3) return false;
-  const d = [dx / L, dy / L, dz / L];
-  for (const k of colliders) {
-    if (k.off) continue;
-    const b = k.box;
-    if (b.max.y - b.min.y < 1.0 || b.max.y < eye.y - 0.4 || b.min.y > eye.y + 0.4) continue;
-    const t = rayBox(e, d, { min: [b.min.x, b.min.y, b.min.z], max: [b.max.x, b.max.y, b.max.z] }, L);
-    if (t != null && t < L - 0.1) return true;
-  }
-  return false;
+  // (a terminal mounted on the near face of a wall is entered at the surface itself: not hidden). The thing is hidden only when the line to its
+  // centre is blocked too: a cart just past a doorway has its nearest corner behind the jamb and its middle in plain sight (yakkyoku 1.5.0)
+  const e = [eye.x, eye.y, eye.z];
+  const hit = (q, own) => {
+    const dx = q[0] - e[0], dy = q[1] - e[1], dz = q[2] - e[2], L = Math.hypot(dx, dy, dz);
+    if (L < 0.3) return false;
+    const d = [dx / L, dy / L, dz / L];
+    for (const k of colliders) {
+      if (k.off) continue;
+      const b = k.box;
+      if (b.max.y - b.min.y < 1.0 || b.max.y < eye.y - 0.4 || b.min.y > eye.y + 0.4) continue;
+      if (own && q[0] >= b.min.x && q[0] <= b.max.x && q[1] >= b.min.y && q[1] <= b.max.y && q[2] >= b.min.z && q[2] <= b.max.z) continue;   // the centre inside its own furniture
+      const t = rayBox(e, d, { min: [b.min.x, b.min.y, b.min.z], max: [b.max.x, b.max.y, b.max.z] }, L);
+      if (t != null && t < L - 0.1) return true;
+    }
+    return false;
+  };
+  const near = [Math.max(cand.min[0], Math.min(e[0], cand.max[0])), Math.max(cand.min[1], Math.min(e[1], cand.max[1])), Math.max(cand.min[2], Math.min(e[2], cand.max[2]))];
+  if (!hit(near, false)) return false;
+  return hit([(cand.min[0] + cand.max[0]) / 2, (cand.min[1] + cand.max[1]) / 2, (cand.min[2] + cand.max[2]) / 2], true);
 };
 // every visible interactable with its visible bounds (the sweep of tools/check-select-range.mjs, tests): [{ id, kind, min, max }]
 export function selectablesOf(interactables) {

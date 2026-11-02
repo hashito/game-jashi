@@ -1,4 +1,4 @@
-/* game-kit 244cbc9: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -107,8 +107,8 @@ table.axes td.stars { color: #e0a020; font-size: 1.25em; letter-spacing: 0.1em; 
 .share-buttons button { font: inherit; padding: 9px 6px; border-radius: 10px; border: 1px solid var(--gf-border-strong, #b8b0a0); background: var(--gf-surface, #fff); color: var(--ink); cursor: pointer; }
 .share-buttons .share-x { background: #000; color: #fff; border-color: #000; }
 .share-buttons .share-fb { background: #1b4f9a; color: #fff; border-color: #1b4f9a; }
-.share-buttons .share-line { background: #06a04a; color: #fff; border-color: #06a04a; }
-.share-buttons .share-ig { background: linear-gradient(45deg, #f2a43a, #d9406a, #7a46c8); color: #fff; border: none; }
+.share-buttons .share-line { background: #04783a; color: #fff; border-color: #04783a; }   /* AA with white text (#06a04a was 3.4:1; miru-fusha) */
+.share-buttons .share-ig { background: linear-gradient(45deg, #94500e, #a02448, #5a2c9c); color: #fff; border: none; }
 .share-note { min-height: 1.4em; color: #8a6a1a; font-size: 0.9em; }
 .ask { font-weight: 700; color: var(--gf-heading, #2f5e46); }
 

@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
 // The window manager of the standard UI shell (rules U12 / U14 / U21): ONE window at a time, a fixed size per breakpoint
 // (never changed by tabs or content: the content scrolls inside), larger on big screens (>= 900 x 700), ALWAYS top-anchored
 // (windows shown one after another keep their top edge in one place: a size s window after a size m one does not jump down),
@@ -188,6 +188,10 @@ export function createWindowManager(o = {}) {
       const made = typeof def === "function" ? def(opts) : def || {};
       const merged = { ...made, ...opts };
       if (!def && !merged.render) throw new Error(`win-manager: unknown window "${id}"`);
+      // a window opened by a key press ([E] on a thing): that press ends here, so the new window's own key handlers never see it and
+      // close the window again at once (miru-fusha 1.6.0: [E] on the projector opened the reels and the same E closed them)
+      const ev = typeof window !== "undefined" ? window.event : null;
+      if (ev && ev.type === "keydown") ev.stopPropagation();
       const wasOpen = !!cur;
       if (cur) closeCurrent(true);
       cur = { id, opts: merged, layer: null, win: null, body: null, opener: hasDom() ? document.activeElement : null, warm: warming };

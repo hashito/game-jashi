@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/ext.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: js/ext.js — edit in game-kit and run tools/kit-sync.js */
 // Extension points of the standard 3D first-person game (docs/standard-3d.md). Pure (no DOM, no THREE): runs in Node.
 // One events bus + small registries. Game-specific code lives in js/ext/*.js of the game and ONLY talks to the standard
 // through these (module-boundary rule: no module touches another module's DOM; use the bus and the data schemas).
@@ -15,6 +15,7 @@
 // Added in standard 1.1 (the 届けるな sample, docs/standard-feedback.md): what a game with its OWN world and its OWN rules engine needs.
 //   ext.registerWorld('plant', { build(ctx) -> world, createController?(ctx, opts) -> FirstPersonController-like })   // replaces world-from-plan (one per game)
 //   ext.registerPersist('rules', { serialize(ctx) -> json, restore(json, ctx) })       // saved with the standard save (snapshot.ext.<id>)
+//   ext.registerRender((dt, ctx, look) => { ... })                                        // the game draws each frame itself (own post pass; look.update / look.render are not called)
 //   ext.registerSystem('hud', { create?(ctx) -> any, update(dt, ctx, active) })        // per-frame code that is not a monster
 //   ext.registerBoot('prewarm', async (ctx, report) => {})                             // behind the title: report(0..1, 'text') while it loads; the start button waits
 //   ext.registerTitleButton('chapters', { label, order?, when?(ctx), run(ctx) })        // extra buttons on the title (chapter select, gallery, credits)
@@ -113,6 +114,7 @@ export function createExtensions() {
     death: createRegistry('death', (d) => fn(d, 'run')),
     look: createRegistry('look', (d) => fn(d, 'create')),
     itemKind: createRegistry('itemKind', (d) => fn(d, 'make')),
+    render: createRegistry('render', (d) => fn(d, 'render')),
   };
   return {
     bus, reg, ...bus,
@@ -130,6 +132,7 @@ export function createExtensions() {
     registerTitleButton: (id, d) => reg.title.register(id, { order: 100, ...d }),
     registerUi: (section, d) => reg.ui.register(section, d),
     registerDeath: (d) => reg.death.register('death', d),
+    registerRender: (d) => reg.render.register('render', typeof d === 'function' ? { render: d } : d),   // standard 1.10.7: a game draws the frame itself (its own post pass): render(dt, ctx, look) replaces look.update + look.render
     registerItemKind: (kind, d) => reg.itemKind.register(kind, typeof d === 'function' ? { make: d } : d),   // standard 1.9: a game's own item model (game.json itemKinds lists it)
     registerSpotFx: (name, make, label) => registerSpotFx(name, make, label),   // standard 1.9: a game's own 'it saw you' effect (js/spot-fx.js)
     registerNoise: (name, def) => registerNoise(name, def),   // standard 1.9: a game's own audio.noise (js/step-sound.js)

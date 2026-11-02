@@ -1,4 +1,4 @@
-/* game-kit 6966c27: js/ui.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: js/ui.js — edit in game-kit and run tools/kit-sync.js */
 // Windows and short messages over a first-person game (style: css/kit.css). From ひだまり薬局 js/ui.js.
 // One window at a time; while one is open the controller should not move (pass `isBlocked: () => !!ui.open`).
 //
@@ -52,9 +52,11 @@ export function keyText(text, input = 'mouse') {
 
 export class SayLine {
   // timer / clear are wrapped: a browser throws "Illegal invocation" when setTimeout is called as a method of another object (this.timer(...))
-  constructor({ show, hide, now = () => performance.now() / 1000, timer = (f, ms) => setTimeout(f, ms), clear = (h) => clearTimeout(h), max = 6 } = {}) {
-    Object.assign(this, { show, hide, now, timer, clear, max });
-    this.q = []; this.cur = null; this.hideT = null; this.waitT = null;
+  // held(): true while something covers the band (a window, a game's intro): the shown line keeps its time and the next one waits
+  // (1.10.8: the opening narration of 坑口 ran out under the radio window, the goal lines of 浦川 under the intro cards)
+  constructor({ show, hide, now = () => performance.now() / 1000, timer = (f, ms) => setTimeout(f, ms), clear = (h) => clearTimeout(h), max = 6, held = null } = {}) {
+    Object.assign(this, { show, hide, now, timer, clear, max, held });
+    this.q = []; this.cur = null; this.hideT = null; this.waitT = null; this.pollT = null; this.polledAt = null;
     this.log = [];   // every line shown, oldest first (the last 60): the 言葉の記録 tab reads it, so nothing said is lost
   }
   remember(html) { const last = this.log[this.log.length - 1]; if (last && last.html === html) return; this.log.push({ html, at: Date.now() }); if (this.log.length > 60) this.log.shift(); }
@@ -69,8 +71,25 @@ export class SayLine {
     while (this.q.length > this.max) { const i = this.q.findIndex((x) => !/class="who"/.test(x.html)); this.q.splice(i >= 0 ? i : 0, 1); }   // a crowded queue drops a thought before a spoken line
     this.next();
   }
+  isHeld() { try { return !!(this.held && this.held()); } catch { return false; } }
+  // while held, push the shown line's times forward by the time it was covered (checked every 0.2 s while there is anything to say)
+  poll() {
+    if (!this.held || this.pollT) return;
+    this.polledAt = this.now();
+    this.pollT = this.timer(() => {
+      this.pollT = null;
+      const t = this.now(), dt = t - this.polledAt;
+      if (this.cur && this.isHeld()) { this.cur.hideAt += dt; this.cur.readyAt += dt; this.arm(); }
+      if (this.cur || this.q.length) this.poll();
+    }, 200);
+  }
   next(force = false) {
     const t = this.now();
+    if (this.held) this.poll();
+    if (!force && this.q.length && this.isHeld()) {   // nothing new under a cover: it waits until the cover is gone
+      if (!this.waitT) this.waitT = this.timer(() => { this.waitT = null; this.next(); }, 250);
+      return;
+    }
     if (!force && this.cur && t < this.cur.readyAt) {
       if (!this.waitT) this.waitT = this.timer(() => { this.waitT = null; this.next(); }, (this.cur.readyAt - t) * 1000 + 20);
       return;
@@ -93,7 +112,7 @@ export class KitUI {
     this.o = o;
     this.root = ensure("ui");
     this.sayEl = ensure("say", ensure("hud"));
-    this.sayLine = new SayLine({ show: (html, n) => { this.sayEl.innerHTML = html; this.sayEl.classList.toggle("long", n > 44); this.sayEl.classList.add("on"); }, hide: () => this.sayEl.classList.remove("on") });
+    this.sayLine = new SayLine({ held: o.sayHeld || null, show: (html, n) => { this.sayEl.innerHTML = html; this.sayEl.classList.toggle("long", n > 44); this.sayEl.classList.add("on"); }, hide: () => this.sayEl.classList.remove("on") });
     this.lane = o.lane || null;   // a ToastLane (js/toast-lane.js): toasts go there (rule U27); without it the legacy #toasts box
     this.toastsEl = this.lane ? null : ensure("toasts", ensure("hud"));
     this.open = null;

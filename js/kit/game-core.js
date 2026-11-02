@@ -1,4 +1,4 @@
-/* game-kit 244cbc9: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.4';
+export const CORE_VERSION = '1.10.8';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -178,7 +178,7 @@ export function createGame(cfg) {
   ctx.isTouch = inputMode.touch; ctx.input = inputMode.mode;
   // HUD slots + toast lane (rule U27, docs/hud-slots.md): one region per HUD part; every short notification is an item of the lane (top centre, below the top stacks)
   const slots = ensureHudSlots(hud);
-  const lane = ctx.lane = new ToastLane({ el: slots.lane, paused: () => !!((ctx.wm && ctx.wm.isOpen) || (ctx.ui && ctx.ui.open)), calm: () => ctx.calm || document.documentElement.hasAttribute('data-gf-calm'), fit: () => { layoutHudSlots(); return laneFree(); }, onChange: scheduleHudLayout });
+  const lane = ctx.lane = new ToastLane({ el: slots.lane, paused: () => !!((ctx.wm && ctx.wm.isOpen) || (ctx.ui && ctx.ui.open)) || (ctx.sayHold || []).some((f) => { try { return !!f(); } catch { return false; } }),   /* a game's own cover holds the notices too (1.10.8) */ calm: () => ctx.calm || document.documentElement.hasAttribute('data-gf-calm'), fit: () => { layoutHudSlots(); return laneFree(); }, onChange: scheduleHudLayout });
   ctx.registerHudPart = registerHudPart;
   registerHudPart('prompt', { slot: 'prompt' });
   if ($('t-menu')) registerHudPart('pause-menu', { slot: 'tr', order: -20, move: false });
@@ -289,7 +289,8 @@ export function createGame(cfg) {
   };
 
   // short messages (say / toast) and progress-ui's dialogs: KitUI. Menus, tabs, docs, endings: the window manager (ONE window at a time).
-  const ui = ctx.ui = new KitUI({ lane, onOpen: (n) => onUiOpen(n), onClose: (n) => onUiClose(n) });
+  ctx.sayHold = ctx.sayHold || [];   // a game adds () => true while its own cover (an intro, a cut-in) hides the say band: the line waits (1.10.8)
+  const ui = ctx.ui = new KitUI({ lane, sayHeld: () => !!((ctx.wm && ctx.wm.isOpen) || (ctx.ui && ctx.ui.open)) || ctx.sayHold.some((f) => { try { return !!f(); } catch { return false; } }), onOpen: (n) => onUiOpen(n), onClose: (n) => onUiClose(n) });
   const wm = ctx.wm = createWindowManager({ container: body, thought: '#say', onPause: (p) => { if (p) ctx.fp && ctx.fp.release(); else setTimeout(() => { if (state.started && !state.ended && !ui.open && !blocked()) ctx.fp.lock(); }, 0); } });   // the lock waits one tick: a window opened right after the last one closed (a result, the next page) must not get a lock landing over it
   wm.on('open', (id) => bus.emit('ui:open', { name: id })); wm.on('close', (id) => bus.emit('ui:close', { name: id }));
   function onUiOpen(n) { ctx.fp && ctx.fp.release(); bus.emit('ui:open', { name: n }); }
@@ -460,7 +461,11 @@ export function createGame(cfg) {
   ctx.pickNow = pickNow; ctx.selectables = () => selectablesOf(world.interactables);   // the same pick as every frame, for the selection checks (tools/check-select-range.mjs --preset core)
   exposeGf({ snapshot: () => ({ target: target && { kind: target.kind, id: target.id, distance: target.distance, via: target.via }, prompt: ($('prompt') || {}).textContent || '' }), pick: pickNow, selectables: () => selectablesOf(world.interactables), tap: (x, y) => ctx.tapSelect(x, y) });
   // W18: a tap on a thing on the screen selects it and uses it (the finger's radius is >= 44 px); worlds with their own pick() provide world.pickAt(x, y, ctx)
-  ctx.tapSelect = (x, y) => { if (blocked() || !state.started) return false; const t = world.pickAt ? world.pickAt(x, y, ctx) : pickInteractableAt(camera, world.interactables, x, y, innerWidth, innerHeight, 2.4, { colliders: world.colliders }); if (!t) return false; target = ctx.target = t; return ctx.interact(); };
+  // a tap uses the thing on pointerup; the click the browser sends after it must not land on the window the thing opened (yakkyoku 1.5.0:
+  // a row of the schedule opened a case). For 450 ms after a tap use, clicks inside a window are dropped.
+  let tapUsedAt = -1e9;
+  document.addEventListener('click', (e) => { if (performance.now() - tapUsedAt < 450 && e.target.closest && e.target.closest('.wm-layer')) { e.preventDefault(); e.stopPropagation(); } }, true);
+  ctx.tapSelect = (x, y) => { if (blocked() || !state.started) return false; const t = world.pickAt ? world.pickAt(x, y, ctx) : pickInteractableAt(camera, world.interactables, x, y, innerWidth, innerHeight, 2.4, { colliders: world.colliders }); if (!t) return false; target = ctx.target = t; const used = ctx.interact(); if (used) tapUsedAt = performance.now(); return used; };
   ctx.interact = () => { if (blocked() || !target) return false; const h = handlerOf(target.kind); if (!h) return false; bus.emit('player:interact', { kind: target.kind, id: target.id }); h.run(target, ctx); return true; };
   // floors: a stairs / lift end ({ to: { x, z, floor, yaw } }) moves the player; worlds without stairs never call it
   ctx.setFloor = (floor, p = null) => { const from = ctx.floor; if (p) { placeCamera(p.x, p.z, floor); if (p.yaw != null) fp.yaw = p.yaw; } else placeCamera(camera.position.x, camera.position.z, floor); if (from !== floor) bus.emit('player:floor', { from, to: floor }); };
@@ -768,7 +773,8 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     for (const m of monsters) m.inst && m.inst.update && m.inst.update(dt, ctx);
     for (const s of systems) s.def.update(dt, ctx, active, s.inst);
     if (ctx.audio.ctx) safe(() => ctx.audio.setListener(camera));
-    look.update(dt, t / 1000, camera.position); look.render();
+    const own = ext.reg.render.get('render');
+    if (own) own.render(dt, ctx, look); else { look.update(dt, t / 1000, camera.position); look.render(); }   // registerRender: the game draws the frame (arakawa, heiengo)
   });
   // GA4 events (no-ops unless the site build injected gtag)
   bus.on('game:start', () => track('game_start', { game: manifest.id, version: manifest.version }));

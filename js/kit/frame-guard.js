@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/frame-guard.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit d62d2ac: js/frame-guard.js — edit in game-kit and run tools/kit-sync.js */
 // Frame pacing guard for three.js games: find and remove hitches (カクつき).
 // No three.js import (renderer / scene are duck-typed), so the logic runs and is tested in Node.
 //  - FrameStats: frame times in a ring buffer, p50 / p95 / p99 / max, a log of hitches with what the frame did
@@ -18,7 +18,7 @@
 //   renderer.setAnimationLoop((t) => { const dt = fg.frame(t); jobs.run(); update(dt); renderer.render(scene, camera); });
 
 const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
-const probe = () => (typeof window !== "undefined" && window.__perf ? window.__perf : null);
+const probe = () => (typeof window !== "undefined" && window.__perf && typeof window.__perf.mark === "function" && typeof window.__perf.note === "function" ? window.__perf : null);   // a game's own __perf helper is not the probe (heiengo)
 
 // percentile of an array of numbers (q in 0..1), nearest-rank
 export function percentile(arr, q) {
