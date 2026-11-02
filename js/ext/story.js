@@ -16,6 +16,7 @@ import timing from '../kit/mg-timing.js';
 import searchDark from '../kit/mg-search-dark.js';
 import pumpGauge from '../kit/mg-pump-gauge.js';
 import holdBreath from '../kit/mg-hold-breath.js';
+import photoFocus from '../kit/mg-photo-focus.js';
 import { createFear } from '../kit/fear-fx.js';
 import { showEndingScene } from '../kit/ending-scene.js';
 import { dressMountain } from './mountain.js';
@@ -65,7 +66,7 @@ export default function story(ext, shared) {
   const MGX = useMinigames(ext, [
     [steadyHand, { type: 'steady-hand' }],
     [tuneRadio, { type: 'tune-radio', hooks: { sound: (k, c, v) => snd && snd.radioStatic(k !== 'ok' && k !== 'done', typeof v === 'number' ? v : 0) } }],
-    [sortItems, { type: 'sort-items' }], [timing, { type: 'timing' }], [searchDark, { type: 'search-dark' }], [pumpGauge, { type: 'pump-gauge', hooks: { sound: () => snd && snd.chain() } }],
+    [sortItems, { type: 'sort-items' }], [timing, { type: 'timing' }], [photoFocus, { type: 'photo-focus' }], [searchDark, { type: 'search-dark' }], [pumpGauge, { type: 'pump-gauge', hooks: { sound: () => snd && snd.chain() } }],
     [holdBreath, { type: 'hold-breath', hooks: { sound: (k) => { if (!snd) return; if (k === 'near' || k === 'step') snd.steps({ gain: 0.8 }); if (k === 'fail') snd.breath(); } } }],
   ]);
   // a task's own mini game inside its run() (talk before / after it)
@@ -133,6 +134,13 @@ export default function story(ext, shared) {
     if (!ok) { gaze.state.sanity = Math.max(20, gaze.state.sanity - 30); fear.kick(1); snd.sting(); say('息が漏れた。戸の隙間に、白い指が見えた。……今は、離れていく。', 5); }
     return true;
   }, onDone: () => talk('crank', { title: '避難小屋' }) });
+  // 山道の記録 (5.2): three eyes carved into cedars; each shot says where the next one is, the third one is watched back
+  ext.registerTask('T_MARK1', { onDone: () => talk('mark1', { title: '伐採跡の杉' }) });
+  ext.registerTask('T_MARK2', { onDone: () => talk('mark2', { title: '林道の奥の杉' }) });
+  ext.registerTask('T_MARK3', { onDone: async () => {
+    snd.sting(); fear.kick(0.6); gaze.state.sanity = Math.max(25, gaze.state.sanity - 12);
+    await talk('mark3', { title: '沢の下手の杉' });
+  } });
   ext.registerTask('T_PHONE', { run: async () => {
     snd.ring(0.3); await wait(1.4);
     const v = await ctx.choose({ who: '着信', title: '泥の中の携帯電話', text: '圏外のはずの画面に「着信」とだけ出ている。出るか。', options: [{ id: 'no', label: '出ない' }, { id: 'yes', label: '出る', primary: true }] });

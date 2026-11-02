@@ -1,5 +1,5 @@
 {
-  "kit": "9a50101",
+  "kit": "095de84",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -87,7 +87,8 @@
     "mg-search-dark",
     "mg-pump-gauge",
     "mg-hold-breath",
-    "interior-finish"
+    "interior-finish",
+    "flavor"
   ],
   "css": "css/kit.css",
   "cssExtra": [
@@ -237,7 +238,8 @@
     "tools/check-traps.mjs": "4390617a5164",
     "tools/build-site.js": "2743c81000d9",
     "tools/smoke.mjs": "0fb6ac716f86",
-    "tools/review-shots.mjs": "0607446e3242"
+    "tools/review-shots.mjs": "0607446e3242",
+    "js\\kit\\flavor.js": "a1213cf1f2bc"
   },
   "textures": []
 }

@@ -71,6 +71,10 @@ const stations = [
   { id: 'S_BELL', room: 'O_TIMBER_E', x: -12.7, z: -6, label: '林業用の呼び鐘' },
   { id: 'S_CRANK', room: 'SHELTER', x: 15.4, z: -17.2, label: '小屋の床' },
   { id: 'S_PHONE', room: 'O_EAST_SM', x: 17.6, z: -23, label: '泥の中の携帯電話' },
+  // 山道の記録 (5.2: the mid-game quest that lengthens play): three cedars with an eye carved into the bark, filmed one after another
+  { id: 'S_MARK1', room: 'O_TIMBER_W', x: -24.2, z: -11, label: '目の刻まれた杉' },
+  { id: 'S_MARK2', room: 'O_SOUTH', x: -1.5, z: -25, label: '苔むした刻み目の杉' },
+  { id: 'S_MARK3', room: 'O_EAST_S', x: 22.6, z: -26, label: '白い布の巻かれた杉' },
   { id: 'S_GATE', room: 'O_FRONT', x: -14.6, z: 13.6, label: 'ゲートの巻上げ箱' },
   { id: 'S_CAR', room: 'O_PARK', x: -25.6, z: 22.6, label: '叔父の車' },
 ];

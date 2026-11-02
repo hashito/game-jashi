@@ -240,6 +240,111 @@
   ]
  },
  {
+  "id": "T_MARK1",
+  "title": "伐採跡の杉の刻み目を撮る",
+  "stage": "L5",
+  "room": "O_TIMBER_W",
+  "station": "S_MARK1",
+  "needs": [
+   "T_BOTTLE"
+  ],
+  "meaning": "物置の裏の杉に、目の形の刻み目がある。修司は「あれが通った跡には印が残る」と言っていた。記録に残しておく。",
+  "hint": "物置の裏から、西の伐採跡へ。刻み目は目の高さにある。",
+  "minigame": {
+   "type": "photo-focus",
+   "cfg": {
+    "title": "DVカメラ：刻み目を撮る",
+    "help": "ピントを合わせ、刻み目が枠に収まるところで撮ってください。",
+    "image": "assets/photos/mark-1.webp",
+    "focus": 0.58,
+    "zoom": 0.66
+   }
+  },
+  "steps": [
+   {
+    "text": "西の伐採跡へ",
+    "body": "物置の裏から西へ。杉の幹に、目の形の刻み目があります。",
+    "done": "look",
+    "emphasis": "station:S_MARK1"
+   },
+   {
+    "text": "刻み目を撮る",
+    "body": "杉を調べて、DVカメラで撮ります。",
+    "done": "task"
+   }
+  ]
+ },
+ {
+  "id": "T_MARK2",
+  "title": "林道の奥の刻み目を撮る",
+  "stage": "L5",
+  "room": "O_SOUTH",
+  "station": "S_MARK2",
+  "needs": [
+   "T_MARK1"
+  ],
+  "meaning": "一つ目の刻み目は、南を向いていた。林道の奥にも、同じ印があるはずだ。",
+  "hint": "橋を渡って、林道の奥へ。道の脇の太い杉。",
+  "minigame": {
+   "type": "photo-focus",
+   "cfg": {
+    "title": "DVカメラ：苔の下の刻み目",
+    "help": "古い刻み目です。ピントを合わせ、二つの目が枠に入るところで撮ってください。",
+    "image": "assets/photos/mark-2.webp",
+    "focus": 0.4,
+    "zoom": 0.74
+   }
+  },
+  "steps": [
+   {
+    "text": "林道の奥へ",
+    "body": "沢の橋を渡り、林道を南へ進みます。",
+    "done": "look",
+    "emphasis": "station:S_MARK2"
+   },
+   {
+    "text": "刻み目を撮る",
+    "body": "道の脇の杉を調べて、撮ります。",
+    "done": "task"
+   }
+  ]
+ },
+ {
+  "id": "T_MARK3",
+  "title": "沢の下手の刻み目を撮る",
+  "stage": "L5",
+  "room": "O_EAST_S",
+  "station": "S_MARK3",
+  "needs": [
+   "T_MARK2"
+  ],
+  "meaning": "二つの目は、沢の方を見ていた。沢の下手に、最後の印がある。",
+  "hint": "林道の奥から東へ、沢の下手。白い布が巻かれた杉。",
+  "minigame": {
+   "type": "photo-focus",
+   "cfg": {
+    "title": "DVカメラ：白い布の杉",
+    "help": "ピントを合わせ、刻み目と布が枠に入るところで撮ってください。",
+    "image": "assets/photos/mark-3.webp",
+    "focus": 0.7,
+    "zoom": 0.6
+   }
+  },
+  "steps": [
+   {
+    "text": "沢の下手へ",
+    "body": "林道の奥から東へ、沢に沿って下ります。",
+    "done": "look",
+    "emphasis": "station:S_MARK3"
+   },
+   {
+    "text": "刻み目を撮る",
+    "body": "白い布の巻かれた杉を調べて、撮ります。",
+    "done": "task"
+   }
+  ]
+ },
+ {
   "id": "T_PHONE",
   "title": "鳴っている携帯電話を拾う",
   "stage": "L5",

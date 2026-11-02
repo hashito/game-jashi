@@ -306,13 +306,13 @@
   },
   {
    "id": "D_BALC",
-   "look": "none",
    "a": "CAB_UP",
    "b": "CAB_BALC",
    "x": 0,
    "z": 19,
    "width": 1.6,
    "label": "ベランダの戸",
+   "look": "none",
    "reason": "the balcony opens off the workroom"
   },
   {
@@ -346,37 +346,37 @@
   },
   {
    "id": "D_SHED",
-   "look": "slide",
    "a": "SHED",
    "b": "O_TIMBER_N",
    "x": -19.5,
    "z": -1,
    "width": 1.6,
+   "look": "slide",
    "label": "物置の引戸",
    "unlock": "shed",
    "hint": "物置の鍵は、書き置きと一緒に机にあるはずだ。"
   },
   {
    "id": "D_SHELTER",
-   "look": "slide",
    "a": "SHELTER",
    "b": "O_EAST_N",
    "x": 16,
    "z": -13,
    "width": 1.6,
+   "look": "slide",
    "label": "避難小屋の引戸",
    "unlock": "shelter",
    "hint": "小屋の戸は閉まっている。先に物置の支度を。"
   },
   {
    "id": "D_GATE",
-   "look": "none",
    "a": "O_FRONT",
    "b": "O_PARK",
    "x": -16,
    "z": 16,
    "width": 3.6,
    "label": "林道ゲート",
+   "look": "none",
    "unlock": "gate",
    "hint": "鎖のゲートが下りている。巻上げの箱にハンドルを差して上げる。",
    "reason": "the forest road gate (a chain bar, lifted by the crank)"
@@ -591,6 +591,27 @@
    "x": 17.6,
    "z": -23,
    "label": "泥の中の携帯電話"
+  },
+  {
+   "id": "S_MARK1",
+   "room": "O_TIMBER_W",
+   "x": -24.2,
+   "z": -11,
+   "label": "目の刻まれた杉"
+  },
+  {
+   "id": "S_MARK2",
+   "room": "O_SOUTH",
+   "x": -1.5,
+   "z": -25,
+   "label": "苔むした刻み目の杉"
+  },
+  {
+   "id": "S_MARK3",
+   "room": "O_EAST_S",
+   "x": 22.6,
+   "z": -26,
+   "label": "白い布の巻かれた杉"
   },
   {
    "id": "S_GATE",

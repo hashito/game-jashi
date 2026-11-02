@@ -378,6 +378,62 @@
           "shot": true
         },
         {
+            "name": "mark1",
+            "tasks": [
+              "T_TELESCOPE",
+              "T_SHUTTER",
+              "T_RADIO",
+              "T_BOTTLE",
+              "T_BELL"
+            ],
+            "at": {
+              "x": -22.7,
+              "z": -11,
+              "floor": 0,
+              "yaw": 1.5708,
+              "pitch": 0.02
+            },
+            "shot": true
+        },
+        {
+            "name": "mark1-mg",
+            "close": false,
+            "keys": [
+              "KeyE"
+            ],
+            "wait": 1500,
+            "shot": true,
+            "expect": "document.querySelector('.mgx-photo') ? true : 'no photo mini game'"
+        },
+        {
+            "name": "mark2",
+            "tasks": [
+              "T_MARK1"
+            ],
+            "at": {
+              "x": 0.1,
+              "z": -25,
+              "floor": 0,
+              "yaw": 1.5708,
+              "pitch": 0.02
+            },
+            "shot": true
+        },
+        {
+            "name": "mark3",
+            "tasks": [
+              "T_MARK2"
+            ],
+            "at": {
+              "x": 21.0,
+              "z": -26,
+              "floor": 0,
+              "yaw": -1.5708,
+              "pitch": 0.0
+            },
+            "shot": true
+        },
+        {
           "name": "hut-table",
           "focus": {
             "x": 15.8,

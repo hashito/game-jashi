@@ -2,8 +2,8 @@
   "id": "jashi",
   "title": "邪視 ― 視線の山",
   "subtitle": "目を合わせずに、日が暮れる前に山を下りる",
-  "version": "5.1.1",
-  "standard": "1.9",
+  "version": "5.2.0",
+  "standard": "1.10",
   "theme": "dark-industrial fog-forest jashi",
   "themeColors": {
     "from": "fog-forest",
@@ -158,7 +158,8 @@
     "releaseNotes": "data/release-notes.json",
     "monsters": "data/monsters.json",
     "things": "data/things.json",
-    "talk": "data/talk.json"
+    "talk": "data/talk.json",
+    "flavor": "data/flavor.json"
   },
   "titleImage": "assets/title-forest-v4-2.webp",
   "media": {

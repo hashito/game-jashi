@@ -29,7 +29,7 @@ for (let i = 0; i < 50; i++) { if (await fetch(base).then((r) => r.ok).catch(() 
 // in-page helpers: close every window (level-up notes arrive a moment after a task), aim at a point from a clear side, read the screen
 const HELPERS = `window.__rv = {
   async closeAll() { const g = window.__game; let calm = 0;
-    for (let i = 0; i < 40 && calm < 3; i++) { if ((g.wm && g.wm.isOpen) || (g.ui && g.ui.open)) { calm = 0; g.wm && g.wm.isOpen && g.wm.close(); g.ui && g.ui.open && g.ui.close && g.ui.close(); } else calm++; await new Promise((r) => setTimeout(r, 150)); } },
+    for (let i = 0; i < 40 && calm < 3; i++) { const mg = document.getElementById('mg-custom'); if ((g.wm && g.wm.isOpen) || (g.ui && g.ui.open) || mg) { calm = 0; g.wm && g.wm.isOpen && g.wm.close(); g.ui && g.ui.open && g.ui.close && g.ui.close(); if (mg) { const x = [...mg.querySelectorAll('button')].find((b) => /閉じる|やめる|戻る/.test(b.textContent)); x ? x.click() : document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true })); } } else calm++; await new Promise((r) => setTimeout(r, 150)); } },
   async focus(f) { const g = window.__game, THREE = await import('three'); const T = new THREE.Vector3(f.x, f.y ?? 1, f.z), floorY = (f.floor || 0) * 3.2;
     const boxes = (g.world.colliders || []).map((c) => c.box || c).filter((b) => b && b.max && !(b.off));
     const best = []; const dist = f.dist || 1.6;

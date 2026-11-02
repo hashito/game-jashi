@@ -165,6 +165,10 @@
           "open": {
             "type": "boolean",
             "description": "an opening without a door panel, always open (e.g. between two outdoor areas)"
+          },
+          "look": {
+            "enum": ["swing", "slide", "fusuma", "glass", "none", "ladder", "flight"],
+            "description": "how the door is drawn (standard 1.10.2): swing | slide | fusuma | glass | none (the game draws it); on a stairs door: ladder (default) | flight"
           }
         }
       }
@@ -334,6 +338,10 @@
           "type": "number"
         }
       }
+    },
+    "doorLook": {
+      "enum": ["swing", "slide", "fusuma", "glass", "none"],
+      "description": "the plan's default door look (standard 1.10.2; default swing)"
     },
     "exits": {
       "type": "array",

@@ -267,7 +267,27 @@ export function dressMountain(ctx) {
   // the stations that have a model here (telescope, radio, shelf, bell, crank box, car, phone, the hut floor, the amado pull): their
   // marker boxes are not drawn (G1: no plain boxes), they stay as the thing to select
   const unseen = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
-  for (const id of ['S_TELESCOPE', 'S_SHUTTER', 'S_RADIO', 'S_SHELF', 'S_BELL', 'S_CRANK', 'S_PHONE', 'S_GATE', 'S_CAR']) {
+  // 山道の記録 (5.2): three cedars with an eye carved into the bark (the stations S_MARK1-3), the carving facing the path; each trunk
+  // stands on its station, and the station box is wrapped round the trunk at eye height
+  { const wood = mat(0xcaa47a, { roughness: 0.8 }), old = mat(0x6d6a4a, { roughness: 1 }), slit = mat(0x1a120c), cloth = mat(0xe8e4d8, { roughness: 1 });
+    const MARKS = [{ id: 'S_MARK1', face: Math.PI / 2, kind: 'fresh' }, { id: 'S_MARK2', face: Math.PI / 2, kind: 'old' }, { id: 'S_MARK3', face: -Math.PI / 2, kind: 'cloth' }];
+    for (const mk of MARKS) {
+      const st = (plan.stations || []).find((x) => x.id === mk.id); if (!st) continue;
+      const fx = Math.sin(mk.face), fz = Math.cos(mk.face), tx = st.x, tz = st.z;
+      const g = named(`mark:${mk.id}`); g.position.set(tx, 0, tz); g.rotation.y = mk.face;
+      cyl(0.36, 0.5, 10, M.bark, 0, 5, 0, 12, g);
+      addCol(tx - 0.4, tz - 0.4, tx + 0.4, tz + 0.4, 0, 4);
+      const eye = (y, sc, m) => { const e = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), m); e.scale.set(0.15 * sc, 0.3 * sc, 0.05); e.position.set(0, y, 0.47); g.add(e);
+        box(0.025 * sc, 0.22 * sc, 0.03, slit, 0, y, 0.515, g); };
+      if (mk.kind === 'old') { eye(1.75, 0.8, old); eye(1.2, 0.6, old); }
+      else eye(1.55, 1, wood);
+      if (mk.kind === 'cloth') { const band = cyl(0.42, 0.44, 0.22, cloth, 0, 1.05, 0, 14, g); band.castShadow = false; }
+      // the station's box (kit: 0.9 x 1.1 x 0.5 on the ground) wraps the trunk from 0.8 to 1.9 m, so looking at the tree from any side selects it
+      const sm = world.group.getObjectByName(`station:${mk.id}`);
+      if (sm) { const was = new THREE.Box3().setFromObject(sm), c0 = was.getCenter(V3(0, 0, 0)); sm.position.y += 0.8; sm.scale.set(1.25, 1, 2.2); sm.updateMatrixWorld(true); for (const c of world.colliders) if (c.box && c.box.containsPoint(c0) && Math.abs(c.box.max.y - was.max.y) < 0.01) c.box.setFromObject(sm); }
+    }
+  }
+  for (const id of ['S_TELESCOPE', 'S_SHUTTER', 'S_RADIO', 'S_SHELF', 'S_BELL', 'S_CRANK', 'S_PHONE', 'S_GATE', 'S_CAR', 'S_MARK1', 'S_MARK2', 'S_MARK3']) {
     const m = world.group.getObjectByName(`station:${id}`); if (!m) continue;
     m.traverse((o) => { if (o.isMesh) o.material = unseen; });
   }
