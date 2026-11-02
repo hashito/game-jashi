@@ -1,4 +1,4 @@
-/* game-kit 9a50101: js/flavor.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b995134: js/flavor.js — edit in game-kit and run tools/kit-sync.js */
 // Flavor lines (standard 1.10; feedback 2026-11-02 「フレーバーテキストを全体に追加するべき。『嫌な匂いがする』など、雰囲気を出す目的」):
 // short thoughts that only set the mood - a smell, a sound, the cold, something out of place - said in the thought band when the player
 // first enters a room, comes near a spot, or has walked a while in silence. They never carry a hint the game needs (that belongs in tasks
@@ -76,8 +76,9 @@ export function installFlavor(ctx, data) {
     if (!ctx.state.started) return;
     const p = ctx.camera.position, ui = ctx.ui;
     const blocked = !active || (ctx.wm && ctx.wm.isOpen) || (ui && ui.open) || !!(ctx.fxState && (ctx.fxState.chasing || ctx.fxState.danger > 0.5)) || !!ctx.flavorOff;
-    const busy = !!(ui && ui.sayLine && (ui.sayLine.cur || ui.sayLine.q.length));
-    const t = picker.tick(Math.min(dt, 0.25), { stage: stageId(), room: ctx.state.room, x: p.x, z: p.z, floor: ctx.floor || 0, busy, blocked });
+    // ctx.sayBusy: functions a game adds when it has its own queue of lines (tidegate's radio): a mood line waits for them
+    const busy = !!(ui && ui.sayLine && (ui.sayLine.cur || ui.sayLine.q.length)) || (ctx.sayBusy || []).some((f) => { try { return !!f(); } catch { return false; } });
+    const t = picker.tick(Math.min(dt, 0.25), { stage: stageId(), room: ctx.state.room, x: p.x, z: p.z, floor: ctx.world && typeof ctx.world.floorOf === 'function' ? ctx.world.floorOf(p.y) : ctx.floor || 0, busy, blocked });
     if (t) { ctx.monologue(t, 4.5); ctx.bus.emit('flavor:said', { text: t }); }
   };
   return { picker, update };

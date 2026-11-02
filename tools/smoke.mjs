@@ -31,10 +31,13 @@ const expect = (ok, m) => { if (!ok) fail(m); else log('ok  ', m); };
 try {
   await p.goto(`${base}?qa=1${mobile ? '&touch=1' : ''}`);
   await p.waitFor("window.__game && document.getElementById('start-btn') && !document.getElementById('start-btn').disabled", 90000);   // the button is disabled while the boot steps run
+  // a game that shows its own card after the start button (miru-delivery's 「今夜の仕事」 #controls: クリック（タップ）で始める) is tapped through, as a player would
+  const passStartCard = async () => { for (let i = 0; i < 20; i++) { await p.sleep(150); if (await p.eval('!!(window.__game && __game.state.started)')) return; const c = await p.eval("(() => { const e = document.getElementById('controls'); if (!e || e.classList.contains('hidden') || getComputedStyle(e).display === 'none') return ''; const b = e.getBoundingClientRect(); return JSON.stringify({ x: b.x + b.width / 2, y: b.y + b.height - 20 }); })()"); if (c) { const q = JSON.parse(c); await p.click(q.x, q.y); return; } } };
   await shot('title');
   // a short landscape phone scrolls the title: bring the button into view before tapping it
   const r = await p.eval("(() => { const b = document.getElementById('start-btn'); b.scrollIntoView({ block: 'center' }); return JSON.stringify(b.getBoundingClientRect()); })()").then(JSON.parse);
   await p.click(r.x + r.width / 2, r.y + r.height / 2);
+  await passStartCard();
   await p.waitFor('__game.state.started', 10000);
   await sleep(500);
   expect((await G('g.world.roomAt(g.camera.position.x, g.camera.position.z)')) !== null, 'the player starts inside a room');
@@ -121,6 +124,7 @@ try {
         await p.waitFor("window.__game && document.getElementById('continue-btn') && !document.getElementById('continue-btn').classList.contains('hidden') && !document.getElementById('start-btn').disabled", 90000);   // shown before the boot steps end: wait for them (slow phones)
         const rect = JSON.parse(await p.eval("(() => { const b = document.getElementById('continue-btn'); b.scrollIntoView({ block: 'center' }); return JSON.stringify(b.getBoundingClientRect()); })()"));
         await p.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        await passStartCard();
         await p.waitFor('__game.state.started', 10000);
         expect(JSON.stringify(before) === JSON.stringify(await G('[g.state.tasks, g.state.docsRead, g.state.inv]')), 'reload restores tasks, documents and inventory');
         resumed = true;

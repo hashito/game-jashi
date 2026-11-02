@@ -1,4 +1,4 @@
-/* game-kit 9a50101: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b995134: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.2';
+export const CORE_VERSION = '1.10.3';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -502,7 +502,8 @@ export function createGame(cfg) {
   const kt = (x) => (x == null ? x : keyText(x, ctx.input === 'pad' ? 'pad' : ctx.isTouch ? 'touch' : 'mouse'));   // the step card's key names follow the device
   ctx.keyText = kt; ui.keys = () => (ctx.input === 'pad' ? 'pad' : ctx.isTouch ? 'touch' : 'mouse');
   function refreshGuide() {
-    const t = tasks.find((x) => x.steps && x.steps.length && ctx.canStart(x) === true) || null;
+    const ok = (x) => x.steps && x.steps.length && ctx.canStart(x) === true;   // a required task first: an optional one (shiogaeri's 量水標) only when nothing required has steps
+    const t = tasks.find((x) => ok(x) && !x.optional) || tasks.find(ok) || null;
     if ((t && guideTask && t.id === guideTask.id) || (!t && !guideTask)) return;
     if (guide) { guide.destroy(); guide = null; }
     guideTask = t;
@@ -532,7 +533,7 @@ export function createGame(cfg) {
     else if (controls.flashlight && e.code === 'KeyF') ctx.setLight(!ctx.lightOn);
     else if (e.code === 'KeyI') tm.open('items');
     else if (e.code === 'KeyM') tm.open('map');
-    else if (e.code === 'KeyL') tm.open('log');
+    else if (e.code === 'KeyL') tm.open('saylog');
   });
   const tb = $('touch');
   if (tb) {
@@ -588,6 +589,7 @@ export function createGame(cfg) {
   ctx.teleport = (target) => { // debug and tests: a room id or { x, z, yaw, floor }
     const R = typeof target === 'string' ? world.rooms.get(target) : null;
     const p = R ? { x: R.cx, z: R.cz, floor: (R.room || {}).floor || 0 } : target;
+    if (typeof world.teleport === 'function') return world.teleport(p, ctx);   // a game's own world moves its own player (yukishiro: the host put the camera straight back)
     ctx.setFloor(p.floor != null ? p.floor : ctx.floor, p); return world.roomAt(p.x, p.z, camera.position.y);
   };
   // monsters (registered by the game): each gets create(ctx) once and update(dt, ctx) per frame; systems are the same without the "monster" meaning
@@ -639,12 +641,16 @@ export function createGame(cfg) {
   { const T = createTalk({ wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), said: (L) => ui.sayLine.remember(`<span class="who">${esc(L.who || '')}</span>${esc(L.text || '')}`), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.talk = T.talk; ctx.choose = T.choose; }
   // 言葉の記録 (feedback 2026-11-02 「思ったことや会話が流れる」): every thought and spoken line since the start, newest first, in the menu;
   // L opens it, and on a phone a tap on the thought band does
-  tm.registerTab({ id: 'log', label: uiDef('tabs').labels?.log || '言葉の記録', icon: 'notes', render: (el) => {
+  // 言葉の記録: id 'saylog', so a game's own 'log' tab (urakawa / shiogaeri 手帳) is not replaced
+  tm.registerTab({ id: 'saylog', label: uiDef('tabs').labels?.saylog || '言葉の記録', icon: 'notes', render: (el) => {
     const L = ui.sayLine.log.slice().reverse();
     el.innerHTML = `<div class="gf-saylog"><p class="gf-saylog-help">${ctx.isTouch ? '画面下の文をタップしても開けます。' : '[L] でいつでも開けます。'}新しい順です。</p>${L.length ? `<ol>${L.map((x) => `<li>${x.html}</li>`).join('')}</ol>` : '<p class="tm-empty">まだ何もありません。</p>'}</div>`; } });
-  { const sayEl = document.getElementById('say'); if (sayEl) sayEl.addEventListener('pointerdown', (e) => { if (ctx.isTouch && state.started) { e.preventDefault(); e.stopPropagation(); tm.open('log'); } }); }
+  // the thought band keeps clear of the touch action cluster as it really is (a game with wider buttons, e.g. miru-record's 調べる 走る ライト row): --gf-cluster-w follows #t-right
+  { const tr = document.getElementById('t-right'); if (tr && typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { const w = Math.round(tr.getBoundingClientRect().width); if (w > 40) document.documentElement.style.setProperty('--gf-cluster-w', `${Math.max(w, 168)}px`); }).observe(tr); }
+  { const sayEl = document.getElementById('say'); if (sayEl) sayEl.addEventListener('pointerdown', (e) => { if (ctx.isTouch && state.started) { e.preventDefault(); e.stopPropagation(); tm.open('saylog'); } }); }
   if (manifest.things && data.things && cfg.mods && cfg.mods.things) cfg.mods.things.installThings(ctx);   // data/things.json: [E] examine -> card + thought + journal (standard 1.5)
   if (data.terminals && cfg.mods && cfg.mods.terminals) cfg.mods.terminals.installTerminals(ctx);   // data/terminals.json: the 'terminal' screen kind (standard 1.5)
+  ctx.sayBusy = ctx.sayBusy || [];   // a game with its own line queue pushes () => busy, the mood lines wait (docs/flavor.md)
   if (data.flavor && cfg.mods && cfg.mods.flavor) { const fl = ctx.flavor = cfg.mods.flavor.installFlavor(ctx, data.flavor); systems.push({ id: 'flavor', def: { update: fl.update }, inst: fl }); }   // mood lines in the thought band (docs/flavor.md)
   if (data.monsters && cfg.mods && cfg.mods.monsters) { const ms = cfg.mods.monsters.installMonsters(ctx); if (ms) systems.push({ id: 'monsters', def: { update: (dt, c, active) => ms.update(dt, c, active) }, inst: ms }); }   // the default monster pack (data/monsters.json, standard 1.5)
 

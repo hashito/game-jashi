@@ -1,5 +1,5 @@
 {
-  "kit": "095de84",
+  "kit": "b995134",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -118,7 +118,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "c35c17150eb5",
+    "js\\kit\\game-core.js": "420e27b8743e",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -158,7 +158,7 @@
     "js\\kit\\plan-check.js": "fc5021a21d48",
     "js\\kit\\step-guide.js": "fc4562b6c380",
     "js\\kit\\frame-guard.js": "1165523c6019",
-    "js\\kit\\ui-warm.js": "72bc997adab7",
+    "js\\kit\\ui-warm.js": "0dfaca7a2016",
     "js\\kit\\boot.js": "24fabfb7df99",
     "js\\kit\\analytics.js": "3400f39899df",
     "js\\kit\\look-input.js": "de220a7858a1",
@@ -167,7 +167,7 @@
     "js\\kit\\ambience.js": "b320fcda4aa7",
     "js\\kit\\game-data.js": "f436682bec94",
     "js\\kit\\ending-scene.js": "b121391ecb89",
-    "js\\kit\\schema-check.js": "bd25f3ed72ec",
+    "js\\kit\\schema-check.js": "ebccf998c09b",
     "js\\kit\\monster-ai.js": "9d98d9ba414f",
     "js\\kit\\things-data.js": "3aabd0a31ea1",
     "js\\kit\\terminal-data.js": "a9ec2af2abe1",
@@ -237,9 +237,9 @@
     "js\\kit\\interior-finish.js": "8a2515743cd5",
     "tools/check-traps.mjs": "4390617a5164",
     "tools/build-site.js": "2743c81000d9",
-    "tools/smoke.mjs": "0fb6ac716f86",
+    "tools/smoke.mjs": "3d4da51af2a6",
     "tools/review-shots.mjs": "0607446e3242",
-    "js\\kit\\flavor.js": "a1213cf1f2bc"
+    "js\\kit\\flavor.js": "1e4371c2baf8"
   },
   "textures": []
 }

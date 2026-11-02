@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/ui-warm.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b995134: js/ui-warm.js — edit in game-kit and run tools/kit-sync.js */
 // Pre-paint of the standard UI (perf, docs/3d-stutter-guide.md "windows"): the FIRST open of a window costs 150-450 ms at 4x CPU even when its JS already ran once,
 // because style / layout, the web-font glyphs and the image decode only happen when something is really PAINTED. Opening a window behind the title without a frame
 // in between warms nothing. warmStandardUi() opens every standard window invisibly (body.gf-warming: opacity .001, no pointer events, no transitions), waits two real frames
@@ -62,10 +62,11 @@ export async function decodeImages(urls, { limit = 80, concurrency = 4, timeout 
   await Promise.race([Promise.all(Array.from({ length: concurrency }, one)), new Promise((r) => setTimeout(r, timeout))]);
   return n;
 }
-// the picture urls named by data records (items / docs / things / entries: img, photo, image)
+// the picture urls named by data records (items / docs / things / entries: img, photo, image); a bare media id (the みる series' "img": "ph_family", resolved by the game) is not a url
+const isUrl = (u) => /[/.:]/.test(u);
 export function imagesOf(...lists) {
   const out = [];
-  for (const l of lists) for (const r of Array.isArray(l) ? l : l && typeof l === "object" ? Object.values(l) : []) if (r && typeof r === "object") for (const k of ["img", "photo", "image"]) if (typeof r[k] === "string") out.push(r[k]);
+  for (const l of lists) for (const r of Array.isArray(l) ? l : l && typeof l === "object" ? Object.values(l) : []) if (r && typeof r === "object") for (const k of ["img", "photo", "image"]) if (typeof r[k] === "string" && isUrl(r[k])) out.push(r[k]);
   return out;
 }
 

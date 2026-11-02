@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/schema-check.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b995134: js/schema-check.js — edit in game-kit and run tools/kit-sync.js */
 // A small JSON Schema checker (no dependencies, no DOM; Node and browser) + the cross-file checks of a game's data.
 // Supported keywords: $ref ("#/$defs/x"), type (string | array), enum, const, required, properties, additionalProperties
 // (bool | schema), items, minItems, maxItems, minLength, maxLength, pattern, minimum, maximum, oneOf, anyOf, uniqueBy (own).
@@ -9,6 +9,8 @@
 // names of the kinds / room types (item kinds: js/item-catalog.js, 192 since standard 1.9; room types kept in sync with js/room-types.js ROOM_TYPES; test/standard-1.7.test.mjs checks)
 import { ITEM_KIND_LIST } from './item-catalog.js';
 export const ITEM_KIND_NAMES = ITEM_KIND_LIST;
+// the paper styles of a document (docs[].kind in the みる series: how the page reads; the 3D model is the standard paper)
+export const DOC_PAPER_STYLES = ['typed', 'memo', 'label', 'handwritten', 'letter', 'note'];
 export const ROOM_TYPE_NAMES = ['washitsu', 'kitchen', 'storage', 'office', 'shop', 'classroom', 'hospital', 'bathroom', 'workshop', 'corridor', 'engawa', 'doma', 'road', 'yard', 'field', 'forest', 'grounds', 'street'];
 // The schemas live in schema/*.schema.json; tools/check-game-data.mjs loads and runs everything. docs/standard-3d.md "Data".
 import { resolveParams, earlyOk, PLAYER } from './monster-ai.js';
@@ -106,7 +108,7 @@ export function checkGameData(d, opts = {}) {
   }
   // standard 1.7: item / doc kinds, items given by a task, room types
   const ownKinds = new Set([...((game && game.itemKinds) || []), ...(opts.itemKinds || [])]);   // a game's own kinds (ext.registerItemKind + game.json itemKinds)
-  for (const x of [...items, ...docs]) if (x.kind && !ITEM_KIND_NAMES.includes(x.kind) && !ownKinds.has(x.kind)) E(`${items.includes(x) ? 'item' : 'doc'} "${x.id}": kind "${x.kind}" is not a standard kind (docs/item-kinds.md, js/item-catalog.js) nor in game.json itemKinds`);
+  for (const x of [...items, ...docs]) if (x.kind && !ITEM_KIND_NAMES.includes(x.kind) && !ownKinds.has(x.kind) && !(docs.includes(x) && DOC_PAPER_STYLES.includes(x.kind))) E(`${items.includes(x) ? 'item' : 'doc'} "${x.id}": kind "${x.kind}" is not a standard kind (docs/item-kinds.md, js/item-catalog.js) nor in game.json itemKinds`);
   for (const x of items) if (x.given && !taskIds.has(x.given)) E(`item "${x.id}": given by unknown task "${x.given}"`);
   for (const r of (plan && plan.rooms) || []) if (r.type && !ROOM_TYPE_NAMES.includes(r.type)) E(`room "${r.id}": type "${r.type}" is not one of ${ROOM_TYPE_NAMES.join(', ')} (js/room-types.js)`);
   for (const dr of (plan && plan.doors) || []) if (dr.unlock && !unlockLevel.has(dr.unlock)) E(`door "${dr.id}": unlock "${dr.unlock}" is not unlocked by any level in stages.json`);
