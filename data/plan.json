@@ -306,6 +306,7 @@
   },
   {
    "id": "D_BALC",
+   "look": "none",
    "a": "CAB_UP",
    "b": "CAB_BALC",
    "x": 0,
@@ -345,6 +346,7 @@
   },
   {
    "id": "D_SHED",
+   "look": "slide",
    "a": "SHED",
    "b": "O_TIMBER_N",
    "x": -19.5,
@@ -356,6 +358,7 @@
   },
   {
    "id": "D_SHELTER",
+   "look": "slide",
    "a": "SHELTER",
    "b": "O_EAST_N",
    "x": 16,
@@ -367,6 +370,7 @@
   },
   {
    "id": "D_GATE",
+   "look": "none",
    "a": "O_FRONT",
    "b": "O_PARK",
    "x": -16,

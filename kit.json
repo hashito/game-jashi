@@ -1,5 +1,5 @@
 {
-  "kit": "77fe572",
+  "kit": "9a50101",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -117,7 +117,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "0bfadf8f5379",
+    "js\\kit\\game-core.js": "c35c17150eb5",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -133,7 +133,7 @@
     "js\\kit\\render-presets.js": "5fbf24fe6100",
     "js\\kit\\render-budget.js": "640b01d42e86",
     "js\\kit\\controller.js": "7de2ad5c9bd7",
-    "js\\kit\\ui.js": "1318c5468c3f",
+    "js\\kit\\ui.js": "c9aee98bd348",
     "js\\kit\\toast-lane.js": "859d066623ff",
     "js\\kit\\gf-test.js": "60c9d2530682",
     "js\\kit\\hud-slots.js": "424758828926",
@@ -146,7 +146,7 @@
     "js\\kit\\audio.js": "6bbf00df9f42",
     "js\\kit\\audio-at.js": "85440435d84e",
     "js\\kit\\task-minigames.js": "41492f5b2250",
-    "js\\kit\\world-from-plan.js": "5e73d8f96d6a",
+    "js\\kit\\world-from-plan.js": "47b2ebcf5616",
     "js\\kit\\interact-select.js": "b4675956490c",
     "js\\kit\\room-types.js": "a99c6dc37499",
     "js\\kit\\win-manager.js": "1fcca24c2190",
@@ -200,7 +200,7 @@
     "schema/items.schema.json": "faa2f5a7e22a",
     "schema/media-queue.schema.json": "2c674c764cb1",
     "schema/monsters.schema.json": "bc4bfb9d5cfe",
-    "schema/plan.schema.json": "e77ad1938abf",
+    "schema/plan.schema.json": "c2e571757517",
     "schema/release-notes.schema.json": "4097758c9ec4",
     "schema/stages.schema.json": "1c343e9e4f9f",
     "schema/tasks.schema.json": "09d905388209",

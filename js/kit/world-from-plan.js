@@ -1,3 +1,4 @@
+/* game-kit 9a50101: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -148,24 +149,95 @@ export function buildWorld(plan, o = {}) {
   if (K.edgeLooks !== false) dressEdges(group, edges, colliders);
 
   // door panels (one per door, in the gap of room a); a locked door stays shut until its unlock key is unlocked
-  const doorM = m('door', 0x6a4b32);
+  // Designed doors (standard 1.10.2; feedback 2026-11-02 「ベランダへのドアのデザインを直して」「ヨコテンでドアのデザインを他のゲームについて見直して」):
+  // a panel in a frame that swings or slides open (it used to vanish). plan.doorLook (default 'swing') or door.look:
+  //   'swing'  a wooden door with two inset panels and a knob on each face, hinged on one side, swings 100 degrees into room a
+  //   'slide'  a wooden sliding door (引き戸) with a recessed pull, slides along the wall on room a's side
+  //   'fusuma' a paper sliding door (襖) with a dark lacquered border and a round pull
+  //   'glass'  a glazed sliding door: four panes over a wooden kick panel (the balcony door of 邪視 5.0.2)
+  //   'none'   nothing drawn (the game dresses the door itself; it still opens, closes and blocks)
+  // The [E] target and the collider is an invisible box in the gap (`door:<id>`); the look is the group `doorlook:<id>`.
+  const doorM = m('door', 0x6a4b32), doorPanelM = m('door-panel', 0x553a26), frameM = m('door-frame', 0x3e2c1e), knobM = mat(0x8a7a5a, { metalness: 0.6, roughness: 0.4 });
+  const paperM = m('door-paper', 0xd9cfb4), lacquerM = m('door-lacquer', 0x231812), glassM = new THREE.MeshStandardMaterial({ color: 0x9fb4b8, transparent: true, opacity: 0.28, roughness: 0.08, metalness: 0.1, depthWrite: false });
+  const doorHitM = new THREE.MeshBasicMaterial({ visible: false });
+  const outdoorRoom = (r) => (r.kind || 'room') === 'outdoor';
+  function doorLook(d, a, b, edge, w) {
+    const look = d.look || plan.doorLook || 'swing', H = K.doorH - 0.02, T = K.wallT;
+    const sIn = edge === 'n' || edge === 'e' ? 1 : -1;   // room a's side, in the door's local z (local x runs along the opening)
+    const G = new THREE.Group(); G.name = `doorlook:${d.id}`;
+    if (look === 'none') return { G, leaves: [], look, sliding: true, sIn, w, faces: [], decos: [] };
+    const part = (host, mt, x, y, z, sx, sy, sz) => { const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mt); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; host.add(o); return o; };
+    if (!(outdoorRoom(a) && (!b || outdoorRoom(b)))) {   // the casing round the opening, on both faces (not for a gate between two outdoor rooms)
+      for (const sx of [-1, 1]) part(G, frameM, sx * (w / 2 + 0.04), K.doorH / 2, 0, 0.08, K.doorH + 0.02, T + 0.05);
+      part(G, frameM, 0, K.doorH + 0.04, 0, w + 0.16, 0.08, T + 0.05);
+    }
+    // one leaf of width lw, its parts centred on x = 0 (a swing leaf is shifted onto its hinge below)
+    const makeLeaf = (lw) => {
+      const leaf = new THREE.Group();
+      const slab = (mt, th) => { const o = part(leaf, mt, 0, H / 2 + 0.01, 0, lw - 0.03, H, th); o.userData.doorFace = true; return o; };
+      if (look === 'swing') {
+        slab(doorM, 0.045);
+        for (const f of [-1, 1]) for (const [py, ph] of [[H * 0.72, H * 0.36], [H * 0.27, H * 0.36]]) part(leaf, doorPanelM, 0, py, f * 0.026, lw - 0.24, ph, 0.012);   // two inset panels a face
+        for (const f of [-1, 1]) part(leaf, knobM, lw / 2 - 0.1, 1.0, f * 0.045, 0.05, 0.05, 0.05);
+      } else if (look === 'fusuma') {
+        slab(paperM, 0.03);
+        for (const f of [-1, 1]) { for (const sx of [-1, 1]) part(leaf, lacquerM, sx * (lw / 2 - 0.035), H / 2 + 0.01, f * 0.017, 0.04, H, 0.008); for (const yy of [0.03, H - 0.01]) part(leaf, lacquerM, 0, yy, f * 0.017, lw - 0.03, 0.04, 0.008); }
+        for (const f of [-1, 1]) part(leaf, lacquerM, lw / 2 - 0.13, 0.95, f * 0.018, 0.06, 0.06, 0.006);   // the round pull (引手)
+      } else if (look === 'glass') {
+        const st = 0.06, kick = 0.85;
+        for (const sx of [-1, 1]) part(leaf, doorM, sx * (lw / 2 - 0.015 - st / 2), H / 2 + 0.01, 0, st, H, 0.05);
+        for (const yy of [0.04, kick, (kick + H) / 2, H - 0.02]) part(leaf, doorM, 0, yy, 0, lw - 0.03, 0.06, 0.05);
+        part(leaf, doorPanelM, 0, kick / 2 + 0.02, 0, lw - 0.12, kick - 0.06, 0.03);   // the kick panel (腰板)
+        part(leaf, doorM, 0, (kick + H) / 2, 0, 0.04, H - kick - 0.06, 0.05);   // the muntin
+        for (const sx of [-1, 1]) for (const yy of [(kick + (kick + H) / 2) / 2, ((kick + H) / 2 + H) / 2]) part(leaf, glassM, sx * (lw / 4 - 0.01), yy, 0, lw / 2 - 0.1, (H - kick) / 2 - 0.08, 0.008);
+        for (const f of [-1, 1]) part(leaf, knobM, lw / 2 - 0.1, 1.0, f * 0.03, 0.02, 0.14, 0.02);
+      } else {   // slide
+        slab(doorM, 0.04);
+        for (const f of [-1, 1]) { part(leaf, doorPanelM, 0, H * 0.5, f * 0.022, lw - 0.16, H - 0.2, 0.008); part(leaf, lacquerM, lw / 2 - 0.1, 1.0, f * 0.022, 0.03, 0.16, 0.006); }
+      }
+      return leaf;
+    };
+    // a wide opening (1.5 m and more) gets two leaves: a pair of doors swinging from both jambs, or two sliding apart
+    const sliding = look !== 'swing', pair = w >= 1.5, lw = pair ? w / 2 : w, leaves = [];
+    for (const side of pair ? [-1, 1] : [1]) {
+      const leaf = makeLeaf(sliding ? lw + 0.07 : lw), hold = new THREE.Group();   /* a sliding leaf runs in front of the wall: a little wider, so a pair overlaps in the middle and no light shows through */ hold.add(leaf); G.add(hold);
+      if (sliding) { hold.position.set(pair ? side * lw / 2 : 0, 0, sIn * (T / 2 + 0.035 + (pair && side > 0 ? 0.045 : 0))); }   // runs on room a's face of the wall (the second leaf on its own track)
+      else { leaf.position.x = -side * (lw / 2 - 0.015); if (side > 0) leaf.rotation.y = Math.PI; hold.position.x = side * (w / 2 - 0.015); }   // hinged at its jamb, the knob on the far edge
+      leaves.push({ hold, side, base: hold.position.x });
+    }
+    const faces = [], decos = [];
+    for (const f of leaves) f.hold.traverse((o) => { if (o.isMesh) (o.userData.doorFace ? faces : decos).push(o); });
+    return { G, leaves, look, sliding, sIn, w: lw, faces, decos };
+  }
+  const doorAnims = [];
   for (const d of plan.doors || []) {
     const a = byId.get(d.a);
     if (!a || d.x == null || d.kind === 'stairs' || d.kind === 'lift') continue;
     if (d.open) { doors.set(d.id, { def: d, mesh: null, col: null, isOpen: true, locked: () => false, open() { return false; }, close() {} }); continue; }   // an opening: no panel
     const { edge } = doorEdge(a, d.x, d.z), w = d.width ?? K.doorW, y0 = yOf(a), alongX = edge === 'n' || edge === 's';
     const fixed = alongX ? (edge === 'n' ? a.z : a.z + a.d) : edge === 'w' ? a.x : a.x + a.w;
-    const { mesh, col } = alongX ? box(w, K.doorH, 0.08, doorM, d.x, y0 + K.doorH / 2, fixed, true, `door:${d.id}`) : box(0.08, K.doorH, w, doorM, fixed, y0 + K.doorH / 2, d.z, true, `door:${d.id}`);
+    const { mesh, col } = alongX ? box(w, K.doorH, 0.12, doorHitM, d.x, y0 + K.doorH / 2, fixed, true, `door:${d.id}`) : box(0.12, K.doorH, w, doorHitM, fixed, y0 + K.doorH / 2, d.z, true, `door:${d.id}`);
     mesh.userData.interact = { kind: 'door', id: d.id };
     interactables.push(mesh);
+    const L = doorLook(d, a, byId.get(d.b), edge, w);
+    L.G.position.set(alongX ? d.x : fixed, y0, alongX ? fixed : d.z); L.G.rotation.y = alongX ? 0 : -Math.PI / 2; group.add(L.G);
+    // games written for the old box door dress it with `door.mesh.material = ...`: a material with a picture goes on the leaf's face (the drawn
+    // panels and pulls step aside for the picture), an invisible one hides the whole door (a gate the game builds itself)
+    Object.defineProperty(mesh, 'material', { configurable: true, get: () => doorHitM, set: (v) => { if (!v || v === doorHitM) return; if (v.visible === false) { L.G.visible = false; return; } L.G.visible = true; if (!L.faces.length) return; for (const o of L.faces) o.material = v; for (const o of L.decos) o.visible = false; } });
+    const anim = { L, t: 0, to: 0 };
     const api = {
-      def: d, mesh, col, isOpen: false,
+      def: d, mesh, col, look: L.G, isOpen: false,
       locked: () => !!d.unlock && !isUnlocked(d.unlock),
-      open() { if (api.isOpen || api.locked()) return false; api.isOpen = true; mesh.visible = false; col.off = true; return true; },
-      close() { api.isOpen = false; mesh.visible = true; col.off = false; },
+      open() { if (api.isOpen || api.locked()) return false; api.isOpen = true; mesh.visible = false; col.off = true; anim.to = 1; return true; },
+      close() { api.isOpen = false; mesh.visible = true; col.off = false; anim.to = 0; },
+      snap() { anim.t = anim.to; pose(anim); },   // jump to the end (a restored save)
     };
+    doorAnims.push(anim);
     doors.set(d.id, api);
   }
+  // open / close over 0.6 s (eased); a swing door turns about its hinge, a sliding one runs along the wall
+  function pose(an) { const e = an.t * an.t * (3 - 2 * an.t), L = an.L; for (const f of L.leaves) { if (L.sliding) f.hold.position.x = f.base + f.side * e * (L.w * 0.94); else f.hold.rotation.y = f.side * L.sIn * e * 1.75; } }
+  const updateDoors = (dt) => { for (const an of doorAnims) if (an.t !== an.to) { an.t = an.to > an.t ? Math.min(an.to, an.t + dt / 0.6) : Math.max(an.to, an.t - dt / 0.6); pose(an); } };
 
   // room under a point (y = the eye height; floors are told apart by it)
   const roomAt = (x, z, y = 1.6) => {
@@ -315,7 +387,7 @@ export function buildWorld(plan, o = {}) {
   }
   const spawnRoom = S && S.room;
   if (spawn && spawn.floor == null && spawnRoom) spawn.floor = spawnRoom.floor || 0;
-  return { group, colliders, interactables, rooms: roomsById, doors, stairs, roomAt, place, bounds, spawn, floorY, yOf: (id) => roomsById.get(id)?.y || 0, K, edges };
+  return { group, colliders, interactables, rooms: roomsById, doors, stairs, roomAt, place, bounds, spawn, floorY, yOf: (id) => roomsById.get(id)?.y || 0, K, edges, update: (dt) => updateDoors(dt) };
 }
 
 // the interaction pick (rule W18, js/interact-select.js): the thing the camera looks at, with a cone assist, a 15 cm margin around the

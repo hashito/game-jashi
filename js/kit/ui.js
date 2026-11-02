@@ -1,4 +1,4 @@
-/* game-kit c5819b2: js/ui.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 6966c27: js/ui.js — edit in game-kit and run tools/kit-sync.js */
 // Windows and short messages over a first-person game (style: css/kit.css). From ひだまり薬局 js/ui.js.
 // One window at a time; while one is open the controller should not move (pass `isBlocked: () => !!ui.open`).
 //
@@ -41,6 +41,15 @@ export function splitSay(html, max = 60) {
   if (rest) pages.push(rest);
   return pages.map((p) => head + p);
 }
+// key names in a line follow the device (W18; feedback 2026-11-02, コトリバコ's step cards said 「近づいて [E]」 on a phone): touch -> タップ /
+// the menu, a gamepad -> [A]; the keyboard keeps the text (pure: test/say-line.test.mjs)
+export function keyText(text, input = 'mouse') {
+  const t = String(text);
+  if (input === 'pad') return t.replace(/\[E\]/g, '[A]');
+  if (input !== 'touch') return t;
+  return t.replace(/ ?\[E\] ?/g, 'タップ').replace(/（Tab）/g, '（右上のメニュー）').replace(/Tab（手帳）か M/g, '右上のメニュー').replace(/Tab で手帳、M で地図を開ける/g, '右上のメニューで手帳と地図を開ける');
+}
+
 export class SayLine {
   // timer / clear are wrapped: a browser throws "Illegal invocation" when setTimeout is called as a method of another object (this.timer(...))
   constructor({ show, hide, now = () => performance.now() / 1000, timer = (f, ms) => setTimeout(f, ms), clear = (h) => clearTimeout(h), max = 6 } = {}) {
@@ -151,7 +160,7 @@ export class KitUI {
 
   // the thought line: queued, never cut while it is being read (SayLine). o.urgent shows at once
   say(html, sec = 4.5, o = {}) {
-    this.sayLine.push(html, sec, o);
+    this.sayLine.push(this.keys ? keyText(html, this.keys()) : html, sec, o);   // keys: () => 'mouse' | 'touch' | 'pad' (game-core sets it)
   }
 
   toast(html, cls = "", max = 4) {

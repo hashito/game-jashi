@@ -1,4 +1,4 @@
-/* game-kit c5819b2: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 9a50101: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -29,7 +29,7 @@ import { createTalk } from './talk-ui.js';
 import { createRenderer, applyPreset, extendPreset, QualityTier } from './render-presets.js';
 import { browserEnv } from './render-budget.js';
 import { FirstPersonController } from './controller.js';
-import { KitUI, esc } from './ui.js';
+import { KitUI, esc, keyText } from './ui.js';
 import { ToastLane } from './toast-lane.js';
 import { ensureHudSlots, registerHudPart, layoutHudSlots, laneFree, hudTestHooks, schedule as scheduleHudLayout } from './hud-slots.js';
 import { Progression } from './progression.js';
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.1';
+export const CORE_VERSION = '1.10.2';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -499,6 +499,8 @@ export function createGame(cfg) {
   // step guide: STEP cards for the first task that can be started and has "steps" (U22/U23); the hint is the protagonist's line
   let guide = null, guideTask = null;
   const glow = (key, on) => { const m = world.interactables.find((o) => key && o.userData.interact && `${o.userData.interact.kind}:${o.userData.interact.id}` === key); if (m && m.material && m.material.emissiveIntensity != null) m.material.emissiveIntensity = on ? 1.8 : 0.55; };
+  const kt = (x) => (x == null ? x : keyText(x, ctx.input === 'pad' ? 'pad' : ctx.isTouch ? 'touch' : 'mouse'));   // the step card's key names follow the device
+  ctx.keyText = kt; ui.keys = () => (ctx.input === 'pad' ? 'pad' : ctx.isTouch ? 'touch' : 'mouse');
   function refreshGuide() {
     const t = tasks.find((x) => x.steps && x.steps.length && ctx.canStart(x) === true) || null;
     if ((t && guideTask && t.id === guideTask.id) || (!t && !guideTask)) return;
@@ -510,7 +512,7 @@ export function createGame(cfg) {
       container: $('guide'), getState: () => state, say: (text) => ui.say(esc(text)), storage: safe(() => localStorage), key: `${manifest.id}.guide.${t.id}`, calm: settings.calm,
       onEmphasize: (tg, on) => { if (gd.onEmphasize) return gd.onEmphasize(tg, on, ctx); glow(tg && tg.game, on); return true; },
       steps: t.steps.map((s, i) => ({
-        id: `${t.id}.${i}`, title: s.text, body: s.body || '', hint: s.hint || (i === 0 ? t.hint : undefined), emphasize: 'glow', target: s.emphasis ? { game: s.emphasis } : undefined,
+        id: `${t.id}.${i}`, title: kt(s.text), body: kt(s.body || ''), hint: kt(s.hint || (i === 0 ? t.hint : undefined)), emphasize: 'glow', target: s.emphasis ? { game: s.emphasis } : undefined,
         done: s.done === 'room' ? () => state.room === t.room : s.done === 'look' ? () => !!ctx.target && `${ctx.target.kind}:${ctx.target.id}` === s.emphasis : s.done === 'task' ? () => state.tasks.includes(t.id) : undefined,
       })),
     });
@@ -681,7 +683,7 @@ export function createGame(cfg) {
         Object.assign(state, { inv: snap.inv || [...startInv], docsRead: snap.docsRead || [], doors: snap.doors || [], visited: snap.visited || [] });
         prog.restore(snap.prog);
         state.tasks = [...(snap.tasks || [])]; state.flags = [...(snap.flags || [])];
-        for (const id of state.doors) world.doors.get(id) && world.doors.get(id).open();
+        for (const id of state.doors) { const d = world.doors.get(id); if (d && d.open() && d.snap) d.snap(); }   // a restored door is already open (no swing on load)
         for (const id of state.inv) remove('item', id);
         if (snap.pos) { placeCamera(snap.pos.x, snap.pos.z, snap.pos.floor || 0); fp.yaw = snap.pos.yaw || 0; }
       } else if (!o.keepSave) store.clear();
