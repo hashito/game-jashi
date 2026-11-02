@@ -142,7 +142,7 @@ export function dressMountain(ctx) {
   box(6.1, 0.12, 2.1, M.plank, 0, balcY - 0.08, 18);
   // the telescope on its tripod, looking south down the valley
   { const t = named('telescope'); t.position.set(-1.9, balcY, 17.75);
-    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2, l = cyl(0.018, 0.022, 1.3, M.iron, Math.cos(a) * 0.22, 0.62, Math.sin(a) * 0.22, 6, t); l.rotation.set(Math.sin(a) * 0.3, 0, -Math.cos(a) * 0.3); }
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2, l = cyl(0.018, 0.022, 1.3, M.iron, Math.cos(a) * 0.22, 0.62, Math.sin(a) * 0.22, 6, t); l.rotation.set(-Math.sin(a) * 0.3, 0, Math.cos(a) * 0.3); }   // the feet splay out and the tops meet under the tube (the other sign stood it on its head)
     const tube = cyl(0.07, 0.055, 0.9, M.white, 0, 1.32, -0.05, 14, t); tube.rotation.x = Math.PI / 2 + 0.12; cyl(0.075, 0.075, 0.05, M.black, 0, 1.27, -0.5, 14, t).rotation.x = Math.PI / 2 + 0.12; }
   // the amado: a wooden leaf beside the balcony door that slides across it when T_SHUTTER is done (W5)
   { const s = named('shutter'); s.position.set(0, balcY, 18.86);   // outside the wall line (z 19), on the balcony side
