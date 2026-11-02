@@ -226,6 +226,53 @@
           "expect": "scr.lane.join('').includes('サングラス') ? true : 'the pick-up card was gone after the talk: ' + scr.lane.join(' ')"
         },
         {
+          "name": "radio-open",
+          "eval": "for (let i=0;i<20 && g.wm.isOpen;i++){ g.wm.close(); await new Promise(r=>setTimeout(r,300)); }",
+          "focus": {
+            "x": 3.4,
+            "y": 0.85,
+            "z": 24.75,
+            "floor": 0,
+            "dist": 1.4
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "close": false,
+          "wait": 600
+        },
+        {
+          "name": "radio-dial-far",
+          "close": false,
+          "eval": "for (let i=0;i<40 && !document.querySelector('.mgx-radio');i++){ const b=document.querySelector('.gf-talk-next'); if (b) b.click(); else if (!g.wm.isOpen) { window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyE'})); } await new Promise(r=>setTimeout(r,400)); }",
+          "wait": 1200,
+          "shot": true,
+          "expect": "document.querySelector('.mgx-radio') ? true : 'the dial did not open'"
+        },
+        {
+          "name": "radio-dial-near",
+          "close": false,
+          "eval": "const k=document.querySelector('.mgx-radio-knob'); for(let i=0;i<32;i++) k.dispatchEvent(new KeyboardEvent('keydown',{code:'ArrowRight',bubbles:true}));",
+          "wait": 500,
+          "shot": true,
+          "expect": "/聞こえるか|声が混じる/.test(document.querySelector('.mgx-radio') ? document.querySelector('.mgx-radio-heard').textContent : '') ? true : 'no caption of the voice'"
+        },
+        {
+          "name": "radio-tuned",
+          "close": false,
+          "wait": 2500,
+          "shot": true,
+          "expect": "g.state.tasks.includes('T_RADIO') ? true : 'the radio was not tuned'"
+        },
+        {
+          "name": "say-log",
+          "eval": "window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyL'}));",
+          "wait": 800,
+          "shot": true,
+          "close": true,
+          "expect": "document.querySelectorAll('.gf-saylog li').length >= 3 ? true : 'the say log is empty'"
+        },
+        {
           "name": "note-table",
           "focus": {
             "x": -2.2,

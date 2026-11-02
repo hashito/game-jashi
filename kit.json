@@ -1,5 +1,5 @@
 {
-  "kit": "dc6b159",
+  "kit": "77fe572",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -117,7 +117,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "e331ab9f2cb7",
+    "js\\kit\\game-core.js": "0bfadf8f5379",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -129,11 +129,11 @@
     "js\\kit\\spot-fx.js": "5f338dd97de8",
     "js\\kit\\stage-look.js": "2cce49866cc2",
     "js\\kit\\step-sound.js": "5b683be9a674",
-    "js\\kit\\talk-ui.js": "e4a4a5132500",
+    "js\\kit\\talk-ui.js": "8a99fa74569b",
     "js\\kit\\render-presets.js": "5fbf24fe6100",
     "js\\kit\\render-budget.js": "640b01d42e86",
     "js\\kit\\controller.js": "7de2ad5c9bd7",
-    "js\\kit\\ui.js": "dd558be29425",
+    "js\\kit\\ui.js": "1318c5468c3f",
     "js\\kit\\toast-lane.js": "859d066623ff",
     "js\\kit\\gf-test.js": "60c9d2530682",
     "js\\kit\\hud-slots.js": "424758828926",
@@ -188,7 +188,7 @@
     "js\\kit\\env-props.js": "cc164232ed7a",
     "js\\kit\\texture-library.js": "3270ec79ed80",
     "js\\kit\\text-contrast.js": "0f2a95264e07",
-    "css/kit.css": "9a819e5719af",
+    "css/kit.css": "4fcec263213e",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
     "css\\shell.css": "22de577a41c7",
@@ -227,7 +227,7 @@
     "js\\kit\\mg-widgets.js": "08baa1fd96b3",
     "js\\kit\\mg-photo-focus.js": "1c96a1bb08c1",
     "js\\kit\\mg-steady-hand.js": "1f268485feb3",
-    "js\\kit\\mg-tune-radio.js": "b386e85a3341",
+    "js\\kit\\mg-tune-radio.js": "6b1f2e3fe9be",
     "js\\kit\\mg-sort-items.js": "3a3f29e6b087",
     "js\\kit\\mg-timing.js": "8c77129699ae",
     "js\\kit\\mg-search-dark.js": "bce1b548875e",

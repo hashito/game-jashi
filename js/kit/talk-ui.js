@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/talk-ui.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit c5819b2: js/talk-ui.js — edit in game-kit and run tools/kit-sync.js */
 // The 3D conversation window (standard 1.7): who speaks, where, an optional picture, the line, and 次へ (tap / click / Enter; S11:
 // the player sends each line). A choice is the same window with buttons. Both open in the ONE window of win-manager (U12), so the game
 // pauses and the pointer is free while they are open; the protagonist's thoughts stay in the thought band (ctx.monologue).
@@ -12,7 +12,7 @@
 // Style: css/kit.css .gf-talk (tokens). The me-speaker (default '私') is drawn quieter.
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-export function createTalk({ wm, qa = false, me = '私', data = null, log = [], voice = null, portraits = null } = {}) {
+export function createTalk({ wm, qa = false, me = '私', data = null, log = [], voice = null, portraits = null, said = null } = {}) {
   const linesOf = (x) => (typeof x === 'string' ? (data && data[x]) || [] : x || []);
   function talk(src, o = {}) {
     const lines = linesOf(src);
@@ -24,7 +24,7 @@ export function createTalk({ wm, qa = false, me = '私', data = null, log = [], 
       const hush = () => { try { spoken && spoken.stop && spoken.stop(); } catch (e) {} spoken = null; };
       const render = (el) => {
         const L = lines[i], last = i === lines.length - 1;
-        hush(); if (L.voice && voice) spoken = voice(L);
+        hush(); if (L.voice && voice) spoken = voice(L); if (said) said(L);   // said: every line read goes to the game's 言葉の記録
         const f = face(L.who), words = `<p class="gf-talk-who">${esc(L.who || '')}${L.where ? `<span>（${esc(L.where)}）</span>` : ''}</p><p class="gf-talk-text">${esc(L.text).replace(/\n/g, '<br>')}</p>`;
         el.innerHTML = `<div class="gf-talk${L.who === me ? ' gf-talk--me' : ''}">${L.img ? `<img class="gf-talk-img" src="${esc(L.img)}" alt="">` : ''}${f ? `<div class="gf-talk-row"><img class="gf-talk-face" src="${esc(f)}" alt="${esc(L.who)}"><div class="gf-talk-words">${words}</div></div>` : words}<div class="gf-talk-foot"><span class="gf-talk-n">${i + 1} / ${lines.length}</span><button type="button" class="btn primary gf-talk-next">${last ? esc(o.last || '閉じる') : '次へ'}</button></div></div>`;
         const b = el.querySelector('.gf-talk-next');

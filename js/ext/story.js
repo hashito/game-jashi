@@ -72,10 +72,8 @@ export default function story(ext, shared) {
   async function playMG(task, mg = task.minigame) {
     if (!mg) return true;
     if (ctx.qa) return true;
-    const lib = MGX[mg.type]; if (!lib) return true;
-    const host = document.createElement('div'); host.id = 'mg-custom'; host.className = 'gf-overlay'; document.body.appendChild(host);
-    ctx.fp.release();
-    try { return !!(await lib.mount(host, { title: task.title, help: task.hint || '', ...(mg.cfg || {}) }, ctx)); } finally { host.remove(); }
+    if (!MGX[mg.type]) return true;
+    return ctx.runMinigame(task, mg);   /* the kit's runner: the game is blocked while it is open (no look hint over it) */
   }
   ext.registerUi('title', {
     kicker: 'JASHI ／ A FIRST-PERSON MOUNTAIN HORROR',

@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 40c1bc6: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -3087,6 +3087,12 @@ body.gf-warming .wm-layer, body.gf-warming .rn-wrap, body.gf-warming #mg, body.g
 .mgx-radio-bars b { flex: 1; height: 10%; background: color-mix(in srgb, var(--gf-accent, #3a7a5a) 70%, transparent); border-radius: 2px 2px 0 0; }
 .mgx-radio-hold { width: min(380px, 100%); height: 8px; border-radius: 4px; background: var(--gf-surface-2, #ece6d6); overflow: hidden; }
 .mgx-radio-hold i { display: block; height: 100%; width: 0; background: var(--gf-accent, #3a7a5a); }
+.mgx-radio-heard { margin: 0; min-height: 1.7em; width: min(380px, 100%); text-align: center; color: var(--gf-text); font-size: 0.95em; line-height: 1.7; }
+@media (max-height: 500px) { .mgx-radio { gap: 6px; } .mgx-radio-knob { width: 84px; height: 84px; } .mgx-radio-bars { height: 36px; } }
+.mgx-radio-signal { display: flex; align-items: center; gap: 8px; width: min(380px, 100%); font-size: 0.8em; color: var(--gf-text-dim); }
+.mgx-radio-signal div { flex: 1; height: 12px; border-radius: 6px; background: var(--gf-surface-2, #ece6d6); overflow: hidden; border: 1px solid var(--gf-border, #d8d2c2); }
+.mgx-radio-signal i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8a7a5a, var(--gf-accent, #3a7a5a)); transition: width 0.1s linear; }  /* pair-ok */
+.mgx-radio.warm .mgx-radio-needle { box-shadow: 0 0 5px #ff5a40; }  /* pair-ok */
 .mgx-radio-knob { --a: 0deg; position: relative; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #6a6e70, #1a1c1e); border: 3px solid #2a2e30; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: grab; touch-action: none; transform: rotate(var(--a)); }  /* pair-ok */
 .mgx-radio-knob i { position: absolute; left: 50%; top: 8px; width: 6px; height: 30px; margin-left: -3px; background: #e8e0c8; border-radius: 3px; }  /* pair-ok */
 .mgx-radio-knob:focus-visible { outline: 3px solid var(--gf-accent, #3a7a5a); outline-offset: 4px; }
@@ -3523,3 +3529,11 @@ body.gf-warming .wm-layer, body.gf-warming .rn-wrap, body.gf-warming #mg, body.g
 .mg-hsvg .hook.on circle:first-child { stroke: #e0b828; stroke-width: 1.4; }
 .mg-hsvg .bead { fill: #e0b828; }
 .mg-hsvg .no { fill: #e0b828; font-size: 5px; font-weight: 700; }
+
+/* 言葉の記録 (the say log tab): newest first, a speaker tag in the accent colour */
+.gf-saylog-help { margin: 0 0 8px; color: var(--gf-text-dim); font-size: 0.85em; }
+.gf-saylog ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.gf-saylog li { padding: 8px 10px; border-radius: 6px; background: var(--gf-surface-2, rgba(255,255,255,0.04)); line-height: 1.7; }
+.gf-saylog li:first-child { outline: 1px solid var(--gf-accent, #3a7a5a); }
+.gf-saylog .who { color: var(--gf-accent, #3a7a5a); margin-right: 0.5em; font-weight: 600; }
+body.touch #say.on { pointer-events: auto; }   /* a tap on the thought band opens 言葉の記録 */
