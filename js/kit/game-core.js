@@ -1,4 +1,4 @@
-/* game-kit 96bae95: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 3557bda: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.9.2';
+export const CORE_VERSION = '1.10.0';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -85,6 +85,7 @@ export async function loadGame(manifestUrl = 'game.json', o = {}) {
   if (manifest.things && data.things && !mods.things) mods.things = await import('./things.js');   // opt-in: a game's own legacy things.json (other format) is not touched
   if (data.terminals && !mods.terminals) mods.terminals = await import('./terminal-screen.js');
   if (manifest.voice && !mods.voice) mods.voice = await import('./voice-fx.js');
+  if (data.flavor && !mods.flavor) mods.flavor = await import('./flavor.js');   // data/flavor.json: mood lines (standard 1.10)
   const ctx = createGame({ manifest, data, ext, ...o, mods });
   if (manifest.recipes) await (await import('./recipes.js')).installRecipes(ctx, manifest.recipes);
   ctx.seatPickups && ctx.seatPickups();   // the furniture is in: put the pickups on it (standard 1.7)   // props / openables / textures / ambience, switched on from game.json (standard 1.5)
@@ -635,6 +636,7 @@ export function createGame(cfg) {
   { const T = createTalk({ wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.talk = T.talk; ctx.choose = T.choose; }
   if (manifest.things && data.things && cfg.mods && cfg.mods.things) cfg.mods.things.installThings(ctx);   // data/things.json: [E] examine -> card + thought + journal (standard 1.5)
   if (data.terminals && cfg.mods && cfg.mods.terminals) cfg.mods.terminals.installTerminals(ctx);   // data/terminals.json: the 'terminal' screen kind (standard 1.5)
+  if (data.flavor && cfg.mods && cfg.mods.flavor) { const fl = ctx.flavor = cfg.mods.flavor.installFlavor(ctx, data.flavor); systems.push({ id: 'flavor', def: { update: fl.update }, inst: fl }); }   // mood lines in the thought band (docs/flavor.md)
   if (data.monsters && cfg.mods && cfg.mods.monsters) { const ms = cfg.mods.monsters.installMonsters(ctx); if (ms) systems.push({ id: 'monsters', def: { update: (dt, c, active) => ms.update(dt, c, active) }, inst: ms }); }   // the default monster pack (data/monsters.json, standard 1.5)
 
   // ---- title ----

@@ -116,7 +116,7 @@ export default function story(ext, shared) {
     await talk('telescope', { title: '望遠鏡' });
     snd.sting(); fear.kick(0.6);
   } });
-  ext.registerTask('T_SHUTTER', { onDone: async () => {
+  ext.registerTask('T_SHUTTER', { canStart: (c) => (c.state.room === 'CAB_BALC' ? '雨戸は部屋の中から引く。先に作業室へ戻ろう。' : true), onDone: async () => {   // drawn from inside only: pulled from the balcony it shut the player out (feedback 2026-11-02)
     M.parts.shutter.target = 1; snd.shutter();
     const d = ctx.world.doors.get('D_BALC'); if (d) d.close();
     await talk('shutter', { title: '二階の作業室' });
@@ -274,7 +274,7 @@ export default function story(ext, shared) {
     const i = lvl();
     const U = M.people.uncle; if (U) U.root.visible = i === 0 && !st.uncleGone;
     if (M.parts.shutter) M.parts.shutter.target = done('T_SHUTTER') ? 1 : 0;
-    const balc = ctx.world.doors.get('D_BALC'); if (balc && done('T_SHUTTER')) balc.close();
+    const balc = ctx.world.doors.get('D_BALC'); if (balc && done('T_SHUTTER') && ctx.state.room !== 'CAB_BALC') balc.close();
     const gate = ctx.world.doors.get('D_GATE'); if (gate && done('T_GATE')) { gate.isOpen = true; gate.col && (gate.col.off = true); }
     if (M.parts.crankArm) M.parts.crankArm.visible = done('T_GATE');
     if (gaze) gaze.updateBottles();
@@ -308,7 +308,7 @@ export default function story(ext, shared) {
     c.bus.on('task:done', ({ id }) => { if (id === 'T_BELL') c.world.interactables.push(bm); });
     if (c.state.tasks.includes('T_BELL')) c.world.interactables.push(bm);
     // the balcony door stays shut once the amado is drawn
-    const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') ? true : base()); balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
+    const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') && c.state.room !== 'CAB_BALC' ? true : base()); /* locked from the room side only: outside, it always opens (a player shut out on the balcony, 2026-11-02) */ balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
     document.body.insertAdjacentHTML('beforeend', `<div id="js-photo" class="js-photo" hidden></div><div id="js-jump" class="js-jump" hidden><img src="assets/textures/monster-face-v4-2.webp" alt=""></div>`);
     c.warmImages = [...(c.warmImages || []), 'assets/textures/monster-face-v4-2.webp', 'assets/photos/mountain-v4-1.webp'];
     if (window.__gf || c.qa || c.debug) window.__js = { st, gaze, M, F: () => F, applyStage, chains: () => completedChains(c.state.docsRead), shared };
@@ -346,6 +346,12 @@ export default function story(ext, shared) {
 
   // ---------------------------------------------------------------- per frame
   ext.registerSystem('jashi-story', { update: (dt, c, active) => {
+    // never shut out on the balcony: once the amado is drawn, standing outside opens it and the door again; back inside, both close
+    if (M && M.parts.shutter && done('T_SHUTTER')) {
+      const balc = c.world.doors.get('D_BALC'), out = c.state.room === 'CAB_BALC';
+      if (out && M.parts.shutter.target !== 0) { M.parts.shutter.target = 0; if (balc && !balc.isOpen) balc.open(); say('雨戸を少し開けて、中へ戻ろう。', 4); }
+      else if (!out && M.parts.shutter.target === 0 && c.state.room === 'CAB_UP' && c.camera.position.z > 19.9) { M.parts.shutter.target = 1; snd.shutter(); if (balc) balc.close(); }
+    }
     if (!M) return;
     const t = performance.now() / 1000;
     M.update(dt, t);
