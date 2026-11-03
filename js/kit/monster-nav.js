@@ -1,7 +1,7 @@
-/* game-kit 6e0b6f0: js/monster-nav.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 4b9f6fa: js/monster-nav.js — edit in game-kit and run tools/kit-sync.js */
 // Navigation for the standard monster (js/monster-ai.js) built from plan.json. Pure: no DOM, no THREE, runs in Node.
 //
-//   const nav = navFromPlan(plan, { isDoorOpen: (id) => true });
+//   const nav = navFromPlan(plan, { isDoorOpen: (id) => true, isDoorPassable?: (id) => true });   (isDoorOpen: sight; isDoorPassable === false: no path through)
 //   nav.roomAt(x, z, floor)        -> room id | null
 //   nav.path(a, b)                 -> [{ x, z }, ...] waypoints from a (excluded) to b (included), or null if unreachable
 //   nav.los(a, b)                  -> true when no wall is between a and b (door openings are gaps; a shut door is a wall)
@@ -137,6 +137,7 @@ export function navFromPlan(plan, opts = {}) {
     const pa = addNode({ x: d.x - g.n.x * o.nodeOffset, z: d.z - g.n.z * o.nodeOffset, room: a.id, floor: a.floor, kind: 'door', door: d.id });
     const pb = addNode({ x: d.x + g.n.x * o.nodeOffset, z: d.z + g.n.z * o.nodeOffset, room: b.id, floor: b.floor, kind: 'door', door: d.id });
     link(pa.id, pb.id, 2 * o.nodeOffset);
+    for (const [i, j] of [[pa.id, pb.id], [pb.id, pa.id]]) edges.get(i).find((e) => e.to === j).door = d.id;   // o.isDoorPassable(id) === false cuts it
     pa.mate = pb.id; pb.mate = pa.id;
   }
   const hides = (plan.hides || []).map((h) => ({ ...h, floor: (byId.get(h.room) || {}).floor || 0 }));
@@ -152,7 +153,7 @@ export function navFromPlan(plan, opts = {}) {
       for (let i = 0; i < nodes.length; i++) if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
       if (u < 0) break;
       done[u] = true;
-      for (const e of edges.get(u)) if (dist[u] + e.cost < dist[e.to] && (!allow || allow(e.to, dist[u] + e.cost))) { dist[e.to] = dist[u] + e.cost; prev[e.to] = u; }
+      for (const e of edges.get(u)) if ((!e.door || !o.isDoorPassable || o.isDoorPassable(e.door) !== false) && dist[u] + e.cost < dist[e.to] && (!allow || allow(e.to, dist[u] + e.cost))) { dist[e.to] = dist[u] + e.cost; prev[e.to] = u; }
     }
     return { dist, prev };
   }

@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/monster-ai.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 4b9f6fa: js/monster-ai.js — edit in game-kit and run tools/kit-sync.js */
 // The standard monster's behaviour (rules S12, S20). Pure: no DOM, no THREE, runs in Node (tests, tools/check-escape.mjs).
 // The 3D body, the sounds and the screen effects are in js/monster-std.js; it feeds this class the player and reads { pos, yaw, state, visible }.
 //
@@ -65,7 +65,7 @@ export class MonsterAI {
     this.witnessed = false; this.wasHidden = false;
     this.hintAt = { run: -9, turn: -9, hide: -9 }; this.hintCount = { run: 0, turn: 0, hide: 0 }; this.clock = 0;
     this.events = []; this.noticed = 0; this.lost = 0; this.caught = false; this.speed = 0; this.moving = false;
-    this.lastP = null; this.stillT = 0;
+    this.lastP = null; this.stillT = 0; this.pauseT = 0;
   }
   get active() { return this.state !== 'off'; }
   get chasing() { return this.state === 'chase'; }
@@ -110,6 +110,7 @@ export class MonsterAI {
   }
   walk(dt, speed) {
     this.moving = false; this.speed = speed;
+    if (this.pauseT > 0) { this.pauseT -= dt; this.speed = 0; return false; }   // a short stop (it opens a door: monster-std opensDoors)
     if (!this.path || this.pi >= this.path.length) return true;
     let step = speed * dt;
     while (step > 0 && this.pi < this.path.length) {

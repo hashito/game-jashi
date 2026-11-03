@@ -1,4 +1,4 @@
-/* game-kit 356b5d0: js/monster-std.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 4b9f6fa: js/monster-std.js — edit in game-kit and run tools/kit-sync.js */
 // The default monster pack (standard 1.5; rules S12 / S20). Driven by DATA: manifest data.monsters = data/monsters.json (schema/monsters.schema.json).
 //   { "early": { "stages": 2 },
 //     "monsters": [ { "id": "windmill", "look": "windmill", "phases": [ { "preset": "early", "untilStage": "L3" }, { "preset": "normal" } ],
@@ -30,7 +30,7 @@ const DEF_LOOK = 'dark-red-mist';
 export function defaultMonsterDef(def = {}) {
   const look = def.look || DEF_LOOK;
   // afterNear (standard 1.7): with a nearAttack, the monster does not patrol before the scripted first encounter has happened (S8 comes first)
-  return { id: def.id || look, look, phases: def.phases || [{ preset: def.preset || 'early' }], spawn: def.spawn || null, route: def.route === undefined ? 'auto' : def.route, activeFrom: def.activeFrom || null, nearAttack: def.nearAttack || null, afterNear: def.afterNear ?? !!def.nearAttack, nearRespawn: def.nearRespawn ?? 6, params: def.params || {}, respawn: def.respawn ?? 14, assets: def.assets || null };
+  return { id: def.id || look, look, phases: def.phases || [{ preset: def.preset || 'early' }], spawn: def.spawn || null, route: def.route === undefined ? 'auto' : def.route, activeFrom: def.activeFrom || null, nearAttack: def.nearAttack || null, afterNear: def.afterNear ?? !!def.nearAttack, nearRespawn: def.nearRespawn ?? 6, params: def.params || {}, respawn: def.respawn ?? 14, assets: def.assets || null, opensDoors: def.opensDoors || false, footsteps: def.footsteps || null, lure: def.lure || null };
 }
 // which phase (preset) applies now: phases are tried in order; { untilStage } holds while the player's level is below that stage
 export function phaseFor(def, levelOf, levelIndex) {
@@ -62,7 +62,7 @@ export function installMonsters(ctx) {
   const { bus, scene, camera } = ctx;
   const plan = ctx.data.plan;
   const doors = () => ctx.world && ctx.world.doors;
-  const nav = ctx.monsterNav || (ctx.world && ctx.world.monsterNav) || navFromPlan(plan, { isDoorOpen: (id) => { const d = doors() && doors().get(id); return !d || !(d.locked && d.locked()); } });
+  const nav = ctx.monsterNav || (ctx.world && ctx.world.monsterNav) || navFromPlan(plan, { isDoorOpen: (id) => { const d = doors() && doors().get(id); return !d || !((d.locked && d.locked()) || d.monsterHold > 0); }, isDoorPassable: (id) => { const d = doors() && doors().get(id); return !(d && d.monsterHold > 0); } });   // a locked door blocks its sight; a fire door just shut (monsterHold, standard 1.10.15) blocks its way too
   ctx.monsterNavUsed = nav;
   const levelOf = (id) => (ctx.levelIndex ? ctx.levelIndex(id) : 0);
   const sstate = () => ({ levelIndex: ctx.prog ? ctx.prog.index : 0, levelOf, tasks: ctx.state.tasks, flags: ctx.state.flags, visited: ctx.state.visited });
@@ -142,6 +142,41 @@ export function installMonsters(ctx) {
   bus.on('player:room', ({ to }) => {
     for (const m of list) { const n = m.def.nearAttack; if (n && !m.nearDone && !m.near && n.room === to && isActive(m.def, sstate())) startNear(m, n); }
   });
+  // monsters.json "opensDoors": true | seconds (deguchi K2): it opens a closed (unlocked) door it walks into and stops there that long (0.9 s);
+  // "footsteps": "<audio noise>" | { noise, stride, gain, range } (K5): its steps sound where it walks, and bus 'monster:step' fires on every step;
+  // "lure": { block, ignoreWithin } (K4): the defaults of ctx.monsters.lure(pt, o) - it walks to a sound, not noticing you for `block` s
+  const floorOfRoom = new Map((plan.rooms || []).map((r) => [r.id, r.floor || 0]));
+  const closedDoorNear = (pos, r) => {
+    if (!doors()) return null;
+    for (const d of doors().values()) {
+      if (d.isOpen || !d.mesh || !d.def || d.def.x == null || (d.locked && d.locked()) || d.monsterHold > 0) continue;
+      if ((floorOfRoom.get(d.def.a) || 0) === (pos.floor || 0) && Math.hypot(d.def.x - pos.x, d.def.z - pos.z) < r) return d;
+    }
+    return null;
+  };
+  const doorsAndSteps = (m, dt, p) => {
+    if (m.def.opensDoors && m.ai.moving) {
+      const d = closedDoorNear(m.ai.pos, 1.15);
+      if (d && d.open()) {
+        m.ai.pauseT = typeof m.def.opensDoors === 'number' ? m.def.opensDoors : 0.9;
+        if (!ctx.state.doors.includes(d.def.id)) ctx.state.doors.push(d.def.id);
+        if (Math.hypot(d.def.x - p.x, d.def.z - p.z) < 10) ctx.sound && ctx.sound('door');
+        bus.emit('door:open', { id: d.def.id, by: m.def.id });
+      }
+    }
+    const fs = m.def.footsteps;
+    if (fs && m.ai.moving && (m.ai.pos.floor || 0) === (p.floor || 0)) {
+      const f = typeof fs === 'string' ? { noise: fs } : fs;
+      m.stepAcc = (m.stepAcc || 0) + (m.ai.speed || 0) * dt;
+      if (m.stepAcc >= (f.stride || 1.4)) {
+        m.stepAcc = 0;
+        const at = { x: m.ai.pos.x, z: m.ai.pos.z, floor: m.ai.pos.floor || 0 };
+        const dd = Math.hypot(at.x - p.x, at.z - p.z), R = f.range ?? 22;   // fainter with distance, unheard past `range` m
+        if (f.noise && dd < R && ctx.audio && ctx.audio.noise) { try { ctx.audio.noise(f.noise, { pos: { x: at.x, y: 0.05, z: at.z }, gain: (f.gain ?? 1) * Math.max(0.15, 1 - dd / R) * (ctx.calm ? 0.6 : 1) }); } catch { /* no audio */ } }
+        bus.emit('monster:step', { id: m.def.id, ...at, run: m.ai.state === 'chase' });
+      }
+    }
+  };
   const resetAll = () => { for (const m of list) { m.ai.reset(); m.near = null; m.spawned = false; m.wait = 3; } ctx.fxState = { danger: 0, mist: 0, chasing: false, spook: 0 }; };
   bus.on('player:respawn', resetAll);
   bus.on('game:start', resetAll);
@@ -169,6 +204,7 @@ export function installMonsters(ctx) {
         if (on && !m.spawned && active && !waitsForNear) { if (m.wait > 0) m.wait -= dt; else place(m); }
         if (on && m.spawned && active) {
           for (const e of m.ai.update(dt, p)) onEvent(m, e);
+          doorsAndSteps(m, dt, p);
           if (m.ai.state === 'chase' && (m.hbT -= dt) <= 0) { m.hbT = 0.8; ctx.sound && ctx.sound('heartbeat', 0.5); }
         }
         const dist = Math.hypot(m.ai.pos.x - p.x, m.ai.pos.z - p.z);
@@ -185,7 +221,22 @@ export function installMonsters(ctx) {
     place(id, pt, state = 'idle') { const m = list.find((x) => x.def.id === id) || list[0]; if (!m) return false; m.spawned = true; m.active = true; m.ai.spawnAt(pt, state); m.ai.blockNotice = 0; return true; },
     chase(id) { const m = list.find((x) => x.def.id === id) || list[0]; if (!m) return false; m.spawned = true; m.active = true; if (!m.ai.active) place(m); m.ai.startChase(P(), true); for (const e of m.ai.events.splice(0)) onEvent(m, e); return true; },
     reset: resetAll,
+    // the monster walks to a sound at pt (deguchi K4): not while it is right on top of you in a chase (ignoreWithin m), and it notices nobody on
+    // the way for `block` s. Returns true when it goes. o: { id, block, ignoreWithin }
+    lure(pt, o = {}) {
+      const m = list.find((x) => x.def.id === o.id) || list.find((x) => x.spawned && x.ai.active) || list[0];
+      if (!m || !m.ai.active || !pt) return false;
+      const L = { block: 1.4, ignoreWithin: 2.2, ...(m.def.lure || {}), ...o }, q = P();
+      if (m.ai.state === 'chase' && (m.ai.pos.floor || 0) === (q.floor || 0) && Math.hypot(m.ai.pos.x - q.x, m.ai.pos.z - q.z) < L.ignoreWithin) return false;
+      if (!m.ai.goTo({ x: pt.x, z: pt.z, floor: pt.floor ?? m.ai.pos.floor ?? 0 })) return false;
+      m.ai.set('seek'); m.ai.blockNotice = L.block;
+      bus.emit('monster:lure', { id: m.def.id, x: pt.x, z: pt.z });
+      return true;
+    },
+    // after a door turned into a wall (a fire door shut): every monster walking a path finds a new one
+    repath() { for (const m of list) if (m.ai.active && m.ai.target && m.ai.path) { if (!m.ai.goTo(m.ai.target)) { m.ai.path = null; } } },
   };
+  bus.on('door:close', ({ id }) => { const d = doors() && doors().get(id); if (d && d.monsterHold > 0) sys.repath(); });
   // __gf hooks (docs/testing.md; only with ?gftest=1)
   gfRegister('monsterStd', () => ({
     snapshot: () => ({ monsters: sys.snapshot(), fxState: ctx.fxState || null, hidden: !!ctx.hidden, rooms: nav.rooms.length, routes: nav.routes.map((r) => r.id) }),

@@ -1,4 +1,4 @@
-/* game-kit 77f396d: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 5b6bf60: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,9 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.14';
+export const CORE_VERSION = '1.10.16';
+// the mini game library's types (js/mg-library.js LIBRARY; test/story-hooks.test.mjs keeps the two equal): game.json "minigames" naming one of these loads the library
+export const MG_LIB_TYPES = ['pour', 'turn-dials', 'match-mark', 'timing', 'code-drums', 'tune-radio', 'trace-path', 'slide-tiles', 'search-dark', 'rotate-pipes', 'sort-items', 'memory-pairs', 'lock-pick', 'photo-focus', 'rhythm-taps', 'connect-dots', 'balance-scale', 'echo-bells', 'switch-panel', 'rotate-pieces', 'count-shadows', 'spot-difference', 'maze-path', 'cipher-wheel', 'steady-hand', 'pump-gauge', 'order-steps', 'compass-bearing', 'mirror-beam', 'kana-word', 'jug-measure', 'hold-breath'];
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -78,6 +80,15 @@ export async function loadGame(manifestUrl = 'game.json', o = {}) {
   const data = Object.fromEntries(await Promise.all(Object.entries(manifest.data).map(async ([k, f]) => [k, await get(f)])));
   const ext = o.ext || createExtensions();
   for (const f of manifest.ext || []) { const m = await import(new URL(f, base).href); if (typeof m.default === 'function') await m.default(ext, { manifest, data, base }); }   // (1.1) the ext module gets the loaded data (a game whose rules read it at import time fills its tables here)
+  // the kit's mini game library (standard 1.10.15, deguchi K9): a library type named in game.json "minigames" is registered (kit-sync copies
+  // js/mg-library.js and those js/mg-<type>.js); a type the game registered itself is left alone
+  if (Array.isArray(manifest.minigames) && manifest.minigames.some((t) => MG_LIB_TYPES.includes(t))) {   // only the game's own types: no mg-library.js to load (1.10.16)
+    try {
+      const { LIBRARY, useMinigames } = await import('./mg-library.js');
+      const want = LIBRARY.filter((e) => manifest.minigames.includes(e.type) && !ext.reg.minigame.has(e.type));
+      if (want.length) useMinigames(ext, await Promise.all(want.map(async (e) => (await import(`./${e.module}.js`)).default)));
+    } catch (e) { console.warn('mini game library:', e); }
+  }
   // optional feature modules are loaded only when the manifest / data ask for them (tools/kit-features.cjs is the list kit-sync copies)
   const mods = { ...(o.mods || {}) };
   if (data.monsters && !mods.monsters) mods.monsters = await import('./monster-std.js');
@@ -212,6 +223,23 @@ export function createGame(cfg) {
   world.floorY = world.floorY || (() => 0);
   const EYE = controls.eye || 1.65;
   ctx.eyeY = (floor = ctx.floor) => world.floorY(floor) + EYE;
+  // doors the story locks (standard 1.10.15, deguchi K1): ctx.lockDoor(id, fn, hint) adds a lock (fn() true = shut) and the [E] answer while
+  // it holds (a text or a function); plan.doors[i].needs = { flags, items, tasks } (every one must hold), hints = { <missing id>: text }
+  ctx.lockDoor = (id, fn, hint) => {
+    const d = world.doors && world.doors.get(id); if (!d || !d.def) return false;
+    const base = d.locked || (() => false); d.locked = () => base() || !!fn();
+    if (hint != null) {
+      const prev = Object.getOwnPropertyDescriptor(d.def, 'hint'), old = () => (prev ? (prev.get ? prev.get.call(d.def) : prev.value) : undefined);
+      Object.defineProperty(d.def, 'hint', { configurable: true, enumerable: true, get: () => (fn() ? ((typeof hint === 'function' ? hint() : hint) ?? old()) : old()) });
+    }
+    return true;
+  };
+  ctx.needsMissing = (needs = {}) => [...(needs.flags || []).filter((k) => !state.flags.includes(k)), ...(needs.items || []).filter((k) => !state.inv.includes(k)), ...(needs.tasks || []).filter((k) => !state.tasks.includes(k))];
+  for (const d of plan.doors || []) if (d.needs) ctx.lockDoor(d.id, () => ctx.needsMissing(d.needs).length > 0, () => (d.hints || {})[ctx.needsMissing(d.needs)[0]]);
+  // a door that holds the monster back for a while after you shut it (deguchi K3, a fire door): plan.doors[i].blocksMonster = seconds (a wall
+  // on the monster's nav, d.monsterHold counts down; opening it again ends it), holdText = the line when it shuts, holdLocked = a text: you
+  // cannot open it either while it holds (that text is the answer)
+  for (const d of plan.doors || []) if (d.blocksMonster && d.holdLocked) ctx.lockDoor(d.id, () => world.doors.get(d.id).monsterHold > 0, d.holdLocked);
 
   // pickups (items, docs): a model of the item's `kind` (js/item-kinds.js; docs default to paper) resting on what is under it, or a coloured box
   // for an item without a kind; a world that places its own pickups says so (registerWorld({ pickups: 'self' })). Items with "given": <task id>
@@ -448,11 +476,13 @@ export function createGame(cfg) {
         if (d.isOpen && d.def.closable) {   // standard 1.10.4: a closable door shuts again (never on the player standing in the doorway)
           const b = new THREE.Box3().setFromObject(d.mesh).expandByScalar(0.3), p = camera.position;
           if (p.x > b.min.x && p.x < b.max.x && p.z > b.min.z && p.z < b.max.z) { ui.say('戸口から一歩離れると閉められます。', 3, { urgent: true }); return; }
-          d.close(); sound('door'); const k = state.doors.indexOf(o.id); if (k >= 0) state.doors.splice(k, 1); bus.emit('door:close', { id: o.id }); ctx.save(); return;
+          d.close(); sound('door'); const k = state.doors.indexOf(o.id); if (k >= 0) state.doors.splice(k, 1);
+          if (d.def.blocksMonster) { d.monsterHold = d.def.blocksMonster; if (d.def.holdText) ctx.answer(d.def.holdText); }   // a fire door (standard 1.10.15)
+          bus.emit('door:close', { id: o.id }); ctx.save(); return;
         }
-        if (d.open()) { sound('door'); state.doors.push(o.id); bus.emit('door:open', { id: o.id }); } else if (d.locked()) { ui.say(esc(d.def.hint || prog.lockText(d.def.unlock) || 'いまは開きません。鍵や手がかりを探してみましょう。'), 5, { urgent: true }); /* the answer to [E]: at once, not after a queued line */ bus.emit('door:locked', { id: o.id, unlock: d.def.unlock }); } } },
+        if (d.open()) { sound('door'); state.doors.push(o.id); d.monsterHold = 0; bus.emit('door:open', { id: o.id }); } else if (d.locked()) { ui.say(esc(d.def.hint || prog.lockText(d.def.unlock) || 'いまは開きません。鍵や手がかりを探してみましょう。'), 5, { urgent: true }); /* the answer to [E]: at once, not after a queued line */ bus.emit('door:locked', { id: o.id, unlock: d.def.unlock }); } } },
     station: { prompt: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); return t ? `[E] ${t.title}` : o.label || '（いまは何もない）'; },
-      run: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); if (!t) { const open = tasks.find((x) => x.station === o.id && !state.tasks.includes(x.id)); return ui.say(esc(open ? ctx.canStart(open) : 'ここでの作業は、もう終わっています。')); } return ctx.startTask(t.id); } },
+      run: (o) => { const t = taskAtStation(tasks, o.id, state.tasks); if (!t) { const open = tasks.find((x) => x.station === o.id && !state.tasks.includes(x.id)); const why = open ? ctx.canStart(open) : 'ここでの作業は、もう終わっています。'; return ui.say(esc(why), Math.min(9, 2.4 + String(why).length * 0.09), { urgent: true }); }   /* the answer to [E] (K8): never behind a queued line */ return ctx.startTask(t.id); } },
     item: { prompt: (o) => `[E] 拾う：${items.find((i) => i.id === o.id).name}`,
       run: (o) => { const it = items.find((i) => i.id === o.id); remove('item', o.id); state.inv.push(o.id); sound('pickup'); ctx.lastPickup = { it, at: Date.now() }; if (it.photo) lane.push({ kind: 'card', cls: 'tl-lookcard tl-pickcard', key: `pickup:${it.id}`, ttl: 6000, html: viewItemHtml({ photo: it.photo, title: `入手：${it.name}` }) }); else ui.toast(`入手：${esc(it.name)}`); ui.say(esc(it.feeling));   /* an item with a photo shows its picture card (the feeling stays in the thought band) */ bus.emit('item:pickup', { id: o.id }); ctx.save(); checkEndings(); } },
     doc: { prompt: (o) => `[E] 読む：${docs.find((d) => d.id === o.id).title}`,
@@ -669,18 +699,29 @@ export function createGame(cfg) {
   }
   ctx.systems = systems;
   ctx.monologue = (text, sec = 2.2, o) => ui.say(esc(text), sec, o);   // the protagonist's thought line (U23); monster hints ("走れ") go through it
+  // the answer to what the player just did ([E] on something, a key): at once, never dropped from a full queue (standard 1.10.15, deguchi K8)
+  ctx.answer = (text, sec) => ctx.monologue(text, sec ?? Math.min(9, 2.4 + String(text).length * 0.09), { urgent: true });
+  systems.push({ id: 'door-hold', def: { update: (dt = 0.016, c, active) => { if (active && world.doors) for (const d of world.doors.values()) if (d.monsterHold > 0) d.monsterHold = Math.max(0, d.monsterHold - dt); } } });
   // the conversation window and the choice (js/talk-ui.js, standard 1.7): ctx.talk(lines | 'key of data/talk.json', o), ctx.choose({ who, text, options })
   { const T = createTalk({ wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), said: (L) => ui.sayLine.remember(`<span class="who">${esc(L.who || '')}</span>${esc(L.text || '')}`), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.choose = T.choose;
     // a talk that opens right after a pick-up (the item finished a task, the story answers it) used to cover the item card at once: the player
     // never read what they had picked up. Such a talk now starts with the item itself (picture, name, desc) as its first page, read at the player's pace.
+    // a line { t: '...' } in a talk is a thought (deguchi K6): the spoken lines go in the window, then the thoughts in the thought band
+    const isThought = (l) => l && l.t != null && l.text == null;
+    const talk0 = (src, o) => {
+      const all = typeof src === 'string' ? (data.talk && data.talk[src]) || [] : src || [];
+      if (!all.some(isThought)) return T.talk(src, o);
+      const spoken = all.filter((l) => !isThought(l)), after = () => { for (const l of all) if (isThought(l)) ctx.monologue(l.t, Math.min(9, 2.4 + String(l.t).length * 0.09)); };
+      return spoken.length ? Promise.resolve(T.talk(spoken, o)).then((v) => { after(); return v; }) : (after(), Promise.resolve(true));
+    };
     ctx.talk = (src, o = {}) => {
       const p = ctx.lastPickup; ctx.lastPickup = null;
       const lines = typeof src === 'string' ? (data.talk && data.talk[src]) || [] : src || [];
-      if (!p || Date.now() - p.at > 8000 || o.pickup === false || !lines.length) return T.talk(src, o);
+      if (!p || Date.now() - p.at > 8000 || o.pickup === false || !lines.length) return talk0(src, o);
       lane.clear('card');
       const it = p.it, first = { who: '入手', text: `${it.name}${it.desc ? `
 ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
-      return T.talk([first, ...lines], o);
+      return talk0([first, ...lines], o);
     }; }
   // 言葉の記録 (feedback 2026-11-02 「思ったことや会話が流れる」): every thought and spoken line since the start, newest first, in the menu;
   // L opens it, and on a phone a tap on the thought band does

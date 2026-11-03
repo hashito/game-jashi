@@ -103,6 +103,9 @@ try {
   const doneAll = () => G('g.data.tasks.every((t) => g.state.tasks.includes(t.id)) || !!g.state.ended');
   let resumed = false;
   for (let round = 0; round < 12 && !(await doneAll()); round++) {
+    // a running task timer (a 90 s drain) is waited out: ?qa runs timers 10x (standard 1.10.15, deguchi K7)
+    const left = await G('Math.max(0, ...g.data.tasks.filter((t) => t.timer && !g.state.tasks.includes(t.id) && (g.state.timers || {})[t.id] > 0).map((t) => (g.timer(t.id) || {}).left || 0))');
+    if (round > 0 && left > 0) await sleep(Math.min(60000, (left / 10) * 1000 + 800));
     for (const d of doors) {
       if (await G(`g.world.doors.get(${JSON.stringify(d)}).isOpen`)) continue;
       const unlocked = await G(`!g.world.doors.get(${JSON.stringify(d)}).locked()`);

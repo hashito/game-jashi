@@ -1,4 +1,4 @@
-/* game-kit 8cacc23: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 4b9f6fa: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
 // The window manager of the standard UI shell (rules U12 / U14 / U21): ONE window at a time, a fixed size per breakpoint
 // (never changed by tabs or content: the content scrolls inside), larger on big screens (>= 900 x 700), ALWAYS top-anchored
 // (windows shown one after another keep their top edge in one place: a size s window after a size m one does not jump down),
@@ -31,6 +31,7 @@ export function hudLayout(vw, vh, { touch = false, open = false } = {}) {
   const maxW = compact ? Math.round(Math.min(vw * (open ? H.openFrac : H.closedFrac), open ? H.openW : H.closedW)) : Math.round(Math.min(H.fullW, vw * H.fullFrac));
   return { compact, open: compact && !!open, maxW };
 }
+export const PHONE_SHORT = 500, PHONE_ZOOM = 1.18; // windows on a phone: the text bigger (standard 1.10.16)
 export const isLarge = (vw, vh) => vw >= WM_LARGE.w && vh >= WM_LARGE.h;
 // The fixed window size for a viewport (pure). `band` = the inner-voice band height at the bottom (kept free).
 // Large: centred, the preset size grown with the viewport (WM_GROW; a custom {w,h} stays exact), margin 32. Small: a full-screen SHEET (the whole screen minus the margin / safe-area insets, margin 16, 12 on short
@@ -41,8 +42,9 @@ export function windowSize(vw, vh, { size = "m", band = 0 } = {}) {
   const large = isLarge(vw, vh);
   const g = !custom && large ? WM_GROW[WM_SIZES[size] ? size : "m"] : null;
   const preset = g ? { w: Math.round(Math.max(base.w, Math.min(g.w, vw * g.fw))), h: Math.round(Math.max(base.h, Math.min(g.h, vh * g.fh))) } : base;
-  // text grows a little with a big window (1 at 800px tall, up to 1.25)
-  const zoom = large ? Math.round(Math.max(1, Math.min(1.25, vh / 800)) * 100) / 100 : 1;
+  // text grows a little with a big window (1 at 800px tall, up to 1.25); on a phone (short side < 500 px) it is PHONE_ZOOM (feedback
+  // 2026-11-04 出口はこちらです「携帯でダイアログが小さく文字が見えない」: 15 px is about 2.5 mm on a phone)
+  const zoom = large ? Math.round(Math.max(1, Math.min(1.25, vh / 800)) * 100) / 100 : Math.min(vw, vh) < PHONE_SHORT ? PHONE_ZOOM : 1;
   const margin = large ? 32 : vh < 520 ? 12 : 16;
   const freeW = Math.max(240, vw - margin * 2);
   const bandKept = large ? band || 0 : 0;

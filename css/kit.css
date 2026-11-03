@@ -1,4 +1,4 @@
-/* game-kit 8cacc23: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 4b9f6fa: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -3031,12 +3031,14 @@ html[data-gf-no-flash="1"] .wm-layer { animation: none; }
 .gf-talk-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gf-space-2, 8px); }
 .gf-talk-img + .gf-talk-row .gf-talk-face { width: clamp(64px, 14%, 96px); }
 .gf-talk-img:has(+ .gf-talk-row) { max-height: 22vh; }   /* a scene picture with a face under it: both fit without scrolling */
-.gf-talk-who { margin: 0; color: var(--gf-accent, #d9b46a); font-size: var(--gf-text-sm, 13px); letter-spacing: 0.12em; }
+.gf-talk-who { margin: 0; color: var(--gf-accent, #d9b46a); font-size: 0.9em; letter-spacing: 0.12em; }
 .gf-talk-who span { color: var(--gf-text-dim, #b8b4a8); margin-left: 0.4em; letter-spacing: 0; }
 .gf-talk--me .gf-talk-who { color: var(--gf-text-dim, #b8b4a8); }
-.gf-talk-text { margin: 0; color: var(--gf-text, #e8e6df); font-size: 18px; line-height: 1.9; cursor: pointer; }
+.gf-talk-text { margin: 0; color: var(--gf-text, #e8e6df); font-size: 1.2em; line-height: 1.9; cursor: pointer; }
 .gf-talk-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: var(--gf-space-3, 12px); }
-.gf-talk-n { color: var(--gf-text-dim, #b8b4a8); font-size: var(--gf-text-sm, 13px); }
+.gf-talk-n { color: var(--gf-text-dim, #b8b4a8); font-size: 0.9em; }
+/* the talk sizes follow the window text (--wm-zoom: bigger on PC and on a phone, standard 1.10.16); a short landscape phone keeps the face small so the words fit */
+@media (max-height: 499px) { .gf-talk-face { width: clamp(64px, 16%, 110px); } .gf-talk-img { max-height: 26vh; } .gf-talk-img:has(+ .gf-talk-row) { max-height: 18vh; } }
 .gf-talk-next, .gf-talk-choice { min-height: var(--gf-hit, 44px); min-width: 120px; }
 .gf-talk-choices { display: flex; flex-wrap: wrap; gap: var(--gf-space-3, 12px); justify-content: flex-end; margin-top: var(--gf-space-4, 16px); }
 
@@ -3049,7 +3051,17 @@ body.gf-warming .wm-layer, body.gf-warming .rn-wrap, body.gf-warming #mg, body.g
 .mgx { position: fixed; left: 50%; top: max(var(--gf-space-5, 24px), min(9vh, 80px), env(safe-area-inset-top, 0px)); transform: translateX(-50%); width: min(520px, calc(100vw - 24px)); max-height: calc(100vh - min(9vh, 80px) - 24px); overflow: auto; z-index: calc(var(--gf-z-window, 60) + 5);
   box-sizing: border-box; background: var(--gf-surface, var(--panel, #fffdf6)); border: 1px solid var(--gf-border-strong, var(--line, #b8b0a0)); border-radius: var(--gf-radius-lg, 12px); padding: var(--gf-space-5, 20px); color: var(--gf-text, var(--ink, #23302c)); box-shadow: var(--gf-shadow, 0 10px 40px rgba(0, 0, 0, 0.35)); }
 .mgx-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.mgx-head b { font-size: 18px; color: var(--gf-heading, var(--gf-accent, #2f5e46)); }
+.mgx-head b { font-size: 1.15em; color: var(--gf-heading, var(--gf-accent, #2f5e46)); }
+/* on a phone (short side < 500 px) a mini game window takes the screen and its text is bigger (standard 1.10.16, feedback 2026-11-04
+   出口はこちらです「携帯でダイアログが小さく文字が見えない」) */
+@media (max-height: 499px), (max-width: 499px) {
+  .mgx { top: max(8px, env(safe-area-inset-top, 0px)); width: min(820px, calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))); max-height: calc(100dvh - 16px); padding: 14px 18px; font-size: calc(17px * var(--fs, 1)); }
+  #mg { padding: max(8px, env(safe-area-inset-top, 0px)) 8px 8px; }
+  #mg .mg-box { width: min(820px, 100%); font-size: calc(17px * var(--fs, 1)); }
+  #mg .mg-x, #mg .mg-ok, #mg .mg-step { font-size: 1em; }
+  #mg .mg-help { font-size: 1em; } #mg .mg-msg { font-size: 0.95em; } #mg .mg-foot { font-size: 0.82em; }
+  #mg .al-mark span, #mg .dl-lbl, #mg .sq-n, #mg .sq-btn small, #mg .ln-tray { font-size: 0.88em; } #mg .al-item span { font-size: 0.75em; } #mg .ln-slip { font-size: 1em; }
+}
 .mgx-help { color: var(--gf-text-dim, var(--dim, #5c6662)); line-height: 1.7; }
 .mgx-msg { min-height: 1.7em; color: var(--gf-accent-hover, var(--gf-accent, #2f5e46)); }
 .mgx-close, .mgx-row .btn { min-height: var(--gf-hit, 44px); }

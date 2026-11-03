@@ -1,5 +1,5 @@
 {
-  "kit": "77f396d",
+  "kit": "5b6bf60",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -90,7 +90,8 @@
     "interior-finish",
     "flavor",
     "hide-looks",
-    "barrier-look"
+    "barrier-look",
+    "station-looks"
   ],
   "css": "css/kit.css",
   "cssExtra": [
@@ -120,7 +121,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "c1836d6ca077",
+    "js\\kit\\game-core.js": "56114ef28de6",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -149,10 +150,10 @@
     "js\\kit\\audio.js": "6bbf00df9f42",
     "js\\kit\\audio-at.js": "85440435d84e",
     "js\\kit\\task-minigames.js": "41492f5b2250",
-    "js\\kit\\world-from-plan.js": "6058d6d9ed9a",
+    "js\\kit\\world-from-plan.js": "8b3caf79c7e0",
     "js\\kit\\interact-select.js": "b4675956490c",
     "js\\kit\\room-types.js": "a99c6dc37499",
-    "js\\kit\\win-manager.js": "e8830a5007fa",
+    "js\\kit\\win-manager.js": "bf94a76654a5",
     "js\\kit\\tab-menu.js": "9f745cde2c9a",
     "js\\kit\\pause-menu.js": "7b75571546ea",
     "js\\kit\\journal-ui.js": "ce94368a8143",
@@ -170,12 +171,12 @@
     "js\\kit\\game-data.js": "f436682bec94",
     "js\\kit\\ending-scene.js": "38960229a610",
     "js\\kit\\schema-check.js": "ebccf998c09b",
-    "js\\kit\\monster-ai.js": "9d98d9ba414f",
+    "js\\kit\\monster-ai.js": "9011fda4b7e9",
     "js\\kit\\things-data.js": "3aabd0a31ea1",
     "js\\kit\\terminal-data.js": "a9ec2af2abe1",
     "js\\kit\\recipes-data.js": "19af60d3dd45",
-    "js\\kit\\monster-std.js": "1a8509c28da3",
-    "js\\kit\\monster-nav.js": "8593abb398ca",
+    "js\\kit\\monster-std.js": "51a60a15318a",
+    "js\\kit\\monster-nav.js": "e8c9ff6e2b4c",
     "js\\kit\\monster-looks.js": "084272543168",
     "js\\kit\\character.js": "9c8eb0e6e73a",
     "js\\kit\\motion.js": "7abe78dbc489",
@@ -190,8 +191,8 @@
     "js\\kit\\prop-batch.js": "c5fa6b1cd894",
     "js\\kit\\env-props.js": "cc164232ed7a",
     "js\\kit\\texture-library.js": "3270ec79ed80",
-    "js\\kit\\text-contrast.js": "0f2a95264e07",
-    "css/kit.css": "7d539d39d511",
+    "js\\kit\\text-contrast.js": "7ee42856ab86",
+    "css/kit.css": "58f3ccf03274",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
     "css\\shell.css": "b10ba41363e3",
@@ -221,7 +222,7 @@
     "tools/check-wording.mjs": "fba8646626fe",
     "tools/check-stage.mjs": "f23c43fd8df1",
     "tools/check-escape.mjs": "e02864475501",
-    "tools/kit-features.cjs": "1ab84029d4f2",
+    "tools/kit-features.cjs": "c98f85ca0c76",
     "js\\kit\\building.js": "81b12f396b1e",
     "js\\kit\\outer-walls.js": "114f94921936",
     "js\\kit\\fear-fx.js": "1df2962a4146",
@@ -239,11 +240,12 @@
     "js\\kit\\interior-finish.js": "8a2515743cd5",
     "tools/check-traps.mjs": "4390617a5164",
     "tools/build-site.js": "2743c81000d9",
-    "tools/smoke.mjs": "3d4da51af2a6",
+    "tools/smoke.mjs": "ef4b5d335643",
     "tools/review-shots.mjs": "5498ba6d5e1c",
     "js\\kit\\flavor.js": "1e4371c2baf8",
     "js\\kit\\hide-looks.js": "39f3ec1af2ca",
-    "js\\kit\\barrier-look.js": "b700d47e252d"
+    "js\\kit\\barrier-look.js": "b700d47e252d",
+    "js\\kit\\station-looks.js": "d975e9cad2f9"
   },
   "textures": []
 }

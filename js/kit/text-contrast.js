@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/text-contrast.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 5b6bf60: js/text-contrast.js — edit in game-kit and run tools/kit-sync.js */
 // Computed text contrast (rule U30 / docs/text-contrast.md): for every visible text node, the colour it is really drawn in against the colour it is really drawn on.
 // Used by tools/check-text-contrast.mjs (headless browser; real pixels where the background is an image / gradient / 3D scene) and, in the page itself,
 // through window.__gf.drive("textContrast", "audit") (docs/testing.md; no pixels: elements that need them are reported as "unchecked").
@@ -74,7 +74,8 @@ export function collectTextItems(root) {
     if (rc.width < 1 || rc.height < 1) continue;
     if (rc.right < 0 || rc.bottom < 0 || rc.left > innerWidth || rc.top > innerHeight) continue;
     let ok = true, op = 1;
-    for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.display === "none" || cs.visibility === "hidden" || cs.contentVisibility === "hidden") { ok = false; break; } op *= parseFloat(cs.opacity); }
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.display === "none" || cs.visibility === "hidden" || cs.contentVisibility === "hidden") { ok = false; break; } op *= parseFloat(cs.opacity);
+      if (n !== el && (cs.overflowX !== "visible" || cs.overflowY !== "visible")) { const b = n.getBoundingClientRect(); if (rc.bottom <= b.top + 1 || rc.top >= b.bottom - 1 || rc.right <= b.left + 1 || rc.left >= b.right - 1) { ok = false; break; } } }   // scrolled out of a scroll box: not seen (yet)
     if (!ok || op < 0.05) continue;
     const cx = Math.min(innerWidth - 1, Math.max(0, rc.left + rc.width / 2)), cy = Math.min(innerHeight - 1, Math.max(0, rc.top + rc.height / 2));
     const top = doc.elementFromPoint(cx, cy);

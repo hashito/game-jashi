@@ -1,4 +1,4 @@
-/* game-kit 77f396d: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 4b9f6fa: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -22,6 +22,7 @@ import * as THREE from 'three';
 import { selectInteractable, selectAtScreen, rayBox } from './interact-select.js';
 import { roomLook } from './room-types.js';
 import { barrierLook } from './barrier-look.js';
+import { dressStation } from './station-looks.js';
 
 export const DEFAULTS = { wallH: 3, wallT: 0.16, floorH: 3.4, doorH: 2.2, doorW: 1.0, roomLights: true };
 export const PALETTE = {
@@ -281,8 +282,10 @@ export function buildWorld(plan, o = {}) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.5), stationM);
     mesh.position.y = 0.55; mesh.name = `station:${s.id}`; mesh.userData.interact = { kind: 'station', id: s.id, label: s.label };
     place(mesh, s.room, s.x, s.z);
-    colliders.push({ box: new THREE.Box3().setFromObject(mesh), off: false });
+    const col = { box: new THREE.Box3().setFromObject(mesh), off: false };
+    colliders.push(col);
     interactables.push(mesh);
+    if (s.look) { const R = roomsById.get(s.room); dressStation(s, R.room, mesh, col, group, R.y); }   // s.look / s.mount: the thing itself, not the green box (standard 1.10.15, js/station-looks.js)
   }
 
   // stairs / lifts: a block at each end, [E] to go to the other floor
