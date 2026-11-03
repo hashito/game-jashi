@@ -1,5 +1,5 @@
 {
-  "kit": "17b29ea",
+  "kit": "ec15eb1",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -88,7 +88,8 @@
     "mg-pump-gauge",
     "mg-hold-breath",
     "interior-finish",
-    "flavor"
+    "flavor",
+    "hide-looks"
   ],
   "css": "css/kit.css",
   "cssExtra": [
@@ -118,7 +119,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "711c25fcb77d",
+    "js\\kit\\game-core.js": "205cf7837565",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -147,7 +148,7 @@
     "js\\kit\\audio.js": "6bbf00df9f42",
     "js\\kit\\audio-at.js": "85440435d84e",
     "js\\kit\\task-minigames.js": "41492f5b2250",
-    "js\\kit\\world-from-plan.js": "d837e0a0f3f3",
+    "js\\kit\\world-from-plan.js": "341ccdd93f34",
     "js\\kit\\interact-select.js": "b4675956490c",
     "js\\kit\\room-types.js": "a99c6dc37499",
     "js\\kit\\win-manager.js": "e8830a5007fa",
@@ -172,7 +173,7 @@
     "js\\kit\\things-data.js": "3aabd0a31ea1",
     "js\\kit\\terminal-data.js": "a9ec2af2abe1",
     "js\\kit\\recipes-data.js": "19af60d3dd45",
-    "js\\kit\\monster-std.js": "78fbc48529d0",
+    "js\\kit\\monster-std.js": "1a8509c28da3",
     "js\\kit\\monster-nav.js": "8593abb398ca",
     "js\\kit\\monster-looks.js": "084272543168",
     "js\\kit\\character.js": "9c8eb0e6e73a",
@@ -239,7 +240,8 @@
     "tools/build-site.js": "2743c81000d9",
     "tools/smoke.mjs": "3d4da51af2a6",
     "tools/review-shots.mjs": "5498ba6d5e1c",
-    "js\\kit\\flavor.js": "1e4371c2baf8"
+    "js\\kit\\flavor.js": "1e4371c2baf8",
+    "js\\kit\\hide-looks.js": "e9b2216c1706"
   },
   "textures": []
 }

@@ -1,4 +1,4 @@
-/* game-kit d62d2ac: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b1860c2: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -209,11 +209,54 @@ export function buildWorld(plan, o = {}) {
     for (const f of leaves) f.hold.traverse((o) => { if (o.isMesh) (o.userData.doorFace ? faces : decos).push(o); });
     return { G, leaves, look, sliding, sIn, w: lw, faces, decos };
   }
+  // an opening that opens at a stage (door "open": true + "unlock": key, standard 1.10.12, rule S13 "前半は行ける場所を絞る"): until then a barrier
+  // stands across it - "barrier": "rope" (a straw rope between two stakes, default outdoors), "tape" (yellow and black tape between two cones), or
+  // "none" (the game dresses it). It blocks the player (not the monster's nav) and [E] on it says the door's "hint" (or the stage's lock text);
+  // it is taken away when its key is unlocked.
+  const barriers = [];
+  function barrierAt(d, a) {
+    const { edge } = doorEdge(a, d.x, d.z), w = d.width ?? K.doorW, y0 = yOf(a), alongX = edge === 'n' || edge === 's';
+    const fixed = alongX ? (edge === 'n' ? a.z : a.z + a.d) : edge === 'w' ? a.x : a.x + a.w;
+    const { mesh, col } = alongX ? box(w, K.doorH, 0.12, doorHitM, d.x, y0 + K.doorH / 2, fixed, true, `door:${d.id}`) : box(0.12, K.doorH, w, doorHitM, fixed, y0 + K.doorH / 2, d.z, true, `door:${d.id}`);
+    mesh.userData.interact = { kind: 'door', id: d.id };
+    interactables.push(mesh);
+    const kind = d.barrier || plan.barrier || (outdoorRoom(a) ? 'rope' : 'tape');
+    const G = new THREE.Group(); G.name = `barrier:${d.id}`; G.position.set(alongX ? d.x : fixed, y0, alongX ? fixed : d.z); G.rotation.y = alongX ? 0 : -Math.PI / 2;
+    const part = (geo, mt, x, y, z) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.castShadow = true; G.add(o); return o; };
+    const half = w / 2 - 0.08;
+    const n = Math.max(1, Math.ceil((half * 2) / 3)), xs = Array.from({ length: n + 1 }, (_, i) => -half + (i * half * 2) / n);   // a post every 3 m or less
+    if (kind === 'rope') {
+      const stake = m('barrier-stake', 0x5a4632), rope = m('barrier-rope', 0xb59a62), paper = m('barrier-paper', 0xe8e2d0);
+      for (const x of xs) part(new THREE.CylinderGeometry(0.045, 0.05, 1.15, 8), stake, x, 0.575, 0);
+      for (let i = 0; i < n; i++) {
+        const x0 = xs[i], x1 = xs[i + 1], curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x0, 1.0, 0), new THREE.Vector3((x0 + x1) / 2, 0.84, 0), new THREE.Vector3(x1, 1.0, 0));
+        part(new THREE.TubeGeometry(curve, 12, 0.022, 6, false), rope, 0, 0, 0);
+        const pt = curve.getPoint(0.5); part(new THREE.PlaneGeometry(0.07, 0.16), paper, pt.x, pt.y - 0.1, 0).material.side = THREE.DoubleSide;
+      }
+    } else if (kind === 'tape') {
+      const cone = m('barrier-cone', 0xd8602a), bar = m('barrier-bar', 0x2a2a2a), tape = new THREE.MeshStandardMaterial({ map: stripeTex(), roughness: 0.6, side: THREE.DoubleSide });
+      for (const x of xs) { part(new THREE.ConeGeometry(0.16, 0.7, 12), cone, x, 0.35, 0); part(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), bar, x, 0.85, 0); }
+      const t = part(new THREE.PlaneGeometry(half * 2, 0.07), tape, 0, 1.0, 0); if (t.material.map) t.material.map.repeat.set(Math.max(1, Math.round(half * 4)), 1);
+    }
+    group.add(G);
+    const api = { def: d, mesh, col, look: G, isOpen: false, barrier: true, locked: () => !isUnlocked(d.unlock), open() { return false; }, close() {}, snap() {} };
+    doors.set(d.id, api); barriers.push(api);
+  }
+  let stripeT = null;
+  function stripeTex() {
+    if (stripeT) return stripeT;
+    if (typeof document === 'undefined') return null;
+    const c = document.createElement('canvas'); c.width = 64; c.height = 16; const g = c.getContext('2d');
+    g.fillStyle = '#e8c21a'; g.fillRect(0, 0, 64, 16); g.fillStyle = '#1a1a1a'; for (let x = -16; x < 64; x += 16) { g.beginPath(); g.moveTo(x, 16); g.lineTo(x + 8, 16); g.lineTo(x + 16, 0); g.lineTo(x + 8, 0); g.fill(); }
+    stripeT = new THREE.CanvasTexture(c); stripeT.wrapS = THREE.RepeatWrapping; stripeT.colorSpace = THREE.SRGBColorSpace; return stripeT;
+  }
+  const updateBarriers = () => { for (const b of barriers) if (!b.isOpen && !b.locked()) { b.isOpen = true; b.look.visible = false; b.mesh.visible = false; b.col.off = true; const i = interactables.indexOf(b.mesh); if (i >= 0) interactables.splice(i, 1); } };
   const doorAnims = [];
   for (const d of plan.doors || []) {
     const a = byId.get(d.a);
     if (!a || d.x == null || d.kind === 'stairs' || d.kind === 'lift') continue;
-    if (d.open) { doors.set(d.id, { def: d, mesh: null, col: null, isOpen: true, locked: () => false, open() { return false; }, close() {} }); continue; }   // an opening: no panel
+    if (d.open && !d.unlock) { doors.set(d.id, { def: d, mesh: null, col: null, isOpen: true, locked: () => false, open() { return false; }, close() {} }); continue; }   // an opening: no panel
+    if (d.open) { barrierAt(d, a); continue; }   // an opening with "unlock": a rope / tape across it until then (standard 1.10.12, rule S13)
     const { edge } = doorEdge(a, d.x, d.z), w = d.width ?? K.doorW, y0 = yOf(a), alongX = edge === 'n' || edge === 's';
     const fixed = alongX ? (edge === 'n' ? a.z : a.z + a.d) : edge === 'w' ? a.x : a.x + a.w;
     const { mesh, col } = alongX ? box(w, K.doorH, 0.12, doorHitM, d.x, y0 + K.doorH / 2, fixed, true, `door:${d.id}`) : box(0.12, K.doorH, w, doorHitM, fixed, y0 + K.doorH / 2, d.z, true, `door:${d.id}`);
@@ -388,7 +431,7 @@ export function buildWorld(plan, o = {}) {
   }
   const spawnRoom = S && S.room;
   if (spawn && spawn.floor == null && spawnRoom) spawn.floor = spawnRoom.floor || 0;
-  return { group, colliders, interactables, rooms: roomsById, doors, stairs, roomAt, place, bounds, spawn, floorY, yOf: (id) => roomsById.get(id)?.y || 0, K, edges, update: (dt) => updateDoors(dt) };
+  return { group, colliders, interactables, rooms: roomsById, doors, stairs, roomAt, place, bounds, spawn, floorY, yOf: (id) => roomsById.get(id)?.y || 0, K, edges, update: (dt) => { updateDoors(dt); updateBarriers(); } };
 }
 
 // the interaction pick (rule W18, js/interact-select.js): the thing the camera looks at, with a cone assist, a 15 cm margin around the

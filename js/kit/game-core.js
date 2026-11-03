@@ -1,4 +1,4 @@
-/* game-kit 17b29ea: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 356b5d0: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.10';
+export const CORE_VERSION = '1.10.13';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -628,6 +628,19 @@ export function createGame(cfg) {
     if (fl.on) ctx.setLight(true);
   } else ctx.setLight = () => {};
   ctx.visibility = () => (fp.crouching ? controls.crouchVisibility ?? 0.6 : 1) * (ctx.lightOn ? controls.lightVisibility ?? 1.3 : 1);
+
+  // control gates (game.json "controls": { "gate": { "run": "G03", "crouch": "G03", "light": "G01", "hide": "G03" } }, standard 1.10.11, rule S13):
+  // the first stages limit the controls and add them one at a time; each opens at its level (a toast says how to use it), before then the key
+  // answers in one line. ctx.controlOpen(k) for a game's own controls (any key name in "gate").
+  const gate = controls.gate || {};
+  const GATE = { run: ['走れるようになりました', 'Shift', '［走る］'], crouch: ['しゃがめるようになりました', 'C', '［しゃがむ］'], light: ['懐中電灯が使えるようになりました', 'F', '［灯り］'], hide: ['隠れられるようになりました', '隠れ場所で E', '隠れ場所をタップ'] };
+  ctx.controlOpen = (k) => !gate[k] || ctx.levelIndex(gate[k]) <= prog.index;
+  const notYet = () => ui.say(esc(controls.gateText || 'いまは、まだ使えません。先に、いまの目的を進めましょう。'), 3, { urgent: true });
+  ctx.controlNotYet = notYet;
+  if (gate.run) { const run0 = fp.running.bind(fp); fp.running = () => run0() && ctx.controlOpen('run'); }
+  if (gate.crouch) { const c0 = ctx.setCrouch; ctx.setCrouch = (on) => (on && !ctx.controlOpen('crouch') ? notYet() : c0(on)); }
+  if (gate.light) { const l0 = ctx.setLight; ctx.setLight = (on) => (on && !ctx.controlOpen('light') ? notYet() : l0(on)); }
+  bus.on('stage:up', ({ level }) => { for (const [k, at] of Object.entries(gate)) if (at === level) { const g = GATE[k] || [`${k} が使えるようになりました`, '', '']; ui.toast(esc(`${g[0]}${g[1] ? `（${ctx.isTouch ? g[2] : g[1]}）` : ''}`)); } });
 
   // timed tasks (tasks.json "timer": { "seconds": 150, "label": "夜明けまで" }, standard 1.7): once the task can be worked on (its stage, its needs),
   // play time counts up and the task completes by itself; ext.registerTask(id, { beforeDone: async (ctx, task) => ... }) runs first (a conversation).

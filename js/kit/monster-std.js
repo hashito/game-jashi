@@ -1,4 +1,4 @@
-/* game-kit 244cbc9: js/monster-std.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 356b5d0: js/monster-std.js — edit in game-kit and run tools/kit-sync.js */
 // The default monster pack (standard 1.5; rules S12 / S20). Driven by DATA: manifest data.monsters = data/monsters.json (schema/monsters.schema.json).
 //   { "early": { "stages": 2 },
 //     "monsters": [ { "id": "windmill", "look": "windmill", "phases": [ { "preset": "early", "untilStage": "L3" }, { "preset": "normal" } ],
@@ -20,6 +20,7 @@ import { MonsterAI, NearAttack, resolveParams, WITNESS } from './monster-ai.js';
 import { navFromPlan } from './monster-nav.js';
 import * as THREE from 'three';
 import { createLook } from './monster-looks.js';
+import { buildHideLook } from './hide-looks.js';
 import { gfRegister, gfEmit, gfOk, gfFail, gfUnknown, mulberry32 } from './gf-test.js';
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -213,12 +214,22 @@ export function installMonsters(ctx) {
       if (ctx.world.place) ctx.world.place(m, h.room, h.x, h.z); else { m.position.x = h.x; m.position.z = h.z; ctx.world.group && ctx.world.group.add(m); }
       ctx.world.interactables.push(m); spots.set(h.id, h);
     }
-    const leave = () => { if (ctx.hidden) { ctx.hidden = false; ctx.hideSpot = null; document.body.classList.remove('gf-hidden'); bus.emit('player:unhide', {}); } };
+    // hiding places you can see (standard 1.10.13, rule G7, js/hide-looks.js): h.look = 'locker' | 'cabinet' | 'oshiire'; the door shuts behind you
+    const looks = new Map();
+    for (const h of hides) {
+      if (!h.look || !ctx.world.group) continue;
+      const R = ctx.world.rooms && ctx.world.rooms.get(h.room), L = buildHideLook(h, R && R.room); if (!L) continue;
+      L.group.position.y = (R && R.y) || 0; ctx.world.group.add(L.group); L.group.updateMatrixWorld(true);
+      for (const s of L.solids) ctx.world.colliders.push({ box: new THREE.Box3().setFromObject(s), off: false });
+      looks.set(h.id, { ...L, k: 0, target: 0 });
+    }
+    ctx.hideLooks = looks;
+    const leave = () => { if (ctx.hidden) { ctx.hidden = false; ctx.hideSpot = null; document.body.classList.remove('gf-hidden'); for (const l of looks.values()) l.target = 0; bus.emit('player:unhide', {}); } };
     ctx.leaveHide = leave;
-    ctx.systems.push({ id: 'hide', def: { update: () => { if (ctx.hidden && ctx.hideSpot && Math.hypot(camera.position.x - ctx.hideSpot.x, camera.position.z - ctx.hideSpot.z) > 1.1) leave(); } }, inst: null });
+    ctx.systems.push({ id: 'hide', def: { update: (dt = 0.016) => { for (const l of looks.values()) if (l.k !== l.target) { l.k += Math.sign(l.target - l.k) * Math.min(Math.abs(l.target - l.k), dt * 3.2); l.setShut(l.k); } if (ctx.hidden && ctx.hideSpot && Math.hypot(camera.position.x - ctx.hideSpot.x, camera.position.z - ctx.hideSpot.z) > 1.1) leave(); } }, inst: null });
     ctx.ext.registerInteract('hide', {
       prompt: (o) => (ctx.hidden ? '[E] 出る' : `[E] 隠れる：${(spots.get(o.id) || {}).label || '隠れる場所'}`),
-      run: (o) => { const h = spots.get(o.id); if (!h) return; if (ctx.hidden) return leave(); ctx.hidden = true; ctx.hideSpot = h; camera.position.x = h.x; camera.position.z = h.z; document.body.classList.add('gf-hidden'); bus.emit('player:hide', { id: h.id }); },
+      run: (o) => { const h = spots.get(o.id); if (!h) return; if (ctx.hidden) return leave(); if (ctx.controlOpen && !ctx.controlOpen('hide')) return ctx.controlNotYet();   /* a gate (standard 1.10.11) */ ctx.hidden = true; ctx.hideSpot = h; camera.position.x = h.x; camera.position.z = h.z; document.body.classList.add('gf-hidden'); const l = looks.get(h.id); if (l) { l.target = 1; ctx.audio && ctx.audio.lockerDoor && ctx.audio.lockerDoor({ x: h.x, y: 1, z: h.z }, false); } bus.emit('player:hide', { id: h.id }); },
     });
     bus.on('player:respawn', leave);
   }

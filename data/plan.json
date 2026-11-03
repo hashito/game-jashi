@@ -648,23 +648,23 @@
   {
    "id": "H_SHELF",
    "room": "SHED",
-   "x": -18.2,
-   "z": -4.6,
-   "label": "物置の棚の陰"
+   "x": -18.0,
+   "z": -5.17,
+   "label": "物置の物入れ", "look": "cabinet"
   },
   {
    "id": "H_HUT",
    "room": "SHELTER",
-   "x": 17.8,
-   "z": -17.2,
-   "label": "小屋の隅の毛布"
+   "x": 18.2,
+   "z": -17.67,
+   "label": "小屋の物入れ", "look": "cabinet"
   },
   {
    "id": "H_CLOSET",
    "room": "CAB_BED",
-   "x": 5.2,
-   "z": 28.2,
-   "label": "寝室の押入れ"
+   "x": 5.55,
+   "z": 27.45,
+   "label": "寝室の押入れ", "look": "oshiire"
   },
   {
    "id": "H_CAR",
