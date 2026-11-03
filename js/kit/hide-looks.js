@@ -1,7 +1,7 @@
-/* game-kit ec15eb1: js/hide-looks.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 77f396d: js/hide-looks.js — edit in game-kit and run tools/kit-sync.js */
 // Hiding places you can see (standard 1.10.13, rule G7 "隠れる場所は、見て隠れ場所と分かる物にする"; feedback 2026-11-03 出口はこちらです
 // 「棚の隙間に隠れるの分かりづらい。ロッカーとかおいて」). plan.hides[i].look builds the thing at the hide spot (x, z = its centre):
-//   'locker'   a grey steel locker, slats at eye height to peek through (offices, stations, schools, plant rooms)
+//   'locker'   a grey steel locker, a louvre at eye height to peek through (offices, stations, schools, plant rooms)
 //   'cabinet'  a tall painted wooden cupboard, dull green so it stands out from plank walls (sheds, huts, old houses)
 //   'oshiire'  a Japanese closet: a recess in the wall with two fusuma (bedrooms, tatami rooms)
 // Its back goes to the nearest wall of the room (h.yaw overrides: 0 = the front faces +z). Its door stands open; it shuts behind you when you
@@ -29,9 +29,12 @@ export function buildHideLook(h, room) {
     const handle = mat('handle', { color: 0x2a2b2b, metalness: 0.6 });
     solids.push(box(g, 0.92, 1.95, 0.03, 0, 0.975, -0.31, body), box(g, 0.03, 1.95, 0.64, -0.46, 0.975, 0, body), box(g, 0.03, 1.95, 0.64, 0.46, 0.975, 0, body));
     box(g, 0.92, 0.03, 0.64, 0, 1.965, 0, body); box(g, 0.92, 0.08, 0.64, 0, 0.04, 0, body);
-    // the door, hinged on the right: solid below and above, four slats at 1.47..1.71 m (you see out between them)
+    // the door, hinged on the right: solid below and above, a louvre inset in the door at 1.44..1.76 m (a frame on both sides; you see
+    // out between the slats, which stop short of the door's edges)
     const door = new THREE.Group(); door.position.set(0.45, 0, 0.32); g.add(door);
-    for (const [sy, y] of [[1.4, 0.74], [0.18, 1.85], ...[0, 1, 2, 3].map((i) => [0.035, 1.47 + i * 0.08])]) box(door, 0.88, sy, 0.025, -0.44, y, 0, body);
+    for (const [sy, y] of [[1.4, 0.74], [0.18, 1.85]]) box(door, 0.88, sy, 0.025, -0.44, y, 0, body);
+    for (const x of [-0.06, -0.82]) box(door, 0.12, 0.32, 0.025, x, 1.6, 0, body);
+    for (let i = 0; i < 4; i++) box(door, 0.64, 0.035, 0.02, -0.44, 1.49 + i * 0.075, -0.004, body);
     box(door, 0.03, 0.16, 0.04, -0.8, 1.05, 0.03, handle);
     setShut = (k) => { door.rotation.y = (1 - k) * 1.9; };
   } else if (kind === 'oshiire') {

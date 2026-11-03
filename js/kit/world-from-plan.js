@@ -1,4 +1,4 @@
-/* game-kit b1860c2: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 77f396d: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
@@ -21,6 +21,7 @@
 import * as THREE from 'three';
 import { selectInteractable, selectAtScreen, rayBox } from './interact-select.js';
 import { roomLook } from './room-types.js';
+import { barrierLook } from './barrier-look.js';
 
 export const DEFAULTS = { wallH: 3, wallT: 0.16, floorH: 3.4, doorH: 2.2, doorW: 1.0, roomLights: true };
 export const PALETTE = {
@@ -221,34 +222,10 @@ export function buildWorld(plan, o = {}) {
     mesh.userData.interact = { kind: 'door', id: d.id };
     interactables.push(mesh);
     const kind = d.barrier || plan.barrier || (outdoorRoom(a) ? 'rope' : 'tape');
-    const G = new THREE.Group(); G.name = `barrier:${d.id}`; G.position.set(alongX ? d.x : fixed, y0, alongX ? fixed : d.z); G.rotation.y = alongX ? 0 : -Math.PI / 2;
-    const part = (geo, mt, x, y, z) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.castShadow = true; G.add(o); return o; };
-    const half = w / 2 - 0.08;
-    const n = Math.max(1, Math.ceil((half * 2) / 3)), xs = Array.from({ length: n + 1 }, (_, i) => -half + (i * half * 2) / n);   // a post every 3 m or less
-    if (kind === 'rope') {
-      const stake = m('barrier-stake', 0x5a4632), rope = m('barrier-rope', 0xb59a62), paper = m('barrier-paper', 0xe8e2d0);
-      for (const x of xs) part(new THREE.CylinderGeometry(0.045, 0.05, 1.15, 8), stake, x, 0.575, 0);
-      for (let i = 0; i < n; i++) {
-        const x0 = xs[i], x1 = xs[i + 1], curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x0, 1.0, 0), new THREE.Vector3((x0 + x1) / 2, 0.84, 0), new THREE.Vector3(x1, 1.0, 0));
-        part(new THREE.TubeGeometry(curve, 12, 0.022, 6, false), rope, 0, 0, 0);
-        const pt = curve.getPoint(0.5); part(new THREE.PlaneGeometry(0.07, 0.16), paper, pt.x, pt.y - 0.1, 0).material.side = THREE.DoubleSide;
-      }
-    } else if (kind === 'tape') {
-      const cone = m('barrier-cone', 0xd8602a), bar = m('barrier-bar', 0x2a2a2a), tape = new THREE.MeshStandardMaterial({ map: stripeTex(), roughness: 0.6, side: THREE.DoubleSide });
-      for (const x of xs) { part(new THREE.ConeGeometry(0.16, 0.7, 12), cone, x, 0.35, 0); part(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6), bar, x, 0.85, 0); }
-      const t = part(new THREE.PlaneGeometry(half * 2, 0.07), tape, 0, 1.0, 0); if (t.material.map) t.material.map.repeat.set(Math.max(1, Math.round(half * 4)), 1);
-    }
+    const G = barrierLook(kind, w, `barrier:${d.id}`); G.position.set(alongX ? d.x : fixed, y0, alongX ? fixed : d.z); G.rotation.y = alongX ? 0 : -Math.PI / 2;
     group.add(G);
     const api = { def: d, mesh, col, look: G, isOpen: false, barrier: true, locked: () => !isUnlocked(d.unlock), open() { return false; }, close() {}, snap() {} };
     doors.set(d.id, api); barriers.push(api);
-  }
-  let stripeT = null;
-  function stripeTex() {
-    if (stripeT) return stripeT;
-    if (typeof document === 'undefined') return null;
-    const c = document.createElement('canvas'); c.width = 64; c.height = 16; const g = c.getContext('2d');
-    g.fillStyle = '#e8c21a'; g.fillRect(0, 0, 64, 16); g.fillStyle = '#1a1a1a'; for (let x = -16; x < 64; x += 16) { g.beginPath(); g.moveTo(x, 16); g.lineTo(x + 8, 16); g.lineTo(x + 16, 0); g.lineTo(x + 8, 0); g.fill(); }
-    stripeT = new THREE.CanvasTexture(c); stripeT.wrapS = THREE.RepeatWrapping; stripeT.colorSpace = THREE.SRGBColorSpace; return stripeT;
   }
   const updateBarriers = () => { for (const b of barriers) if (!b.isOpen && !b.locked()) { b.isOpen = true; b.look.visible = false; b.mesh.visible = false; b.col.off = true; const i = interactables.indexOf(b.mesh); if (i >= 0) interactables.splice(i, 1); } };
   const doorAnims = [];

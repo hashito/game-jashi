@@ -1,4 +1,4 @@
-/* game-kit 356b5d0: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 77f396d: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.13';
+export const CORE_VERSION = '1.10.14';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
