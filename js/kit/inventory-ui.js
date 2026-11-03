@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/inventory-ui.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit bd0256a: js/inventory-ui.js — edit in game-kit and run tools/kit-sync.js */
 // The item-management UI shared by every game (rule U17, with progress-ui.js taskScreen and journal-ui.js createJournal):
 // owned items as a grid (photo + name), a detail pane (large photo, short description, "why needed" (S6), the protagonist's
 // one-line feeling), use / examine buttons, selected + NEW states, a related-items link (opens the related items / papers
@@ -151,7 +151,8 @@ export function createInventory(o = {}) {
       const it = cur.find((i) => i.id === st.sel) || null;
       const fresh = new Set(freshIds(list, st.seen));
       const counts = tabs.length ? tabCounts(list, tabs) : {};
-      const tabsHtml = tabs.length ? `<nav class="hb-tabs iv-tabs" role="tablist">${tabs.map((t) => `<button type="button" role="tab" class="hb-tab${t.id === st.tab ? " on" : ""}" data-tab="${esc(t.id)}">${esc(t.label)}${list.some((i) => (i.tab || tabs[0].id) === t.id && fresh.has(i.id)) ? '<i class="jr-dot"></i>' : ""}<span class="cnt">${counts[t.id]}</span></button>`).join("")}</nav>` : "";
+      fresh.delete(st.sel); // the item being looked at is marked seen below: no NEW tag on it, so the tags, the tab's new count and the menu badge agree
+      const tabsHtml = tabs.length ? `<nav class="hb-tabs iv-tabs" role="tablist">${tabs.map((t) => `<button type="button" role="tab" class="hb-tab${t.id === st.tab ? " on" : ""}" data-tab="${esc(t.id)}">${esc(t.label)}${(() => { const n = list.filter((i) => (i.tab || tabs[0].id) === t.id && fresh.has(i.id)).length; return n ? `<i class="jr-dot iv-newn" aria-label="new">${n}</i>` : ""; })()}<span class="cnt">${counts[t.id]}</span></button>`).join("")}</nav>` : "";
       const grid = cur.length ? cur.map((i) => cellHtml(i, { sel: i.id === st.sel, fresh: fresh.has(i.id), pick: api.pick === i.id, L })).join("") : `<p class="iv-empty">${esc(list.length ? L.emptyTab : L.empty)}</p>`;
       let detail = `<p class="iv-empty">${esc(L.hint)}</p>`;
       let acts = "";

@@ -1,5 +1,5 @@
 {
-  "kit": "5b6bf60",
+  "kit": "bd0256a",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -121,7 +121,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "56114ef28de6",
+    "js\\kit\\game-core.js": "9fad82f6a3f6",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -144,7 +144,7 @@
     "js\\kit\\progression.js": "96f97a34574b",
     "js\\kit\\progress-ui.js": "45185456108f",
     "js\\kit\\icons.js": "1b413032bb03",
-    "js\\kit\\inventory-ui.js": "e4733ff25e7b",
+    "js\\kit\\inventory-ui.js": "73ea5cc48a4a",
     "js\\kit\\release-notes.js": "125b41b73a5b",
     "js\\kit\\store.js": "2580cf204b58",
     "js\\kit\\audio.js": "6bbf00df9f42",
@@ -192,7 +192,7 @@
     "js\\kit\\env-props.js": "cc164232ed7a",
     "js\\kit\\texture-library.js": "3270ec79ed80",
     "js\\kit\\text-contrast.js": "7ee42856ab86",
-    "css/kit.css": "58f3ccf03274",
+    "css/kit.css": "1d884817ec26",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
     "css\\shell.css": "b10ba41363e3",

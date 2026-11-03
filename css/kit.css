@@ -1,4 +1,4 @@
-/* game-kit 4b9f6fa: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit bd0256a: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -2275,6 +2275,7 @@ ul.caselist {
 .jr-win .win-body { min-height: 50vh; }
 .jr .hb-tab { position: relative; }
 .jr-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); margin-left: 4px; vertical-align: top; }
+.jr-dot.iv-newn { width: auto; min-width: 1.35em; height: 1.35em; line-height: 1.35em; padding: 0 0.3em; border-radius: 999px; font-style: normal; font-size: 0.78em; font-weight: 700; text-align: center; background: var(--gf-badge-bg, #b3261e); color: var(--gf-badge-text, #fff); text-shadow: none; vertical-align: 0.15em; }   /* the new count on an item tab (1.10.17, from whitepigeon): tags, tab and menu badge agree */
 .jr-sum { display: flex; align-items: center; gap: 10px; }
 .jr-bar { flex: 1; height: 8px; border-radius: 4px; background: #ece6d6; overflow: hidden; }
 .jr-bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
