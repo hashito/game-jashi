@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/ending-scene.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 17b29ea: js/ending-scene.js — edit in game-kit and run tools/kit-sync.js */
 // The ending as a scene (standard 1.8.1, feedback 2026-11-01 "最後にも写真を置いて手前に文字をつけるなど雰囲気を出して"): the picture fills the
 // screen and slowly comes closer, the kicker and the title stand in front of it, the epilogue appears a line at a time, and the stats and
 // the buttons come last. A click / Enter / Space shows the rest at once; reduced motion (ctx.calm or the OS setting) shows it all still.
@@ -56,6 +56,15 @@ export function showEndingScene(ctx, o = {}) {
   el.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("button[data-i]"); if (b) { const f = (o.buttons || [])[+b.dataset.i]; f && f.fn && f.fn(); } else all(); });
   el.addEventListener("keydown", (e) => { if ((e.code === "Space" || e.code === "Enter") && !(e.target.closest && e.target.closest("button"))) { e.preventDefault(); all(); } });
   el.tabIndex = -1; el.focus({ preventScroll: true });
+  // a long epilogue is taller than the screen: follow each part down as it appears, until the player scrolls or shows it all (1.10.10)
+  if (!still) {
+    let follow = true; const stop = () => { follow = false; };
+    el.addEventListener("wheel", stop, { passive: true }); el.addEventListener("touchstart", stop, { passive: true }); el.addEventListener("click", stop); el.addEventListener("keydown", stop);
+    for (const part of el.querySelectorAll(".gf-ending-text > *")) {
+      const at = parseFloat(part.style.getPropertyValue("--d")) || 0;
+      setTimeout(() => { if (!follow || !el.isConnected) return; const r = part.getBoundingClientRect(), h = el.clientHeight; if (r.bottom > h - 24) el.scrollTo({ top: el.scrollTop + r.bottom - h + Math.min(h * 0.18, 140), behavior: "smooth" }); }, at * 1000 + 150);
+    }
+  }
   const btn = el.querySelector(".gf-ending-buttons button");
   if (btn) setTimeout(() => btn.focus({ preventScroll: true }), still ? 0 : tl.buttons * 1000 + 600);
   return el;

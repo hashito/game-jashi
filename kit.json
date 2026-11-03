@@ -1,5 +1,5 @@
 {
-  "kit": "8cacc23",
+  "kit": "17b29ea",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -118,7 +118,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "d41a28afcf9b",
+    "js\\kit\\game-core.js": "711c25fcb77d",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -166,7 +166,7 @@
     "js\\kit\\ext.js": "d597aa41ed0c",
     "js\\kit\\ambience.js": "b320fcda4aa7",
     "js\\kit\\game-data.js": "f436682bec94",
-    "js\\kit\\ending-scene.js": "b121391ecb89",
+    "js\\kit\\ending-scene.js": "38960229a610",
     "js\\kit\\schema-check.js": "ebccf998c09b",
     "js\\kit\\monster-ai.js": "9d98d9ba414f",
     "js\\kit\\things-data.js": "3aabd0a31ea1",
@@ -192,7 +192,7 @@
     "css/kit.css": "7d539d39d511",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
-    "css\\shell.css": "22de577a41c7",
+    "css\\shell.css": "b10ba41363e3",
     "schema/chat-story.schema.json": "e24a86e49bb9",
     "schema/creation-brief.schema.json": "fc0ca4964483",
     "schema/docs.schema.json": "533be2902f17",

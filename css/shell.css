@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: css/shell.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 17b29ea: css/shell.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: the standard 3D shell (js/game-core.js): title screen, prompt, endings, pause menu, custom mini-game layer.
    Tokens only (css/theme.css); loaded after kit.css and theme.css. A game restyles it through tokens in css/theme-game.css. */
 #title { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--gf-win-margin, 16px); overflow-y: auto; overscroll-behavior: contain;
@@ -182,10 +182,10 @@ body.touch #say { bottom: max(12px, var(--gf-safe-b, 0px)); }
 /* fear on the body (js/fear-fx.js): the edges close in when the thing is near; above the world, under every HUD part and window */
 #gf-fear { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 38%, rgba(10, 0, 0, 0.55) 72%, rgba(0, 0, 0, 0.92) 100%); }
 /* the ending as a scene (js/ending-scene.js): the picture fills the screen and comes slowly closer; the text stands in front, a line at a time */
-.gf-ending { position: fixed; inset: 0; z-index: 96; background: #050505; color: #f1ece0; overflow: hidden auto; display: flex; align-items: flex-end; justify-content: center; }
+.gf-ending { position: fixed; inset: 0; z-index: 96; background: #050505; color: #f1ece0; overflow: hidden auto; display: flex; flex-direction: column; align-items: center; }   /* 1.10.10: no align-items: flex-end (a long epilogue ran off the top, out of reach); the text sits low by its margin-top: auto */
 .gf-ending-photo { position: fixed; inset: 0; background: center / cover no-repeat; filter: saturate(0.75) brightness(0.8); animation: gf-end-zoom 40s ease-out both, gf-end-fade 2.4s ease-out both; }
 .gf-ending-shade { position: fixed; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 28%, rgba(0, 0, 0, 0.8) 58%, rgba(0, 0, 0, 0.94) 100%); }
-.gf-ending-text { position: relative; width: min(720px, 100% - 32px); margin: 30vh auto 0; padding: 0 0 max(32px, var(--gf-safe-b, 0px)); display: flex; flex-direction: column; gap: 12px; text-shadow: 0 1px 3px #000, 0 0 18px rgba(0, 0, 0, 0.8); }
+.gf-ending-text { position: relative; flex: none; width: min(720px, 100% - 32px); margin: auto auto 0; padding: 30vh 0 max(32px, var(--gf-safe-b, 0px)); display: flex; flex-direction: column; gap: 12px; text-shadow: 0 1px 3px #000, 0 0 18px rgba(0, 0, 0, 0.8); }
 .gf-ending-text > * { margin: 0; opacity: 0; animation: gf-end-in 1.6s ease-out var(--d, 0s) both; }
 .gf-ending-kicker { font-size: 13px; letter-spacing: 0.22em; color: #d9c9a3; }
 .gf-ending-title { font-family: var(--hk-serif, serif); font-size: clamp(26px, 6vw, 40px); font-weight: 600; letter-spacing: 0.08em; }
