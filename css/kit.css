@@ -1,4 +1,4 @@
-/* game-kit d62d2ac: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 8cacc23: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -2517,6 +2517,8 @@ body.touch #mg .desk-only { display: none; }
 @media (pointer: coarse) { #mg .desk-only { display: none; } }
 #mg { position: fixed; inset: 0; z-index: calc(var(--gf-z-window, 60) + 5); display: flex; align-items: flex-start; justify-content: center; background: var(--gf-overlay-strong, rgba(0, 0, 0, 0.72)); padding: max(56px, env(safe-area-inset-top)) 12px 110px; overflow: auto; }
 #mg .mg-box { width: min(560px, 100%); background: var(--gf-mg-bg, #0a1410); border: 1px solid var(--gf-mg-line, #2a5a3a); border-radius: 10px; padding: 12px 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
+/* a PC screen: the minigame box uses the screen like the windows do (phones keep 560 / full width) */
+@media (min-width: 900px) and (min-height: 700px) { #mg .mg-box { width: min(max(560px, 48vw), 900px); font-size: 17px; } }
 #mg .mg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--tm-green); }
 #mg .mg-x, #mg .mg-ok, #mg .mg-step { min-height: max(48px, var(--gf-hit, 44px)); padding: 0 16px; border-radius: 8px; border: 1px solid var(--gf-mg-line, #2a5a3a); background: var(--gf-mg-btn, #12261a); color: var(--gf-mg-ink, #d8ffe4); cursor: pointer; font-size: 15px; }
 #mg .mg-ok { margin-top: 10px; width: 100%; border-color: var(--tm-amber); background: var(--gf-mg-btn, #12261a); color: var(--tm-amber); font-weight: 700; }
@@ -2753,7 +2755,7 @@ body.touch .hb-tab { min-height: var(--gf-hit, 44px); } /* (U13) the notebook's 
    band in z-order (--gf-z-window) but its area ends where the band starts (--wm-band, set by the manager): they never overlap (U14). ---- */
 .wm-layer { position: fixed; inset: 0; z-index: var(--gf-z-window, 60); display: flex; align-items: flex-start; justify-content: center; box-sizing: border-box;
   padding: max(var(--wm-m, 16px), env(safe-area-inset-top, 0px)) max(var(--wm-m, 16px), env(safe-area-inset-right, 0px)) calc(var(--wm-band, 0px) + max(var(--wm-m, 16px), env(safe-area-inset-bottom, 0px))) max(var(--wm-m, 16px), env(safe-area-inset-left, 0px));
-  background: var(--gf-overlay, rgba(10, 14, 12, 0.5)); color: var(--gf-text, var(--ink, #23302c)); font-size: calc(15px * var(--fs, 1)); }
+  background: var(--gf-overlay, rgba(10, 14, 12, 0.5)); color: var(--gf-text, var(--ink, #23302c)); font-size: calc(15px * var(--fs, 1) * var(--wm-zoom, 1)); }
 /* always top-anchored (one window after another keeps its top edge): on big screens a little lower than the margin */
 .wm-layer[data-mode="large"] { padding-top: max(var(--wm-m, 32px), min(9vh, 80px), env(safe-area-inset-top, 0px)); }
 /* a text-only window (win-manager: no picture / table / field / tabs) is as tall as its text, never a big empty box (but not a strip either) */
@@ -2770,6 +2772,7 @@ body.touch .hb-tab { min-height: var(--gf-hit, 44px); } /* (U13) the notebook's 
 .wm-infobox[hidden], .wm-btn[hidden], .tm-badge[hidden], .tm-dot[hidden] { display: none; }   /* (a locked window hides its x: .wm-btn is display:grid, which beat the hidden attribute) */
 .wm-body { flex: 1; min-height: 0; overflow: auto; padding: var(--gf-win-pad, 16px); display: flex; flex-direction: column; line-height: 1.7; overscroll-behavior: contain; }
 .wm-body.wm-flush { padding: 0; overflow: hidden; }
+.wm-body img[data-wm-cap][style*="max-width"] { margin-left: auto; margin-right: auto; }   /* a capped picture (win-manager capImages) sits in the middle */
 @media (prefers-reduced-motion: no-preference) { .wm-layer { animation: wm-in 0.14s ease-out; } @keyframes wm-in { from { opacity: 0; } } }
 
 /* tab menu */

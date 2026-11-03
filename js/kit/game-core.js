@@ -1,4 +1,4 @@
-/* game-kit d62d2ac: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 8cacc23: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -60,7 +60,7 @@ import { createExtensions } from './ext.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.8';
+export const CORE_VERSION = '1.10.9';
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -200,7 +200,7 @@ export function createGame(cfg) {
   if (manifest.fx && cfg.mods && cfg.mods.fx) cfg.mods.fx.attachFx(look, ctx, manifest.fx);   // old-TV noise, scanlines, vignette, glitch, danger tint, red-black mist (manifest "fx", js/fx-std.js)
   addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); look.resize && look.resize(); });
   renderer.setSize(innerWidth, innerHeight, false);
-  const fg = ctx.frameGuard = new FrameGuard({ renderer, overlay: FrameGuard.query(), dynres: { targetMs: 1000 / 40, min: 0.6, max: Math.min(devicePixelRatio || 1, look.tier === 'high' ? 2 : 1.5) } });   // ?perf shows hitches
+  const fg = ctx.frameGuard = new FrameGuard({ renderer, overlay: FrameGuard.query(), dynres: { targetMs: 1000 / 40, min: ctx.isTouch ? 0.6 : 0.8, max: Math.min(devicePixelRatio || 1, look.tier === 'high' ? 2 : 1.5) } });   // ?perf shows hitches
   ctx.jobs = new JobQueue({ budgetMs: 3, guard: fg });
 
   // progression: the tasks ARE the goals
@@ -359,7 +359,15 @@ export function createGame(cfg) {
   const guideFor = (id, T) => ({
     create: (rootEl) => createStepGuide({ container: rootEl.querySelector('.mg-help'), steps: minigameSteps(T.kind, { prefix: `mg-${id}`, target: '.mg-stage', ...(uiDef('guide').minigame ? uiDef('guide').minigame(id, T, ctx) : {}) }), say: (text) => ui.say(esc(text)), storage: safe(() => localStorage), key: `${manifest.id}.mg.${id}`, calm: settings.calm }),
   });
-  ctx.minigame = (id, o = {}) => MG.start(id, { qa: ctx.qa, calm: settings.calm, guide: guideFor(id, MG.TASKS[id] || { kind: 'dial' }), ...o });
+  // a kit mini game is a window over the game: the pointer is free while it is open (before 1.10.9 it stayed locked on PC and the cursor was gone
+  // until Esc - コトリバコ's 棚卸し), and the view locks again when it closes
+  ctx.minigame = (id, o = {}) => {
+    fp.release();
+    return MG.start(id, { qa: ctx.qa, calm: settings.calm, guide: guideFor(id, MG.TASKS[id] || { kind: 'dial' }), ...o }).then((r) => {
+      setTimeout(() => { if (state.started && !state.ended && !blocked()) fp.lock(); }, 0);
+      return r;
+    });
+  };
   async function runMinigame(task, mgDef) {
     const type = mgDef.type;
     if (MG.TYPES.includes(type)) {
@@ -764,6 +772,8 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     if (world.update) world.update(dt, ctx);
     const room = world.roomAt(camera.position.x, camera.position.z, camera.position.y);
     if (room !== state.room) { const from = state.room; state.room = room; if (room && !state.visited.includes(room)) state.visited.push(room); if (state.started) bus.emit('player:room', { from, to: room }); }
+    // never a hidden cursor over a window: anything that covers the game (a window, a mini game, a game's own #mg-custom) frees the pointer (1.10.9)
+    if (document.pointerLockElement && (wm.isOpen || ui.open || MG.isActive() || ctx.mgOpen || ctx.rnOpen || document.getElementById('mg-custom'))) fp.release();
     target = ctx.target = state.started && !blocked() ? pickNow() : null;
     const h = target && handlerOf(target.kind);
     let text = h ? (h.prompt ? h.prompt(target, ctx) : '') : '';

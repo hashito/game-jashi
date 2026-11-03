@@ -1,4 +1,4 @@
-/* game-kit d62d2ac: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 8cacc23: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
 // The window manager of the standard UI shell (rules U12 / U14 / U21): ONE window at a time, a fixed size per breakpoint
 // (never changed by tabs or content: the content scrolls inside), larger on big screens (>= 900 x 700), ALWAYS top-anchored
 // (windows shown one after another keep their top edge in one place: a size s window after a size m one does not jump down),
@@ -19,6 +19,8 @@ import { gfRegister, gfEmit, gfOk, gfFail, gfUnknown } from "./gf-test.js";
 export const WM_LABELS = { close: "閉じる", info: "説明", back: "戻る" };
 export const WM_SIZES = { s: { w: 560, h: 460 }, m: { w: 800, h: 620 }, l: { w: 1040, h: 720 } };
 export const WM_LARGE = { w: 900, h: 700 }; // a viewport at least this big is "large"
+// On large screens the named sizes grow with the viewport (a PC window uses the screen; the preset is the floor): fraction of the viewport, capped.
+export const WM_GROW = { s: { fw: 0.5, fh: 0.64, w: 880, h: 780 }, m: { fw: 0.62, fh: 0.78, w: 1200, h: 920 }, l: { fw: 0.8, fh: 0.88, w: 1520, h: 1020 } };
 
 export const HUD_COMPACT = { w: 600, h: 500, closedW: 240, closedFrac: 0.45, openW: 340, openFrac: 0.6, fullW: 340, fullFrac: 0.62 };
 // The top-left HUD column (STEP card, goal chip, menu button): compact on small screens (< 600 wide, < 500 tall, or touch) so it never covers the view (pure).
@@ -31,20 +33,38 @@ export function hudLayout(vw, vh, { touch = false, open = false } = {}) {
 }
 export const isLarge = (vw, vh) => vw >= WM_LARGE.w && vh >= WM_LARGE.h;
 // The fixed window size for a viewport (pure). `band` = the inner-voice band height at the bottom (kept free).
-// Large: centred, the preset size, margin 32. Small: a full-screen SHEET (the whole screen minus the margin / safe-area insets, margin 16, 12 on short
+// Large: centred, the preset size grown with the viewport (WM_GROW; a custom {w,h} stays exact), margin 32. Small: a full-screen SHEET (the whole screen minus the margin / safe-area insets, margin 16, 12 on short
 // landscapes; the band is ignored: the thought line is hidden behind it and the window must never shrink to a strip).
 export function windowSize(vw, vh, { size = "m", band = 0 } = {}) {
-  const preset = typeof size === "object" && size ? { w: size.w || WM_SIZES.m.w, h: size.h || WM_SIZES.m.h } : WM_SIZES[size] || WM_SIZES.m;
+  const custom = typeof size === "object" && size;
+  const base = custom ? { w: size.w || WM_SIZES.m.w, h: size.h || WM_SIZES.m.h } : WM_SIZES[size] || WM_SIZES.m;
   const large = isLarge(vw, vh);
+  const g = !custom && large ? WM_GROW[WM_SIZES[size] ? size : "m"] : null;
+  const preset = g ? { w: Math.round(Math.max(base.w, Math.min(g.w, vw * g.fw))), h: Math.round(Math.max(base.h, Math.min(g.h, vh * g.fh))) } : base;
+  // text grows a little with a big window (1 at 800px tall, up to 1.25)
+  const zoom = large ? Math.round(Math.max(1, Math.min(1.25, vh / 800)) * 100) / 100 : 1;
   const margin = large ? 32 : vh < 520 ? 12 : 16;
   const freeW = Math.max(240, vw - margin * 2);
   const bandKept = large ? band || 0 : 0;
   const freeH = Math.max(200, vh - bandKept - margin * 2);
-  return { mode: large ? "large" : "small", margin, w: large ? Math.min(preset.w, freeW) : freeW, h: large ? Math.min(preset.h, freeH) : freeH, band: bandKept };
+  return { mode: large ? "large" : "small", margin, w: large ? Math.min(preset.w, freeW) : freeW, h: large ? Math.min(preset.h, freeH) : freeH, band: bandKept, zoom };
 }
 // the next focus target for a Tab press inside a trap of `n` focusable elements (pure; -1 = none focused)
 // a window body that holds only text and buttons (no picture, canvas, video, table, form field or tab menu) fits its height to the text
 const MEDIA = "img, canvas, video, iframe, table, textarea, select, input:not([type=button]):not([type=submit]), .tm, .wm-flush, :not(button) > svg";
+// a picture in a window is never blown up past 1.3x its own pixels (a big PC window made 448-720 px photos look rough; 1.10.9). SVG scales freely.
+export const IMG_UPSCALE = 1.3;
+export const imgCap = (naturalW) => (naturalW > 1 ? `min(100%, ${Math.round(naturalW * IMG_UPSCALE)}px)` : "");
+function capImages(body) {
+  if (!body.querySelectorAll) return;
+  for (const im of body.querySelectorAll("img:not([data-wm-cap])")) {
+    im.setAttribute("data-wm-cap", "");
+    if (/\.svg(\?|#|$)|^data:image\/svg/i.test(im.getAttribute("src") || "")) continue;
+    const f = () => { if (!im.style.maxWidth && imgCap(im.naturalWidth)) im.style.maxWidth = imgCap(im.naturalWidth); };
+    if (im.complete) f();
+    else im.addEventListener("load", f, { once: true });
+  }
+}
 export const textOnly = (body) => !!body && !body.querySelector(MEDIA);
 export const trapIndex = (cur, n, shift) => (n <= 0 ? -1 : shift ? (cur <= 0 ? n - 1 : cur - 1) : cur < 0 || cur >= n - 1 ? 0 : cur + 1);
 
@@ -85,11 +105,13 @@ export function createWindowManager(o = {}) {
     st.setProperty("--wm-h", `${z.h}px`);
     st.setProperty("--wm-m", `${z.margin}px`);
     st.setProperty("--wm-band", `${z.band}px`);
+    st.setProperty("--wm-zoom", String(z.zoom || 1));
     cur.layer.dataset.mode = z.mode;
     refit();
   }
   function refit() {
     if (!cur || !cur.layer || !cur.body) return;
+    capImages(cur.body);
     const f = cur.opts.fit;
     cur.layer.classList.toggle("wm-fit", f === true || (f !== false && !cur.body.classList.contains("wm-flush") && textOnly(cur.body)));
   }

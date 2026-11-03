@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/render-presets.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 8cacc23: js/render-presets.js — edit in game-kit and run tools/kit-sync.js */
 // One-call looks for three.js r170 games: renderer colour management / tone mapping / pixel-ratio cap, a procedural
 // PMREM environment (no file to download), a light rig with one shadow light, fog, cheap post (vignette, grain,
 // half-res bloom; a CSS overlay on phones), quality tiers (auto-detect + auto-downgrade + a settings <select>), a
@@ -292,6 +292,10 @@ export class Post {
   }
   render(scene, camera, time = 0) {
     const r = this.renderer;
+    // follow the canvas: a renderer.setSize / setPixelRatio from outside (the game's resize, the dynamic resolution) left the target at its first
+    // size - 300x150, the size of a canvas before layout - and the whole picture was blown up from it (1.10.9, "画像を荒くしすぎている")
+    const ds = r.getDrawingBufferSize(this._ds || (this._ds = new THREE.Vector2()));
+    if (ds.x !== this.rt.width || ds.y !== this.rt.height) this.setSize();
     const prev = r.getRenderTarget();
     r.setRenderTarget(this.rt);
     r.render(scene, camera);

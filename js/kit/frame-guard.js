@@ -1,4 +1,4 @@
-/* game-kit d62d2ac: js/frame-guard.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 8cacc23: js/frame-guard.js — edit in game-kit and run tools/kit-sync.js */
 // Frame pacing guard for three.js games: find and remove hitches (カクつき).
 // No three.js import (renderer / scene are duck-typed), so the logic runs and is tested in Node.
 //  - FrameStats: frame times in a ring buffer, p50 / p95 / p99 / max, a log of hitches with what the frame did
@@ -217,6 +217,7 @@ export class DynamicResolution {
     this.sinceUp = Infinity;
     this.ban = 0; // s during which going up is not tried
     this.changes = 0;
+    this.lastDown = null; // { from, ema }: the step down still on trial
   }
   update(dtMs) {
     const dt = Math.min(dtMs, 250) / 1000;
@@ -227,13 +228,22 @@ export class DynamicResolution {
     else if (this.ema <= this.target * 1.08) (this.good += dt), (this.bad = 0);
     else this.bad = this.good = 0;
     if (this.bad >= this.downAfter && this.ratio > this.min) {
-      if (this.sinceUp < this.upAfter) this.ban = 30; // the last step up did not hold
       this.bad = 0;
+      const last = this.lastDown;
+      if (last && this.ema > last.ema * 0.9) {
+        // the last step down bought nothing: the frame time is not the pixels (a 30 Hz screen, a busy CPU) - back up, and never below that again
+        this.lastDown = null;
+        this.min = Math.max(this.min, last.from);
+        return this.set(last.from);
+      }
+      if (this.sinceUp < this.upAfter) this.ban = 30; // the last step up did not hold
+      this.lastDown = { from: this.ratio, ema: this.ema };
       return this.set(Math.max(this.min, this.ratio - this.step));
     }
     if (this.good >= this.upAfter && this.ratio < this.max && this.ban <= 0) {
       this.good = 0;
       this.sinceUp = 0;
+      this.lastDown = null;
       return this.set(Math.min(this.max, this.ratio + this.step));
     }
     return null;
