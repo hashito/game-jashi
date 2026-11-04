@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/mg-library.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b4c715e: js/mg-library.js — edit in game-kit and run tools/kit-sync.js */
 // The mini game LIBRARY: the mini games a game made for itself, kept in the kit so the next game can use them as they are
 // (a game is not stuck with the standard set of js/task-minigames.js; each one it adds stays reusable).
 //   import pour from './kit/mg-pour.js';
@@ -11,6 +11,8 @@
 // writes js/mg-<name>.js, its test and the LIBRARY / docs rows; `node tools/check-minigames.mjs` mounts every entry headless (qa, Esc,
 // close, top-anchored, keyboard focus, no errors). Hands-on parts (drums, knobs, levers, cranks ...) are js/mg-widgets.js.
 // A game takes one with `node tools/kit-sync.js <game> mg-<name>`.
+import { mgSoundHook } from './mg-sound.js';
+
 export const LIBRARY = [
   { module: 'mg-pour', type: 'pour', from: '八尺様 ― 境の夜（塩を盛る）', about: '押している間だけ注ぎ、線の高さで離す' },
   { module: 'mg-turn-dials', type: 'turn-dials', from: '八尺様 ― 境の夜（車止めの回し金）', about: '一段ずつ回る金具を手がかりの向きにそろえる' },
@@ -46,12 +48,14 @@ export const LIBRARY = [
   { module: 'mg-hold-breath', type: 'hold-breath', from: '標準 1.8.4（押入れ・床下・屏風の陰に隠れる）', about: '近づいてくる気配のあいだ息を止め、通り過ぎるのを待つ' },
 ];
 
-/** register library mini games with the game's ext: an entry is a module's default, or [default, { type, hooks }] to rename / hook it */
+/** register library mini games with the game's ext: an entry is a module's default, or [default, { type, hooks, sound }] to rename / hook it
+ *  (without hooks.sound the mini game plays the kit's default sounds, js/mg-sound.js; { sound: false } keeps it silent) */
 export function useMinigames(ext, list) {
   const out = {};
   for (const e of list) {
     const [m, o = {}] = Array.isArray(e) ? e : [e];
-    const type = o.type || m.type, hooks = o.hooks || {};
+    const type = o.type || m.type, hooks = { ...(o.hooks || {}) };
+    if (!hooks.sound && o.sound !== false) hooks.sound = mgSoundHook(m.type);   // standard 1.10.18: the default sounds (js/mg-sound.js); sound: false = silent
     const def = { mount: (host, cfg, ctx) => m.mount(host, cfg, ctx, hooks) };
     ext.registerMinigame(type, def);
     out[type] = def;

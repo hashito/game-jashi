@@ -1,0 +1,420 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "chat-game.schema.json",
+ "title": "chat-game.json (docs/standard-chat-site.md)",
+ "type": "object",
+ "required": [
+  "id",
+  "name"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "id": {
+   "type": "string",
+   "pattern": "^[a-z0-9][a-z0-9_-]*$",
+   "description": "prefix of everything saved in the browser; the theme words <id>, <id>-light, <id>-dark"
+  },
+  "name": {
+   "type": "string"
+  },
+  "shortName": {
+   "type": "string"
+  },
+  "nameEn": {
+   "type": "string"
+  },
+  "description": {
+   "type": "string"
+  },
+  "titleSuffix": {
+   "type": "string"
+  },
+  "lang": {
+   "type": "string"
+  },
+  "genre": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "storyGenre": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "domain": {
+   "type": "string",
+   "description": "host name only: futari.autoarticles.net"
+  },
+  "firebaseProject": {
+   "type": "string"
+  },
+  "gaId": {
+   "type": "string",
+   "pattern": "^(G-[A-Z0-9]+)?$"
+  },
+  "googleSiteVerification": {
+   "type": "string"
+  },
+  "author": {
+   "type": "string"
+  },
+  "authorUrl": {
+   "type": "string"
+  },
+  "ogImage": {
+   "type": "string"
+  },
+  "ogImageAlt": {
+   "type": "string"
+  },
+  "version": {
+   "type": "string",
+   "pattern": "^\\d+(\\.\\d+){0,2}$"
+  },
+  "releaseNotes": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "version",
+     "date",
+     "items"
+    ],
+    "properties": {
+     "version": {
+      "type": "string"
+     },
+     "date": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "type",
+        "text"
+       ],
+       "properties": {
+        "type": {
+         "enum": [
+          "new",
+          "fix",
+          "change",
+          "balance"
+         ]
+        },
+        "text": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "theme": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "skin": {
+     "type": "string"
+    },
+    "accent": {
+     "type": "string"
+    },
+    "accentDark": {
+     "type": "string"
+    },
+    "light": {
+     "type": "object",
+     "properties": {
+      "page": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "string"
+       }
+      },
+      "ui": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "string"
+       }
+      },
+      "chat": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "string"
+       }
+      },
+      "rooms": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "additionalProperties": false
+    },
+    "dark": {
+     "oneOf": [
+      {
+       "type": "object",
+       "properties": {
+        "page": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "string"
+         }
+        },
+        "ui": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "string"
+         }
+        },
+        "chat": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "string"
+         }
+        },
+        "rooms": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+           "type": "string"
+          }
+         }
+        }
+       },
+       "additionalProperties": false
+      },
+      {
+       "const": false
+      }
+     ]
+    },
+    "css": {
+     "oneOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     ]
+    },
+    "logo": {
+     "type": "string",
+     "description": "markup of the mark in the list header"
+    },
+    "themeColor": {
+     "type": "string"
+    },
+    "font": {
+     "type": "string"
+    }
+   }
+  },
+  "library": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "hero": {
+     "type": "string"
+    },
+    "nav": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "friends",
+       "talk",
+       "record"
+      ]
+     }
+    },
+    "sections": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "id",
+       "title"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "title": {
+        "type": "string"
+       },
+       "from": {
+        "type": "integer"
+       },
+       "to": {
+        "type": "integer"
+       },
+       "stories": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    },
+    "planned": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "id",
+       "title"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "title": {
+        "type": "string"
+       },
+       "format": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   }
+  },
+  "stories": {
+   "type": "array",
+   "items": {
+    "oneOf": [
+     {
+      "type": "string"
+     },
+     {
+      "type": "object",
+      "required": [
+       "id"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string",
+        "pattern": "^custom/[a-z0-9][a-z0-9_-]*/?$"
+       },
+       "title": {
+        "type": "string"
+       },
+       "preview": {
+        "type": "string"
+       },
+       "format": {
+        "type": "string"
+       },
+       "rel": {
+        "type": "string"
+       },
+       "img": {
+        "type": "string"
+       },
+       "initial": {
+        "type": "string"
+       }
+      }
+     }
+    ]
+   }
+  },
+  "talk": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "tapMine": {
+     "type": "boolean"
+    },
+    "speed": {
+     "enum": [
+      "slow",
+      "normal",
+      "fast",
+      "instant"
+     ]
+    },
+    "speedLabels": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "dateHead": {
+     "type": "boolean"
+    },
+    "reveal": {
+     "type": "string"
+    },
+    "settings": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "sfx",
+       "effects",
+       "theme"
+      ]
+     }
+    },
+    "chatCaptions": {
+     "type": "boolean"
+    }
+   }
+  },
+  "endingTypes": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "share": {
+   "type": "object",
+   "properties": {
+    "tags": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "texts": {
+   "type": "object",
+   "description": "every wording of the pages (TEXT_DEFAULTS in js/chat-site-core.js); {title} {ending} {got} {total} {player} {channel} {n} are filled in"
+  },
+  "extensions": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "pattern": "^js/[\\w./-]+\\.js$"
+   }
+  }
+ }
+}

@@ -1,5 +1,5 @@
 {
-  "kit": "bd0256a",
+  "kit": "b4c715e",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -91,7 +91,8 @@
     "flavor",
     "hide-looks",
     "barrier-look",
-    "station-looks"
+    "station-looks",
+    "mg-sound"
   ],
   "css": "css/kit.css",
   "cssExtra": [
@@ -121,7 +122,7 @@
     "review-shots.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "9fad82f6a3f6",
+    "js\\kit\\game-core.js": "e030dc29314b",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -192,11 +193,11 @@
     "js\\kit\\env-props.js": "cc164232ed7a",
     "js\\kit\\texture-library.js": "3270ec79ed80",
     "js\\kit\\text-contrast.js": "7ee42856ab86",
-    "css/kit.css": "1d884817ec26",
+    "css/kit.css": "cd826193c6ab",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
     "css\\shell.css": "b10ba41363e3",
-    "schema/chat-story.schema.json": "e24a86e49bb9",
+    "schema/chat-story.schema.json": "74021fbcd2f8",
     "schema/creation-brief.schema.json": "fc0ca4964483",
     "schema/docs.schema.json": "533be2902f17",
     "schema/endings.schema.json": "ec10b40dad12",
@@ -222,11 +223,11 @@
     "tools/check-wording.mjs": "fba8646626fe",
     "tools/check-stage.mjs": "f23c43fd8df1",
     "tools/check-escape.mjs": "e02864475501",
-    "tools/kit-features.cjs": "c98f85ca0c76",
+    "tools/kit-features.cjs": "06093e9d5d45",
     "js\\kit\\building.js": "81b12f396b1e",
     "js\\kit\\outer-walls.js": "114f94921936",
     "js\\kit\\fear-fx.js": "1df2962a4146",
-    "js\\kit\\mg-library.js": "df478308dd48",
+    "js\\kit\\mg-library.js": "47db75195a82",
     "js\\kit\\mg-frame.js": "373ee74b395c",
     "js\\kit\\mg-widgets.js": "08baa1fd96b3",
     "js\\kit\\mg-photo-focus.js": "1c96a1bb08c1",
@@ -245,7 +246,9 @@
     "js\\kit\\flavor.js": "1e4371c2baf8",
     "js\\kit\\hide-looks.js": "39f3ec1af2ca",
     "js\\kit\\barrier-look.js": "b700d47e252d",
-    "js\\kit\\station-looks.js": "d975e9cad2f9"
+    "js\\kit\\station-looks.js": "d975e9cad2f9",
+    "js\\kit\\mg-sound.js": "716108fa36d3",
+    "schema/chat-game.schema.json": "2aba9a135db4"
   },
   "textures": []
 }

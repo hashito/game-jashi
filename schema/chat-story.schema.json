@@ -110,6 +110,7 @@
         "lines": { "$ref": "#/$defs/lines" }, "set": { "type": "object" }, "add": { "type": "object" }, "prompt": { "type": "string" },
         "backlog": { "type": "boolean", "description": "the earlier conversation, already read: shown at once, no sound, no unread" },
         "emphasis": { "enum": ["warn", "important"] },
+        "custom": { "description": "hand this node's choice to custom/<page>/index.html (js/chat-custom.js, docs/standard-chat-site.md §4)", "oneOf": [ { "type": "string" }, { "type": "object", "required": ["page"], "properties": { "page": { "type": "string" }, "label": { "type": "string" }, "title": { "type": "string" }, "params": { "type": "object" } } } ] },
         "choices": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/choice" } },
         "next": { "type": "string" },
         "branch": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["next"], "properties": { "if": { "type": "string" }, "next": { "type": "string" } } } },

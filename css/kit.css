@@ -1,4 +1,4 @@
-/* game-kit bd0256a: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit b4c715e: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -2468,10 +2468,20 @@ body.hd-hiding #crosshair { display: none; }
 .cx-prompt { font-size: 0.75em; color: var(--cx-meta); font-weight: 700; }
 .cx-choice { text-align: left; border: 1px solid var(--cx-accent); background: #fff; color: #1d2328; border-radius: 14px; padding: 10px 14px; line-height: 1.5; animation: cx-in 0.25s ease-out backwards; }
 .cx-choice:hover, .cx-chip:hover { background: var(--cx-chip); }
+/* tapMine: the player's own line waiting in the input bar (a whole sentence: wraps, not a pill) */
+.cx-chip.cx-say { background: var(--cx-out); color: var(--cx-out-ink); border-color: var(--cx-accent); border-radius: 16px; line-height: 1.5; max-height: 8.5em; overflow-y: auto; white-space: normal; overflow-wrap: anywhere; }
+.cx-chip.cx-say:hover { background: var(--cx-out); filter: brightness(1.08); }
+/* a custom page over the talk (js/chat-custom.js): full size of the app, a thin head with the close button */
+.cx-custom { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; background: var(--cx-bg, #111); animation: cx-in 0.18s ease-out; }
+.cx-custom-head { flex: none; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 6px 0 14px; background: var(--cx-head, #26323c); color: var(--cx-head-ink, #fff); }
+.cx-custom-head b { flex: 1; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-custom-x { width: 44px; height: 44px; border: 0; background: transparent; color: inherit; font-size: 26px; line-height: 1; cursor: pointer; border-radius: 10px; }
+.cx-custom-x:focus-visible { outline: 2px solid currentColor; }
+.cx-custom-frame { flex: 1; width: 100%; border: 0; background: #fff; }
 .cx-act { border-style: dashed; }
 .cx-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--cx-bar); border-top: 1px solid rgba(0, 0, 0, 0.08); flex: none; }
 .cx-input { flex: 1; color: #9aa3aa; padding: 8px 14px; border-radius: 999px; background: #f0f2f4; font-size: 0.9em; }
-.cx-chip { flex: 1; text-align: left; border: 1px solid var(--cx-accent); background: var(--cx-chip); color: #1d2328; border-radius: 999px; padding: 8px 14px; animation: cx-pulse 1.6s ease-in-out infinite; }
+.cx-chip { flex: 1; text-align: left; border: 1px solid var(--cx-accent); background: var(--cx-chip); color: var(--cx-chip-ink, var(--cx-in-ink, #1d2328)); border-radius: 999px; padding: 8px 14px; animation: cx-pulse 1.6s ease-in-out infinite; }
 .cx-send { border: 0; border-radius: 999px; padding: 8px 14px; background: var(--cx-accent); color: var(--cx-accent-ink, #fff); font-weight: 700; }
 .cx-send:disabled { opacity: 0.35; cursor: default; }
 

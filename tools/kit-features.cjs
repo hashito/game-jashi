@@ -4,7 +4,7 @@
 const LIB = (() => { try { return new Set([...require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'mg-library.js'), 'utf8').matchAll(/module: 'mg-[a-z0-9-]+', type: '([a-z0-9-]+)'/g)].map((m) => m[1])); } catch { return new Set(); } })();
 const libTypes = (g) => (Array.isArray(g.minigames) ? g.minigames.filter((t) => LIB.has(t)) : []);
 module.exports = [
-  { id: 'minigames', when: (g) => libTypes(g).length > 0, modules: ['mg-library'], dynamic: (g) => libTypes(g).map((t) => `mg-${t}`) },   // game.json "minigames" naming library types (standard 1.10.15)
+  { id: 'minigames', when: (g) => libTypes(g).length > 0, modules: ['mg-library', 'mg-sound'], dynamic: (g) => libTypes(g).map((t) => `mg-${t}`) },   // game.json "minigames" naming library types (standard 1.10.15)
   { id: 'monsters', when: (g) => !!(g.data && g.data.monsters), modules: ['monster-std', 'monster-escape'], assets: [['assets/monster', 'assets/monster']], tools: ['check-escape.mjs'] },
   { id: 'fx', when: (g) => !!g.fx, modules: ['fx', 'fx-std'] },
   { id: 'things', when: (g) => !!(g.things && g.data && g.data.things), modules: ['things', 'things-data'] },
