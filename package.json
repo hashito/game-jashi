@@ -22,6 +22,7 @@
     "og": "node tools/make-og.mjs",
     "build": "node tools/build-site.js",
     "check:traps": "node tools/check-traps.mjs .",
-    "check:escape": "node tools/check-escape.mjs ."
+    "check:escape": "node tools/check-escape.mjs .",
+    "check:copy": "node tools/check-copy.mjs . --strict"
   }
 }

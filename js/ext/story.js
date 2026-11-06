@@ -79,7 +79,7 @@ export default function story(ext, shared) {
   ext.registerUi('title', {
     kicker: 'JASHI ／ A FIRST-PERSON MOUNTAIN HORROR',
     tagline: '叔父の別荘の二階、ベランダの望遠鏡で見てしまった白い姿。目が合えば心を削られ、近づかれれば鎌が振り下ろされる。日が暮れる前に、山を下りる。',
-    meta: '七つの段階 ・ 約15分 ・ PC・スマートフォン ・ ヘッドホン推奨',
+    meta: '七つの段階 ・ 約15分 ・ PC・スマホ ・ ヘッドホン推奨',
     note: '怪異の姿、襲われて倒れる場面、驚かせる表現があります（設定の「おだやか」で弱められます）。ネット怪談「邪視」の骨組みを借りた創作です。修司の声：VOICEVOX:麒ヶ島宗麟。',
   });
   ext.registerPersist('jashi', {
