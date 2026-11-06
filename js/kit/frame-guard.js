@@ -1,4 +1,4 @@
-/* game-kit 8cacc23: js/frame-guard.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/frame-guard.js — edit in game-kit and run tools/kit-sync.js */
 // Frame pacing guard for three.js games: find and remove hitches (カクつき).
 // No three.js import (renderer / scene are duck-typed), so the logic runs and is tested in Node.
 //  - FrameStats: frame times in a ring buffer, p50 / p95 / p99 / max, a log of hitches with what the frame did
@@ -280,6 +280,8 @@ const nextFrame = () => new Promise((r) => (typeof requestAnimationFrame !== "un
 //         the scene for the warm-up and removed again, so their programs use the real lights / fog
 //  render: one real frame with frustum culling off (uploads geometry, compiles shadow-depth programs and the
 //          tone-mapped screen variants that compile() alone does not reach)
+//  hidden: true also draws the parts that are hidden now (visible=false meshes and groups, not lights) for that one frame, so their
+//          geometry and textures are on the GPU before they first appear
 //  budgetMs: texture uploads are spread over frames so the veil keeps animating
 // -> { ms, programs (linked by this), textures }
 export async function prewarm(renderer, scene, camera, o = {}) {
@@ -301,15 +303,21 @@ export async function prewarm(renderer, scene, camera, o = {}) {
     }
   }
   if (o.render !== false && renderer.render) {
-    const culled = [];
+    const culled = [], shown = [];
     scene.traverse((x) => {
       if (x.frustumCulled) (culled.push(x), (x.frustumCulled = false));
+      if (o.hidden && x.visible === false && !x.isLight && !x.isCamera) (shown.push(x), (x.visible = true));
     });
+    // a light inside a part shown only for the warm-up stays off: the light count must be the one of play, or every program is built for the wrong count
+    const muted = [];
+    for (const x of shown) x.traverse((l) => { if (l.isLight && l.visible) (muted.push(l), (l.visible = false)); });
     // shadow maps are drawn once even when they normally update on demand
     const sm = renderer.shadowMap;
     if (sm && sm.enabled && sm.autoUpdate === false) sm.needsUpdate = true;
     renderer.render(scene, camera);
     for (const x of culled) x.frustumCulled = true;
+    for (const x of shown) x.visible = false;
+    for (const l of muted) l.visible = true;
     await nextFrame();
   }
   for (const x of holder) scene.remove(x);
@@ -325,6 +333,7 @@ export function auditScene(scene, renderer = null, o = {}) {
   const out = [];
   const maxTex = o.maxTexture ?? 2048;
   scene.traverse((x) => {
+    if (x.isLight && !x.isAmbientLight && x.visible !== false) { let a = x.parent; while (a && a.visible !== false) a = a.parent; if (a) out.push(`light "${x.name || x.type}" sits in "${a.name || a.type}", which is hidden: showing that part changes the light count and recompiles every lit material (keep the light outside it, intensity 0 while hidden)`); }
     if (x.isLight && !x.isAmbientLight && x.visible === false) out.push(`light "${x.name || x.type}" is hidden with visible=false: keep it visible and set intensity = 0 (a change of the light count recompiles every lit material)`);
   });
   for (const t of collectTextures(scene)) {

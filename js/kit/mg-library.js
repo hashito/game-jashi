@@ -1,4 +1,4 @@
-/* game-kit b4c715e: js/mg-library.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/mg-library.js — edit in game-kit and run tools/kit-sync.js */
 // The mini game LIBRARY: the mini games a game made for itself, kept in the kit so the next game can use them as they are
 // (a game is not stuck with the standard set of js/task-minigames.js; each one it adds stays reusable).
 //   import pour from './kit/mg-pour.js';
@@ -46,6 +46,7 @@ export const LIBRARY = [
   { module: 'mg-kana-word', type: 'kana-word', from: '標準 1.8.4（謎かけ・墓石の名・錠の合言葉）', about: '手がかりを読んで、文字の札で答えの言葉をつづる' },
   { module: 'mg-jug-measure', type: 'jug-measure', from: '標準 1.8.4（御神水・お神酒・灯油）', about: '目盛りのない二つの器で、決まった量をはかり取る' },
   { module: 'mg-hold-breath', type: 'hold-breath', from: '標準 1.8.4（押入れ・床下・屏風の陰に隠れる）', about: '近づいてくる気配のあいだ息を止め、通り過ぎるのを待つ' },
+  { module: 'mg-layer-board', type: 'layer-board', from: '標準 1.10.19（検案台の層・報告書の三欄・現場の盤）', about: '層や部品の向き・順番・位置をそろえて照合する' },
 ];
 
 /** register library mini games with the game's ext: an entry is a module's default, or [default, { type, hooks, sound }] to rename / hook it

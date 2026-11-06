@@ -36,3 +36,25 @@ npm run smoke:mobile
 ## 声
 
 修司の無線の声は VOICEVOX で作った（**VOICEVOX:麒ヶ島宗麟**、ノーマル）。台詞と設定は `tools/local-media-voices.json`、制作の手順は `tools/local-media-README.md` にある。ゲームではタイトルの注記にクレジットを出している。
+
+<!-- scene-links:start -->
+## テスト用の場面リンク
+
+`?scene=<id>` を付けて開くと、テストモードでその場面から始まります（前の作業は済んだことになり、会話は飛ばします）。
+テストモードではセーブを書かず、消しもしません（画面の上に「テストモード」の札が出ます）。`?test` だけを付けると、最初からテストモードで遊べます。
+知らない id のときは最初から始まります。場面の一覧は `js/ext/test-scenes.js`、この表は `node tools/scene-links.mjs` で作り直します。
+
+
+### 段階の頭
+
+| 場面 | 公開版 | 手元 (npm run serve) |
+|---|---|---|
+| 1. 二階のベランダで、望遠鏡を確かめる | [stage:L1](https://jashi.autoarticles.net/?scene=stage:L1) | [local](http://localhost:8000/?scene=stage:L1) |
+| 2. 窓から離れ、雨戸を閉める | [stage:L2](https://jashi.autoarticles.net/?scene=stage:L2) | [local](http://localhost:8000/?scene=stage:L2) |
+| 3. 机の無線を合わせ、修司の声を拾う | [stage:L3](https://jashi.autoarticles.net/?scene=stage:L3) | [local](http://localhost:8000/?scene=stage:L3) |
+| 4. 西の物置で、ボトルを二本持ち出す | [stage:L4](https://jashi.autoarticles.net/?scene=stage:L4) | [local](http://localhost:8000/?scene=stage:L4) |
+| 5. 東の避難小屋で、巻上げハンドルを探す | [stage:L5](https://jashi.autoarticles.net/?scene=stage:L5) | [local](http://localhost:8000/?scene=stage:L5) |
+| 6. 林道ゲートを、巻き上げる | [stage:L6](https://jashi.autoarticles.net/?scene=stage:L6) | [local](http://localhost:8000/?scene=stage:L6) |
+| 7. 車を始動して、山を下りる | [stage:L7](https://jashi.autoarticles.net/?scene=stage:L7) | [local](http://localhost:8000/?scene=stage:L7) |
+
+<!-- scene-links:end -->

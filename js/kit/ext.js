@@ -1,4 +1,4 @@
-/* game-kit d62d2ac: js/ext.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/ext.js — edit in game-kit and run tools/kit-sync.js */
 // Extension points of the standard 3D first-person game (docs/standard-3d.md). Pure (no DOM, no THREE): runs in Node.
 // One events bus + small registries. Game-specific code lives in js/ext/*.js of the game and ONLY talks to the standard
 // through these (module-boundary rule: no module touches another module's DOM; use the bus and the data schemas).
@@ -132,6 +132,8 @@ export function createExtensions() {
     registerTitleButton: (id, d) => reg.title.register(id, { order: 100, ...d }),
     registerUi: (section, d) => reg.ui.register(section, d),
     registerDeath: (d) => reg.death.register('death', d),
+    registerTestScenes(list, o = {}) { this.testScenes = { list, ...o }; },   // standard 1.12: ?scene=<id> (js/test-scenes.js)
+    testScenes: null,
     registerRender: (d) => reg.render.register('render', typeof d === 'function' ? { render: d } : d),   // standard 1.10.7: a game draws the frame itself (its own post pass): render(dt, ctx, look) replaces look.update + look.render
     registerItemKind: (kind, d) => reg.itemKind.register(kind, typeof d === 'function' ? { make: d } : d),   // standard 1.9: a game's own item model (game.json itemKinds lists it)
     registerSpotFx: (name, make, label) => registerSpotFx(name, make, label),   // standard 1.9: a game's own 'it saw you' effect (js/spot-fx.js)

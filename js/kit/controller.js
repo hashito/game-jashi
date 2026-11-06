@@ -1,4 +1,4 @@
-/* game-kit 244cbc9: js/controller.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/controller.js — edit in game-kit and run tools/kit-sync.js */
 // First-person controller: pointer lock + mouse look, WASD / arrows + Shift to run, a touch stick and
 // swipe-to-look for phones, circle-vs-box collisions, footstep callbacks.
 // Extracted from ひだまり薬局 (game-yakkyoku, js/game.js); the same scheme runs 未然調書 and the police game.
@@ -39,6 +39,8 @@ export class FirstPersonController {
     this.keys = new Set();
     this.stick = { x: 0, y: 0, id: null };
     this.runToggle = false;
+    this.slow = 1; // a multiplier on the walk / run (1.11.1: the approach's dizziness slows the legs when it is near)
+    this.bodySlow = 1; // the same, from js/body-fx.js (a dizzy spell, a stagger; 1.12.1)
     this.enabled = true;
     this.isTouch = matchMedia("(pointer: coarse)").matches;
     this.moved = 0; // metres walked (for tutorials)
@@ -225,7 +227,7 @@ export class FirstPersonController {
         fx /= l;
         fz /= l;
       }
-      const v = new THREE.Vector3(fx, 0, fz).applyAxisAngle(THREE.Object3D.DEFAULT_UP, this.yaw).multiplyScalar((this.crouching ? this.o.speed * (this.o.crouchSpeed ?? 0.5) : this.running() ? this.o.run : this.o.speed) * dt);
+      const v = new THREE.Vector3(fx, 0, fz).applyAxisAngle(THREE.Object3D.DEFAULT_UP, this.yaw).multiplyScalar((this.crouching ? this.o.speed * (this.o.crouchSpeed ?? 0.5) : this.running() ? this.o.run : this.o.speed) * (this.slow * this.bodySlow ?? 1) * dt);
       const before = p.clone();
       p.add(v);
       this.collide(p);

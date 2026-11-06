@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/task-minigames.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/task-minigames.js — edit in game-kit and run tools/kit-sync.js */
 // Short "Among Us-style" mini games for work / task screens (rule S16 of docs/3d-game-rules.md). Game-agnostic:
 // the game registers which task gets which game, then awaits start(). 10-40 s each, understood at once, a miss only
 // retries (no penalty), mouse AND touch (pointer events; tap-to-pick as well as drag), every target >= 44 px,
@@ -153,6 +153,7 @@ export function start(taskId, opts = {}) {
   const promise = new Promise((res) => (finish = res));
   const prevFocus = document.activeElement;
   let guide = null; // opts.guide = { create(root, T) -> { destroy() } }: the game's STEP guide (step-guide.js minigameSteps) for this mini game
+  let wonBtn = null;
   const close = (ok) => {
     if (!active) return;
     if (guide) { try { guide.destroy(); } catch {} guide = null; }
@@ -168,16 +169,26 @@ export function start(taskId, opts = {}) {
     gfEmit("taskMinigames", "win", { taskId });
     say("できた！", false);
     root.classList.add("won");
-    setTimeout(() => close(true), calm ? 250 : 600);
+    if (opts.qa || opts.autoNext || (typeof location !== "undefined" && /[?&]qa\b/.test(location.search))) { setTimeout(() => close(true), calm ? 250 : 600); return; }
+    // the result stays until the player presses (no-auto-advance rule, standard 1.13)
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "btn primary mg-next"; b.textContent = "次へ";
+    b.style.cssText = "display:block;min-height:48px;min-width:10rem;margin:10px auto 0;position:relative;z-index:2";
+    const t0 = Date.now();
+    b.onclick = () => { if (Date.now() - t0 >= 350) close(true); };
+    stage.parentNode.appendChild(b);
+    wonBtn = b;
+    setTimeout(() => { if (active) b.focus({ preventScroll: true }); }, 350);
   };
   // keys: Esc aborts; nothing else reaches the game (number keys would press the panel under us)
   const onKey = (e) => {
-    if (e.code === "Escape") (e.preventDefault(), e.stopImmediatePropagation(), close(false));
+    if (e.code === "Escape") (e.preventDefault(), e.stopImmediatePropagation(), close(!!wonBtn));
+    else if (wonBtn && (e.code === "Enter" || e.code === "Space" || e.code === "KeyE")) (e.preventDefault(), e.stopImmediatePropagation(), wonBtn.click());
     else if (!root.contains(e.target)) e.stopImmediatePropagation();
   };
   addEventListener("keydown", onKey, true);
   root.addEventListener("keydown", (e) => e.stopPropagation());
-  root.querySelector(".mg-x").addEventListener("click", () => close(false));
+  root.querySelector(".mg-x").addEventListener("click", () => close(!!wonBtn));
   root.addEventListener("pointerdown", (e) => e.stopPropagation());
   active = { promise, close, win, taskId, kind: T.kind };
   gfEmit("taskMinigames", "start", { taskId, kind: T.kind });

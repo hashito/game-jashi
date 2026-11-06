@@ -1,4 +1,4 @@
-/* game-kit 77f396d: js/barrier-look.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/barrier-look.js — edit in game-kit and run tools/kit-sync.js */
 // The look of a roped-off opening (standard 1.10.14, rule S13 "前半は行ける所を絞る"): a shimenawa-like rope on stakes with paper shide
 // ('rope', outdoors, shrines, old houses) or cones with yellow-black tape ('tape', offices, plants, stations). The group is centred on
 // the opening, runs along its local x (width w) and stands on y = 0; the caller places and turns it. A post every 3 m or less.
@@ -16,13 +16,18 @@ function stripeTex() {
   stripeT = new THREE.CanvasTexture(c); stripeT.wrapS = THREE.RepeatWrapping; stripeT.colorSpace = THREE.SRGBColorSpace; return stripeT;
 }
 
-/** a rope / tape group across an opening of width w (kind 'rope' | 'tape') */
+/** a rope / tape group across an opening of width w (kind 'rope' | 'tape' | 'board') */
 export function barrierLook(kind, w, name = 'barrier') {
   const G = new THREE.Group(); G.name = name;
   const part = (geo, mt, x, y, z) => { const o = new THREE.Mesh(geo, mt); o.position.set(x, y, z); o.castShadow = true; G.add(o); return o; };
   const half = w / 2 - 0.08;
   const n = Math.max(1, Math.ceil((half * 2) / 3)), xs = Array.from({ length: n + 1 }, (_, i) => -half + (i * half * 2) / n);
-  if (kind === 'rope') {
+  if (kind === 'board') {   // a waist-high steel flood board with a striped top (standard 1.13)
+    const steel = mat('barrier-steel', 0x8e979a), stripe = new THREE.MeshStandardMaterial({ map: stripeTex(), roughness: 0.6 });
+    if (stripe.map) stripe.map.repeat.set(Math.max(1, Math.round(w * 2)), 1);
+    part(new THREE.BoxGeometry(w, 0.8, 0.08), steel, 0, 0.46, 0); part(new THREE.BoxGeometry(w, 0.16, 0.09), stripe, 0, 0.94, 0);
+    for (const x of xs) part(new THREE.BoxGeometry(0.14, 1.2, 0.14), steel, x, 0.6, 0);
+  } else if (kind === 'rope') {
     const stake = mat('barrier-stake', 0x5a4632), rope = mat('barrier-rope', 0xb59a62), paper = mat('barrier-paper', 0xe8e2d0);
     for (const x of xs) part(new THREE.CylinderGeometry(0.045, 0.05, 1.15, 8), stake, x, 0.575, 0);
     for (let i = 0; i < n; i++) {

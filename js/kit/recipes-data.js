@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/recipes-data.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/recipes-data.js — edit in game-kit and run tools/kit-sync.js */
 // The "recipes" of the standard (standard 1.5): the content parts that were copied around by hand (props, env-props, texture-library, ambience, openables) switched on from game.json,
 // pure side (names, plan -> models, checks). js/recipes.js is the THREE / Web Audio side. game.json:
 //   "recipes": {
@@ -13,6 +13,7 @@ export const PROP_KINDS = {
   desk: { from: 'P', t: true }, steelDesk: { from: 'P', t: true }, table: { from: 'P', t: true }, locker: { from: 'P', t: true }, fridge: { from: 'P', t: true }, cardboardBox: { from: 'P', t: true },
   shelf: { from: 'P', t: true }, filingCabinet: { from: 'P', t: true }, counter: { from: 'P', t: true }, crateBox: { from: 'P', t: true }, trashBin: { from: 'P' }, pipeChair: { from: 'P' },
   officeChair: { from: 'P' }, printer: { from: 'P' }, cabinet: { from: 'P', t: true }, tansu: { from: 'P', t: true }, bed: { from: 'P', t: true }, woodenChair: { from: 'P', t: true }, phone: { from: 'P' }, coatRack: { from: 'P' }, extinguisher: { from: 'P' },
+  washerRow: { from: 'P' }, fileRack: { from: 'P' }, linenRack: { from: 'P' }, bodyCabinets: { from: 'P' }, tank: { from: 'P' },   // standard 1.13: a room's big fixture
   // js/env-props.js (an options object)
   bench: { from: 'E' }, vendingMachine: { from: 'E' }, plant: { from: 'E' }, crate: { from: 'E' }, pallet: { from: 'E' }, drum: { from: 'E' }, wheelieBin: { from: 'E' }, trashBag: { from: 'E' },
   trafficCone: { from: 'E' }, bollard: { from: 'E' }, car: { from: 'E' }, streetLamp: { from: 'E' }, deskLamp: { from: 'E' }, signPanel: { from: 'E' }, fence: { from: 'E' }, railing: { from: 'E' },

@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/map-svg.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/map-svg.js — edit in game-kit and run tools/kit-sync.js */
 // SVG floor map (rule U18 of docs/3d-game-rules.md). Game-agnostic: the input is the plan.json used by js/plan-check.js
 // (rooms / doors / stations; x east, z toward the bottom of the map, metres) plus runtime state.
 // Floors as tabs, room names, corridors, doors (locked ones marked), stairs, the player marker with heading,
@@ -299,10 +299,10 @@ export function createMapSvg(cfg) {
     const offX = (rc.width - bx.w * k) / 2, offY = (rc.height - bx.h * k) / 2;
     return { x: bx.x + (clientX - rc.left - offX) / k, y: bx.y + (clientY - rc.top - offY) / k, k };
   };
-  function centerOnPlayer() {
+  function centerOnPlayer(zoom) {
     const p = curState().pos;
     if (!p || (p.floor || 0) !== floor) return;
-    const b = floorBounds(plan, floor), z = Math.max(v.zoom, 2);
+    const b = floorBounds(plan, floor), z = zoom ?? Math.max(v.zoom, 2);
     v = clampView({ zoom: z, x: (p.x - b.x0) * scale - vw / z / 2, y: (p.z - b.z0) * scale - vh / z / 2 }, vw, vh);
     applyView();
   }

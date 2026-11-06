@@ -33,6 +33,10 @@
         "type": "string",
         "description": "plan.stations id where the player works"
       },
+      "reach": {
+        "type": "object",
+        "description": "standard 1.13: done when the player stands there: { x, z, r, floor } or { room } (js/guidance.js)"
+      },
       "meaning": {
         "type": "string",
         "minLength": 1,

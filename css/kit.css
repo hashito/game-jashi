@@ -1,4 +1,4 @@
-/* game-kit b4c715e: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -3036,7 +3036,8 @@ html[data-gf-no-flash="1"] .wm-layer { animation: none; }
 
 /* ---- the 3D conversation window and choice (js/talk-ui.js, standard 1.7) ---- */
 .gf-talk { display: flex; flex-direction: column; gap: var(--gf-space-3, 12px); min-height: 100%; color: var(--gf-text, #e8e6df); }
-.gf-talk-img { width: 100%; max-height: 30vh; object-fit: cover; border: 1px solid var(--gf-border, rgba(255,255,255,.2)); border-radius: var(--gf-radius, 4px); }
+.gf-talk-img { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; max-height: 30vh; object-fit: cover; background: #0b0e0f; border: 1px solid var(--gf-border, rgba(255,255,255,.2)); border-radius: var(--gf-radius, 4px); }   /* the box has its size before the picture arrives (1.11.1) */
+.gf-talk-img--kept { opacity: .72; filter: saturate(.75); }   /* the last picture, kept under a line without one (no jump) */
 .gf-talk-row { display: flex; gap: var(--gf-space-3, 12px); align-items: flex-start; }
 .gf-talk-face { flex: none; width: clamp(84px, 22%, 150px); aspect-ratio: 2 / 3; object-fit: cover; object-position: top; border: 1px solid var(--gf-border, rgba(255,255,255,.2)); border-radius: var(--gf-radius, 4px); }
 .gf-talk-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--gf-space-2, 8px); }
@@ -3566,3 +3567,27 @@ body.gf-warming .wm-layer, body.gf-warming .rn-wrap, body.gf-warming #mg, body.g
 .gf-saylog li:first-child { outline: 1px solid var(--gf-accent, #3a7a5a); }
 .gf-saylog .who, .gf-saylog li > span > b:first-child { color: var(--gf-accent, #3a7a5a); margin-right: 0.5em; font-weight: 600; }   /* a game that tags the speaker with <b> (hikage) reads the same */
 body.touch #say.on { pointer-events: auto; }   /* a tap on the thought band opens 言葉の記録 */
+
+/* layer-board (standard 1.10.19): parts with states, one STEP line, the hint lines */
+.mgx-layer { display: grid; gap: 10px; }
+.mgx-layer-fig { margin: 0; text-align: center; }
+.mgx-layer-fig img { max-width: 100%; max-height: 34vh; border-radius: 6px; border: 1px solid var(--gf-border-strong, #b8b0a0); }
+.mgx-layer-fig figcaption { font-size: 0.85em; color: var(--gf-text-dim, #5a5448); margin-top: 4px; }
+.mgx-layer-step { margin: 0; padding: 8px 12px; border-left: 3px solid var(--gf-accent, #3a7a5a); background: var(--gf-surface-2, #ece6d6); color: var(--gf-text); border-radius: 0 6px 6px 0; }
+.mgx-layer-step b { color: var(--gf-accent, #3a7a5a); margin-right: 6px; }
+.mgx-layer-parts { display: grid; gap: 10px; }
+.mgx-layer-part { padding: 8px 10px; border: 1px solid var(--gf-border, #d6cfbf); border-radius: 8px; background: var(--gf-surface, #fff); }
+.mgx-layer-part.bad { border: 2px solid var(--gf-danger, #b3261e); animation: mgx-msg 0.3s ease-out; }
+.mgx-layer-label { font-weight: 700; margin-bottom: 6px; color: var(--gf-text); }
+.mgx-layer-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.mgx-layer-opt { min-height: 48px; min-width: 64px; padding: 6px 14px; border: 1px solid var(--gf-border-strong, #b8b0a0); border-radius: 6px; background: var(--gf-surface-2, #ece6d6); color: var(--gf-text); font: inherit; cursor: pointer; }
+.mgx-layer-opt.on { background: var(--gf-accent, #3a7a5a); border-color: var(--gf-accent, #3a7a5a); color: var(--gf-accent-ink, #fff); font-weight: 700; }
+.mgx-layer-opt.on::before { content: "\25C6\00a0"; }
+.mgx-layer-count { margin-top: 4px; font-size: 0.85em; color: var(--gf-text-dim, #5a5448); }
+.mgx-layer-shift { display: flex; align-items: center; gap: 10px; }
+.mgx-layer-shift .btn { min-width: 48px; min-height: 48px; }
+.mgx-layer-shift output { min-width: 4em; text-align: center; font: 700 1.2em var(--gf-font); color: var(--gf-text); }
+.mgx-layer-hint { margin: 0; display: grid; gap: 4px; color: var(--gf-text); }
+.mgx-layer-hint b { color: var(--gf-accent, #3a7a5a); margin-right: 6px; }
+.mgx-layer-tools { justify-content: center; flex-wrap: wrap; }
+.mgx-layer-tools .btn { min-height: 48px; }

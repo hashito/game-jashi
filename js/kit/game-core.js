@@ -1,4 +1,4 @@
-/* game-kit b4c715e: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -48,7 +48,12 @@ import { createPauseMenu } from './pause-menu.js';
 import { createJournal } from './journal-ui.js';
 import { createMapSvg } from './map-svg.js';
 import { createStepGuide, minigameSteps } from './step-guide.js';
-import { FrameGuard, JobQueue } from './frame-guard.js';
+import { FrameGuard, JobQueue, prewarm, auditScene } from './frame-guard.js';
+import { createApproach } from './approach-fx.js';
+import { createBodyFx } from './body-fx.js';
+import { buildPlanDress, dressConfig } from './plan-dress.js';
+import { buildRoomMarks } from './room-marks.js';
+import { runTestScene, sceneIn, stageScenes } from './test-scenes.js';
 import { warmStandardUi, corpusOf, imagesOf } from './ui-warm.js';
 import { preloadImage, whenFontsReady, mountTitleArt, crossfadeToTitle } from './boot.js';
 import { track } from './analytics.js';
@@ -57,12 +62,13 @@ import { PadInput } from './pad-input.js';
 import { roomGraph, roomOf, occlusion } from './audio-at.js';
 import { gfRegister, gfOk, gfFail, gfUnknown } from './gf-test.js';
 import { createExtensions } from './ext.js';
+import { installGuidance } from './guidance.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.10.18';
+export const CORE_VERSION = '1.13.0';
 // the mini game library's types (js/mg-library.js LIBRARY; test/story-hooks.test.mjs keeps the two equal): game.json "minigames" naming one of these loads the library
-export const MG_LIB_TYPES = ['pour', 'turn-dials', 'match-mark', 'timing', 'code-drums', 'tune-radio', 'trace-path', 'slide-tiles', 'search-dark', 'rotate-pipes', 'sort-items', 'memory-pairs', 'lock-pick', 'photo-focus', 'rhythm-taps', 'connect-dots', 'balance-scale', 'echo-bells', 'switch-panel', 'rotate-pieces', 'count-shadows', 'spot-difference', 'maze-path', 'cipher-wheel', 'steady-hand', 'pump-gauge', 'order-steps', 'compass-bearing', 'mirror-beam', 'kana-word', 'jug-measure', 'hold-breath'];
+export const MG_LIB_TYPES = ['pour', 'turn-dials', 'match-mark', 'timing', 'code-drums', 'tune-radio', 'trace-path', 'slide-tiles', 'search-dark', 'rotate-pipes', 'sort-items', 'memory-pairs', 'lock-pick', 'photo-focus', 'rhythm-taps', 'connect-dots', 'balance-scale', 'echo-bells', 'switch-panel', 'rotate-pieces', 'count-shadows', 'spot-difference', 'maze-path', 'cipher-wheel', 'steady-hand', 'pump-gauge', 'order-steps', 'compass-bearing', 'mirror-beam', 'kana-word', 'jug-measure', 'hold-breath', 'layer-board'];
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 const safe = (fn, d = null) => { try { return fn(); } catch { return d; } };
@@ -96,6 +102,7 @@ export async function loadGame(manifestUrl = 'game.json', o = {}) {
   if (manifest.things && data.things && !mods.things) mods.things = await import('./things.js');   // opt-in: a game's own legacy things.json (other format) is not touched
   if (data.terminals && !mods.terminals) mods.terminals = await import('./terminal-screen.js');
   if (manifest.voice && !mods.voice) mods.voice = await import('./voice-fx.js');
+  if (manifest.deaths && !mods.moments) mods.moments = await import('./moments.js').catch(() => null);   // game.json "deaths": the death card from data (standard 1.13)
   if (data.flavor && !mods.flavor) mods.flavor = await import('./flavor.js');   // data/flavor.json: mood lines (standard 1.10)
   const ctx = createGame({ manifest, data, ext, ...o, mods });
   if (manifest.recipes) await (await import('./recipes.js')).installRecipes(ctx, manifest.recipes);
@@ -106,6 +113,10 @@ export async function loadGame(manifestUrl = 'game.json', o = {}) {
 }
 
 // "start=chapter3" / "start=3" -> { chapter: 3 }
+// test mode (1.11.2): ?test (or ?scene=<id>) never touches the player's save (no save, no autosave, no clear) and shows a small badge;
+// ?scene=<id> starts at once with game:start { scene: id, test: true } and the game puts the player there (its own list of scenes)
+const TEST_SCENE = Q.get('scene') || '';
+const TEST_MODE = Q.has('test') || !!TEST_SCENE;
 const startFromUrl = () => { const v = Q.get('start'); if (!v) return null; const d = String(v).replace(/\D/g, ''); return d === '' ? null : { chapter: +d }; };
 
 export function createGame(cfg) {
@@ -166,7 +177,8 @@ export function createGame(cfg) {
     return s;
   };
   ctx.snapshot = () => snapshot();
-  ctx.save = () => { if (!state.ended) { const s = snapshot(); if (s) { store.save(s); bus.emit('game:save', { state: s }); } } };
+  ctx.testMode = TEST_MODE; ctx.testScene = TEST_SCENE;
+  ctx.save = () => { if (TEST_MODE) return; if (!state.ended) { const s = snapshot(); if (s) { store.save(s); bus.emit('game:save', { state: s }); } } };
 
   // ---- DOM skeleton ----
   const body = document.body;
@@ -217,10 +229,15 @@ export function createGame(cfg) {
   // progression: the tasks ARE the goals
   const def = buildProgressionDef(data.stages, tasks, plan);
   const prog = ctx.prog = new Progression(def);
-  prog.on('levelup', (e) => bus.emit('stage:up', { level: e.level.id, unlocks: e.unlocks }));
+  prog.on('levelup', (e) => { if (!ctx.skipping) bus.emit('stage:up', { level: e.level.id, unlocks: e.unlocks }); });   // ctx.skipping: a test scene walks there quietly
   const world = ctx.world = wdef ? wdef.build(ctx) : buildWorld(plan, { isUnlocked: (k) => prog.isUnlocked(k) });
+  world.onBarrierOpen = () => { if (state.started && !ctx.skipping) safe(() => ctx.audio.noiseBurst({ dur: 0.7, freq: 300, q: 0.8, gain: 0.22, type: 'lowpass', wet: 0.3 })); };
   if (world.group && !world.group.parent) scene.add(world.group);
   world.floorY = world.floorY || (() => 0);
+  // set dressing (standard 1.11, game.json "dress"): skirting, painted band, corridor pipes, water stains, drains - a plan world only
+  if (manifest.dress && !wdef) ctx.dress = buildPlanDress(THREE, scene, plan, { ...dressConfig(manifest.dress), wallH: (world.K && world.K.wallH) || 3, floorY: world.floorY });
+  // a colour, a band and door signs for each room (standard 1.12, game.json "roomMarks")
+  if (manifest.roomMarks && !wdef) ctx.roomMarks = buildRoomMarks(THREE, scene, plan, manifest.roomMarks, { floorY: world.floorY });
   const EYE = controls.eye || 1.65;
   ctx.eyeY = (floor = ctx.floor) => world.floorY(floor) + EYE;
   // doors the story locks (standard 1.10.15, deguchi K1): ctx.lockDoor(id, fn, hint) adds a lock (fn() true = shut) and the [E] answer while
@@ -430,7 +447,7 @@ export function createGame(cfg) {
     if (!o.quiet) { ui.toast(`✓ ${esc((taskById.get(id) || {}).title || id)}`, 'ok'); sound('beep', true); }
     bus.emit('task:done', { id });
     for (const it of items) if (it.given === id && !state.inv.includes(it.id)) { state.inv.push(it.id); if (!o.quiet) ui.toast(`受け取った：${esc(it.name)}`); bus.emit('item:given', { id: it.id, task: id }); }   // "given": <task id> (standard 1.7)
-    const reg = ext.reg.task.get(id); reg && reg.onDone && reg.onDone(ctx, taskById.get(id));
+    const reg = ext.reg.task.get(id); if (!ctx.skipping) reg && reg.onDone && reg.onDone(ctx, taskById.get(id));
     if (!o.noSave) ctx.save();
     checkEndings();
   };
@@ -458,7 +475,7 @@ export function createGame(cfg) {
     if (!e) return;
     const screen = ext.reg.screen.get('ending');
     state.ended = e.id; fp.release();
-    if (!(screen && screen.keepSave)) store.clear();
+    if (!(screen && screen.keepSave) && !TEST_MODE) store.clear();
     Store.write(`${manifest.id}.endings.v1`, [...new Set([...(Store.read(`${manifest.id}.endings.v1`) || []), e.id])]);
     if (screen) screen.open(ctx, e);   // the game's own presentation (sequence, result card, share buttons)
     // standard 1.8.2 (F10): with no screen of its own a game still ends on the scene - the picture, the lines, the endings found so far
@@ -506,7 +523,7 @@ export function createGame(cfg) {
   ctx.tapSelect = (x, y) => { if (blocked() || !state.started) return false; const t = world.pickAt ? world.pickAt(x, y, ctx) : pickInteractableAt(camera, world.interactables, x, y, innerWidth, innerHeight, 2.4, { colliders: world.colliders }); if (!t) return false; target = ctx.target = t; const used = ctx.interact(); if (used) tapUsedAt = performance.now(); return used; };
   ctx.interact = () => { if (blocked() || !target) return false; const h = handlerOf(target.kind); if (!h) return false; bus.emit('player:interact', { kind: target.kind, id: target.id }); h.run(target, ctx); return true; };
   // floors: a stairs / lift end ({ to: { x, z, floor, yaw } }) moves the player; worlds without stairs never call it
-  ctx.setFloor = (floor, p = null) => { const from = ctx.floor; if (p) { placeCamera(p.x, p.z, floor); if (p.yaw != null) fp.yaw = p.yaw; } else placeCamera(camera.position.x, camera.position.z, floor); if (from !== floor) bus.emit('player:floor', { from, to: floor }); };
+  ctx.setFloor = (floor, p = null) => { const from = ctx.floor; if (p) { placeCamera(p.x, p.z, floor); if (p.yaw != null) fp.yaw = p.yaw; } else placeCamera(camera.position.x, camera.position.z, floor); if (world.setLampFloor) world.setLampFloor(floor); if (from !== floor) bus.emit('player:floor', { from, to: floor }); };
   ctx.useStairs = (o) => { const to = o.to || (o.def && o.def.to); if (!to) return false; if (world.useStairs) return world.useStairs(o, ctx); ctx.setFloor(to.floor || 0, to); return true; };
 
   // ---- menus: tab menu (items / tasks / notes / map + the game's tabs), pause menu, step guide ----
@@ -524,14 +541,31 @@ export function createGame(cfg) {
   const mapDef = uiDef('map');
   const stationPos = (id) => { const m = world.interactables.find((o) => o.userData.interact && o.userData.interact.kind === 'station' && o.userData.interact.id === id); return m ? { x: m.position.x, z: m.position.z } : {}; };
   const mapState = () => {
+    const known = manifest.mapView && manifest.mapView.revealAll ? plan.rooms.map((r) => r.id) : state.visited;
     const base = {
-      pos: { x: camera.position.x, z: camera.position.z, floor: ctx.floor }, heading: (-fp.yaw * 180) / Math.PI, visited: state.visited, named: state.visited,
+      pos: { x: camera.position.x, z: camera.position.z, floor: ctx.floor }, heading: (-fp.yaw * 180) / Math.PI, visited: known, named: known,
       locked: [...world.doors.values()].filter((d) => d.locked()).map((d) => d.def.id),
       pins: tasks.filter((t) => t.station && ctx.canStart(t) === true).map((t) => ({ id: t.id, room: t.room, ...stationPos(t.station), label: t.title, kind: 'task' })),
     };
     return mapDef.state ? { ...base, ...mapDef.state(ctx, base) } : base;
   };
-  tm.registerTab({ id: 'map', label: mapDef.label || '地図', icon: 'map', render: (el) => { el.innerHTML = ''; if (mapView) { el.appendChild(mapView.el); mapView.reset(); return; } mapView = createMapSvg({ plan: mapDef.plan ? mapDef.plan(ctx) : plan, container: el, getState: mapState, ...(mapDef.photo ? { photo: (id) => mapDef.photo(id, ctx) } : {}), ...(mapDef.names ? { names: mapDef.names } : {}), ...(mapDef.floorNames ? { floorNames: mapDef.floorNames } : {}), calm: settings.calm }); }, onShow: () => mapView && mapView.update() });
+  tm.registerTab({ id: 'map', label: mapDef.label || '地図', icon: 'map', render: (el) => { el.innerHTML = ''; if (mapView) { el.appendChild(mapView.el); mapView.reset(); return; } mapView = createMapSvg({ plan: mapDef.plan ? mapDef.plan(ctx) : plan, container: el, getState: mapState, ...(mapDef.photo ? { photo: (id) => mapDef.photo(id, ctx) } : {}), ...(mapDef.names ? { names: mapDef.names } : {}), ...(mapDef.floorNames ? { floorNames: mapDef.floorNames } : {}), calm: settings.calm }); }, onShow: () => { if (mapView) { mapView.update(); focusMap(); } } });
+  // game.json "mapView" (standard 1.13, 五人分の朝: 「小さすぎて」): { "follow": true, "zoom": 2.4, "guide": "text", "revealAll": true, "minHeight": "min(40vh, 340px)" };
+  // bus "map:open" and "map:close" { seconds } tell a game how long the map was looked at (a task "look at the map" done on a real look)
+  const focusMap = () => setTimeout(() => {
+    const mv = manifest.mapView;
+    if (!mv || !mapView) return;
+    const view = mapView.el.querySelector('.ms-view');
+    if (view && mv.minHeight) view.style.minHeight = mv.minHeight;
+    if (mv.guide && !mapView.el.querySelector('.ms-guide')) { const g = document.createElement('div'); g.className = 'ms-guide'; g.textContent = kt(mv.guide); g.style.cssText = 'margin:0 0 8px;padding:6px 10px;border:1px solid var(--gf-accent,#7fb8b0);border-radius:8px;font-size:14px;line-height:1.55'; mapView.el.insertBefore(g, mapView.el.firstChild); }
+    if (mv.follow !== false) mapView.centerOnPlayer(mv.zoom);
+  }, 60);
+  let mapAt = 0;
+  const mapOn = () => { if (!mapAt) { mapAt = performance.now(); bus.emit('map:open', {}); } focusMap(); };
+  const mapOff = () => { if (mapAt) { const seconds = (performance.now() - mapAt) / 1000; mapAt = 0; bus.emit('map:close', { seconds }); } };
+  tm.on('tab', (id) => { if (id === 'map') mapOn(); else mapOff(); });
+  wm.on('open', (id) => { if (id === 'tab-menu' && tm.active === 'map') mapOn(); });
+  wm.on('close', (id) => { if (id === 'tab-menu') mapOff(); });
   for (const t of ext.tabs()) tm.registerTab({ id: t.id, label: t.label, icon: t.icon, after: t.after, render: (el) => t.render(el, ctx), badge: t.badge ? () => t.badge(ctx) : undefined, onShow: t.onShow ? () => t.onShow(ctx) : undefined, onKey: t.onKey, focus: t.focus });
   const pm = ctx.pm = createPauseMenu({
     wm, tabMenu: tm, releaseNotes: rn, ...(uiDef('pause').renderSettings ? { renderSettings: (el, api) => uiDef('pause').renderSettings(el, api, ctx) } : {}), onTitle: () => (ctx.toTitle ? ctx.toTitle() : location.reload()), storage: safe(() => localStorage),
@@ -624,16 +658,41 @@ export function createGame(cfg) {
   });
 
   // ---- player: rooms, die / respawn ----
+  // back to the checkpoint (standard 1.13: games' own death sequences call this instead of copying it)
+  ctx.respawn = (cp = ctx.checkpoint) => {
+    ctx.setFloor(cp.floor || 0, cp); fp.yaw = cp.yaw || 0;
+    bus.emit('player:respawn', { room: world.roomAt(cp.x, cp.z, camera.position.y) });
+  };
+  // ctx.hold(fn): nothing moves or opens while fn (async) runs (standard 1.13; every game had its own busy flag and try / finally)
+  let holds = 0;
+  ctx.blockers.push(() => holds > 0);
+  ctx.hold = async (fn) => { holds++; try { return await fn(); } finally { holds--; } };
   const defaultDie = (reason = '') => {
     bus.emit('player:dead', { reason });
-    ctx.setFloor(ctx.checkpoint.floor || 0, ctx.checkpoint); fp.yaw = ctx.checkpoint.yaw || 0;
-    bus.emit('player:respawn', { room: world.roomAt(ctx.checkpoint.x, ctx.checkpoint.z, camera.position.y) });
+    ctx.respawn();
   };
   ctx.die = (reason = '') => {
     if (state.ended) return;
+    // the catch close-up first (standard 1.11, game.json "approach": { "catchImage" }); the death sequence follows on dark
+    if (ctx.approach && ctx.approach.catches(reason)) { if (ctx.approach.catching) return; const a = ctx.approach; return a.catchClose().then(() => dieNow(reason)); }
+    return dieNow(reason);
+  };
+  const dieNow = (reason) => {
+    if (state.ended) return;
     const d = ext.reg.death.get('death');
     if (d) return d.run(ctx, reason);   // the game's own sequence (it emits player:dead / player:respawn itself)
+    if (manifest.deaths && cfg.mods && cfg.mods.moments && !ctx.qa) return cardDie(reason);
     defaultDie(reason);
+  };
+  // game.json "deaths" (standard 1.13): { "monster": { "text", "sub", "photo", "retry" }, "default": { ... } }: the reason's card, its button, back to the checkpoint
+  let dying = false;
+  const cardDie = async (reason) => {
+    if (dying) return;
+    dying = true;
+    const D = { ...(manifest.deaths.default || {}), ...(manifest.deaths[reason] || {}) };
+    bus.emit('player:dead', { reason });
+    try { await ctx.hold(() => cfg.mods.moments.showDeath(ctx, D.text || 'つかまりました。', D.sub || '最後の場所から、やり直します。', D)); ctx.respawn(); } finally { dying = false; }
+    safe(() => fp.lock());
   };
   ctx.teleport = (target) => { // debug and tests: a room id or { x, z, yaw, floor }
     const R = typeof target === 'string' ? world.rooms.get(target) : null;
@@ -647,14 +706,19 @@ export function createGame(cfg) {
   // crouch and flashlight (game.json "controls": { "crouch": true, "flashlight": true | { "on": true, "intensity": 24 } }, standard 1.7): [C] / [F] and touch
   // buttons; ctx.visibility() tells the monster how easy you are to notice (crouching 0.6, a light on 1.3: controls.crouchVisibility / lightVisibility)
   ctx.setCrouch = (on) => { if (!controls.crouch) return; fp.crouching = !!on; bus.emit('player:crouch', { on: fp.crouching }); ui.toast(fp.crouching ? 'しゃがんだ（Cで立つ）' : '立ち上がった'); };
+  ctx.body = createBodyFx(ctx);   // the body's effects (standard 1.12.1, js/body-fx.js): dizzy, stagger, heartbeat, ringing, collapse, wake
+  // the approach (standard 1.11, game.json "approach"): vignette + heartbeat + shake from ctx.fxState, the warning pulse, the catch close-up
+  ctx.approach = manifest.approach ? createApproach(ctx, manifest.approach) : null;
+  if (ctx.approach) ctx.blockers.push(() => ctx.approach.catching);
   ctx.lightOn = false;
   if (controls.flashlight) {
     const fl = typeof controls.flashlight === 'object' ? controls.flashlight : {};
     const light = ctx.flashlight = new THREE.SpotLight(fl.color ?? 0xffefc7, fl.intensity ?? 24, fl.distance ?? 22, fl.angle ?? Math.PI / 6.5, 0.7, 1.3);
-    light.visible = false; scene.add(light, light.target);
-    ctx.setLight = (on) => { ctx.lightOn = !!on; light.visible = ctx.lightOn; bus.emit('player:light', { on: ctx.lightOn }); };
+    // off = intensity 0, never visible=false: a change in the number of lights recompiles every lit material (the hitch when the light came on)
+    const lit = light.intensity; light.intensity = 0; scene.add(light, light.target);
+    ctx.setLight = (on) => { ctx.lightOn = !!on; light.intensity = ctx.lightOn ? lit : 0; bus.emit('player:light', { on: ctx.lightOn }); };
     const dir = new THREE.Vector3();
-    systems.push({ id: 'flashlight', def: { update: () => { if (!light.visible) return; light.position.copy(camera.position); camera.getWorldDirection(dir); light.target.position.copy(camera.position).addScaledVector(dir, 6); } }, inst: null });
+    systems.push({ id: 'flashlight', def: { update: () => { if (!ctx.lightOn) return; light.position.copy(camera.position); camera.getWorldDirection(dir); light.target.position.copy(camera.position).addScaledVector(dir, 6); } }, inst: null });
     if (fl.on) ctx.setLight(true);
   } else ctx.setLight = () => {};
   ctx.visibility = () => (fp.crouching ? controls.crouchVisibility ?? 0.6 : 1) * (ctx.lightOn ? controls.lightVisibility ?? 1.3 : 1);
@@ -698,12 +762,23 @@ export function createGame(cfg) {
     bus.on('player:respawn', () => { for (const t of timed) if (!state.tasks.includes(t.id)) state.timers[t.id] = 0; });
   }
   ctx.systems = systems;
-  ctx.monologue = (text, sec = 2.2, o) => ui.say(esc(text), sec, o);   // the protagonist's thought line (U23); monster hints ("走れ") go through it
+  // guiding the player (standard 1.13, js/guidance.js): ctx.lookTo, task "reach" / when(), game.json "pointer" and "hud"
+  const guidance = installGuidance(ctx, { manifest, tasks, plan: wdef ? null : plan, stationPos, taskReg: (id) => ext.reg.task.get(id), reachOk: (t) => ctx.levelIndex(t.stage) <= prog.index && (t.needs || []).every((n) => state.tasks.includes(n)) });
+  systems.push({ id: 'guidance', def: { update: (dt, c, active) => guidance.update(dt, active) }, inst: null });
+  // game.json "thoughtVoices": "assets/voice/list.json" (standard 1.13): a thought line with a recording in the list ({ key: { text, file, sec } }) is spoken, and stays up at least as long
+  let thoughtVoices = null, thoughtNode = null;
+  if (manifest.thoughtVoices && typeof fetch !== 'undefined') fetch(manifest.thoughtVoices).then((r) => (r.ok ? r.json() : {})).then((j) => { thoughtVoices = Object.fromEntries(Object.values(j).map((v) => [v.text, v])); }).catch(() => {});
+  const thoughtDir = String(manifest.thoughtVoices || '').replace(/[^/]*$/, '');
+  ctx.monologue = (text, sec = 2.2, o) => {
+    const v = thoughtVoices && thoughtVoices[text];
+    if (v && !ctx.qa) { safe(() => thoughtNode && thoughtNode.stop && thoughtNode.stop()); safe(() => { thoughtNode = ctx.voiceLine(thoughtDir + v.file); }); sec = Math.max(sec, (v.sec || 0) + 1); }
+    return ui.say(esc(text), sec, o);
+  };   // the protagonist's thought line (U23); monster hints ("走れ") go through it
   // the answer to what the player just did ([E] on something, a key): at once, never dropped from a full queue (standard 1.10.15, deguchi K8)
   ctx.answer = (text, sec) => ctx.monologue(text, sec ?? Math.min(9, 2.4 + String(text).length * 0.09), { urgent: true });
   systems.push({ id: 'door-hold', def: { update: (dt = 0.016, c, active) => { if (active && world.doors) for (const d of world.doors.values()) if (d.monsterHold > 0) d.monsterHold = Math.max(0, d.monsterHold - dt); } } });
   // the conversation window and the choice (js/talk-ui.js, standard 1.7): ctx.talk(lines | 'key of data/talk.json', o), ctx.choose({ who, text, options })
-  { const T = createTalk({ wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), said: (L) => ui.sayLine.remember(`<span class="who">${esc(L.who || '')}</span>${esc(L.text || '')}`), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.choose = T.choose;
+  { const T = createTalk({ fx: (f) => ctx.body && ctx.body.play(f), wm, qa: !!ctx.qa, data: data.talk || null, portraits: manifest.portraits || null, log: (ctx.talkLog = []), said: (L) => ui.sayLine.remember(`<span class="who">${esc(L.who || '')}</span>${esc(L.text || '')}`), voice: (L) => ctx.voiceLine(L.voice, L.vfx || null) }); ctx.choose = T.choose;
     // a talk that opens right after a pick-up (the item finished a task, the story answers it) used to cover the item card at once: the player
     // never read what they had picked up. Such a talk now starts with the item itself (picture, name, desc) as its first page, read at the player's pace.
     // a line { t: '...' } in a talk is a thought (deguchi K6): the spoken lines go in the window, then the thoughts in the thought band
@@ -776,10 +851,14 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
         for (const id of state.doors) { const d = world.doors.get(id); if (d && d.open() && d.snap) d.snap(); }   // a restored door is already open (no swing on load)
         for (const id of state.inv) remove('item', id);
         if (snap.pos) { placeCamera(snap.pos.x, snap.pos.z, snap.pos.floor || 0); fp.yaw = snap.pos.yaw || 0; }
-      } else if (!o.keepSave) store.clear();
+      } else if (!o.keepSave && !TEST_MODE) store.clear();
       for (const p of ext.reg.persist.list()) p.restore(resume ? (snap.ext && snap.ext[p.id]) ?? null : null, ctx, { ...o, resume, saved: resume ? snap : null });
       title.classList.add('hidden'); hud.classList.remove('hidden'); state.started = true; applyInput();
-      state.started = true; unlockAudio(); bus.emit('game:start', { ...o, resume });
+      // ?scene=<id> (standard 1.12): a known scene of ext.registerTestScenes runs after game:start; an unknown one says so and starts from the beginning
+      // (standard 1.13: every game also has ?scene=stage:<level id>, its tasks of the earlier stages done)
+      const testDef = { ...(ext.testScenes || {}), list: [...((ext.testScenes && ext.testScenes.list) || []), ...stageScenes(prog.levels, tasks)] }, testId = o.scene && sceneIn(testDef.list, o.scene) ? o.scene : null;
+      state.started = true; unlockAudio(); bus.emit('game:start', { ...o, scene: testId || undefined, resume });
+      if (testId) runTestScene(ctx, testDef, testId); else if (o.scene) ui.say(esc(`テストの場面「${o.scene}」はありません。最初から始めます。`), 6);
       if (!resume && !o.quiet && !td.intro) ui.say(esc(data.stages.goal.sub || data.stages.goal.title), 6);
       if (!blocked()) fp.lock();
       checkEndings();
@@ -790,7 +869,7 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
   $('start-btn').onclick = () => { if (saved && td.confirmNew && !$('start-btn').dataset.sure) { $('start-btn').dataset.sure = '1'; $('start-btn').textContent = td.confirmNew; return; } begin({}); };
   if ($('continue-btn')) $('continue-btn').onclick = () => begin({ resume: true });
   ctx.start = begin;
-  store.autosave(() => (state.started && !state.ended ? snapshot() : null));
+  store.autosave(() => (state.started && !state.ended && !TEST_MODE ? snapshot() : null));
 
   // ---- boot (behind the title: the game's pre-compile, tour, decode steps) ----
   ctx.boot = async () => {
@@ -799,6 +878,10 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     const status = $('boot-status');
     const report = (k, text) => { if (status && text) status.textContent = text; ctx.bootProgress = k; };   // the button keeps one label while loading (no text toggling)
     for (let i = 0; i < steps.length; i++) await steps[i].run(ctx, (k, t) => report((i + k) / steps.length, t));
+    // compile every shader and upload every texture / mesh now, hidden parts included (a field, a monster, a held item shown later): the first
+    // light switch, the first look into a new room or the first fast turn must not link programs mid-play (the hitches at 「電気をつけた / 素早く移動」)
+    if (status) status.textContent = '描画を準備中…';
+    if (!manifest.noPrewarm) { try { ctx.prewarmReport = await prewarm(renderer, scene, camera, { hidden: true, extra: ctx.warmObjects || [] }); fg.armPrograms(); ctx.sceneAudit = auditScene(scene, renderer); if (ctx.sceneAudit.length && (ctx.debug || FrameGuard.query())) console.warn('[frame-guard] hitch risks: ' + ctx.sceneAudit.join(' / ')); } catch (e) { console.warn('prewarm', e); } }
     // pre-paint every standard window (invisible): the first real open must not pay for layout / glyphs / image decode (perf: 150-450 ms at 4x CPU)
     if (status) status.textContent = '画面を準備中…';
     ctx.warmReport = await warmStandardUi({ text: corpusOf([data, manifest]), images: [...imagesOf(data.items, data.docs, data.things), ...(ctx.warmImages || [])], wm, tm, pm, rn, inv, owned: () => ctx.owned(), minigames: Object.keys(MG.TASKS), minigame: (id) => ctx.minigame(id), abortMinigame: MG.abort, steps: ctx.warmSteps });
@@ -807,6 +890,8 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     if (btn) { btn.disabled = false; btn.textContent = saved ? (td.restartLabel || 'はじめから') : 'はじめる'; }
     if ($('continue-btn')) $('continue-btn').classList.remove('hidden');
     bus.emit('game:booted', ctx);
+    if (TEST_MODE && typeof document !== 'undefined' && !document.getElementById('gf-test-badge')) { const b = document.createElement('div'); b.id = 'gf-test-badge'; b.textContent = `テストモード${TEST_SCENE ? `：${TEST_SCENE}` : ''}（保存しません）`; b.style.cssText = 'position:fixed;left:50%;top:4px;transform:translateX(-50%);z-index:3000;padding:2px 10px;border-radius:10px;background:rgba(160,30,20,.85);color:#fff;font:12px/1.6 sans-serif;pointer-events:none'; document.body.appendChild(b); }
+    if (TEST_SCENE) { begin({ skipIntro: true, keepSave: true, quiet: true, scene: TEST_SCENE, test: true }); return ctx; }
     const s = startFromUrl();
     if (s) begin({ ...s, skipIntro: true, keepSave: true }); else if (Q.has('autostart')) begin({});
     return ctx;
@@ -836,6 +921,7 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     $('crosshair').classList.toggle('on', !!text); $('crosshair').classList.toggle('aim', !!text);
     for (const m of monsters) m.inst && m.inst.update && m.inst.update(dt, ctx);
     for (const s of systems) s.def.update(dt, ctx, active, s.inst);
+    if (ctx.approach) ctx.approach.update(dt, active);
     if (ctx.audio.ctx) safe(() => ctx.audio.setListener(camera));
     const own = ext.reg.render.get('render');
     if (own) own.render(dt, ctx, look); else { look.update(dt, t / 1000, camera.position); look.render(); }   // registerRender: the game draws the frame (arakawa, heiengo)

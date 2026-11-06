@@ -206,6 +206,11 @@
       "description": "recipes.buildings (js/building.js): { id, kind: house | gate | tree | forest, x, z, rot, w, d, wallH, roof { type gable|shed|flat, pitch, overhang }, doors [{ side, at, w, leaf: fusuma|shoji|glass|wood }], windows, tex { wall, roof, floor, ceiling, bark, bough, post, leaf } (catalog ids) }; forests keep off indoor rooms and houses",
       "items": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" }, "kind": { "enum": ["house", "gate", "tree", "forest"] } } }
     },
+    "barriers": {
+      "type": "array",
+      "description": "standard 1.13: a barrier anywhere: { id, x, z, w, along: x | z, floor, kind: board | rope | tape, unlock, hint, label }; it blocks the player until its unlock key opens",
+      "items": { "type": "object", "required": ["x", "z"] }
+    },
     "furniture": {
       "type": "array",
       "items": {

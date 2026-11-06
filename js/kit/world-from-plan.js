@@ -1,8 +1,9 @@
-/* game-kit 4b9f6fa: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/world-from-plan.js — edit in game-kit and run tools/kit-sync.js */
 // The standard world builder (docs/standard-3d.md, layer "world"): plan.json (rooms, corridors, doors, stations) -> THREE objects,
 // colliders, doors that open and a room lookup. Boxes only: floors, ceilings, walls with door gaps and lintels, door panels, task
 // stations. The look is a flat palette per room kind + the preset lighting; richer looks (texture-library, props, env-props) are added
 // by the game through the 'world:built' hook (ctx.world.group) or the room `look` key.
+// plan.lampPool: the room lamps of a plan with many floors, a fixed number of real lights that follow the player's floor (world.lamps, world.setLampFloor).
 // Floors (standard 1.1): a room's `floor` (0, 1, ...) stands floorH (3.4 m) higher per floor; world.floorY(floor) gives the height and
 // the controller's floorY follows it. A door of kind 'stairs' | 'lift' joins two rooms on different floors: each end gets a stair block
 // you walk up to ([E]); door.ends = { a: { x, z, arrive: [x, z], yaw }, b: { ... } } places the blocks and where you arrive (default: the room's middle,
@@ -108,6 +109,9 @@ export function buildWorld(plan, o = {}) {
   const edges = [];   // outdoor edges: { room, edge, from: [x, z], to: [x, z], shared, look }
   const hidden = new THREE.MeshBasicMaterial({ visible: false });
   const litRooms = rooms.filter((r) => (PALETTE[r.kind || 'room'] || PALETTE.room).ceil != null).length;
+  // plan.lampPool (standard 1.12.2; 五人分の朝: a second floor took the plan over 16 lit rooms and every lamp went out): a few real lights that follow the player's floor.
+  // world.lamps = [{ room, floor, x, y, z, i, d }] (a game may change them or add its own, then call world.setLampFloor(floor, true)). The number of lights never changes.
+  const LAMP_POOL = 16, lamps = plan.lampPool ? [] : null;
   for (const r of rooms) {
     const pal = PALETTE[r.kind || 'room'] || PALETTE.room, y0 = yOf(r), H = K.wallH, T = K.wallT;
     const outdoor = (r.kind || 'room') === 'outdoor';
@@ -137,11 +141,12 @@ export function buildWorld(plan, o = {}) {
         if (lh > 0.05) { const l = axis === 'x' ? box(g.w, lh, T, wallM, g.c, y0 + K.doorH + lh / 2, fixed, false) : box(T, lh, g.w, wallM, fixed, y0 + K.doorH + lh / 2, g.c, false); l.mesh.userData.lintel = { room: r.id, edge }; }   // unnamed (games look for it), tagged so the textures recipe paints it like its wall
       }
     }
-    if (K.roomLights && pal.ceil != null && litRooms <= 16) {   // indoor rooms only: a big outdoor map must not switch off every lamp (jashi 5.0)
+    if (K.roomLights && pal.ceil != null && (lamps || litRooms <= 16)) {   // indoor rooms only: a big outdoor map must not switch off every lamp (jashi 5.0)
       // a pendant below the ceiling (a ceiling-high light washes the ceiling out) with a small shade and a glowing bulb
       const ly = y0 + H - 0.6;
-      const l = new THREE.PointLight(0xfff1d6, Math.min(30, 4 + r.w * r.d * 0.12), Math.max(r.w, r.d) * 1.8, 1.6);
-      l.position.set(cx, ly, cz); l.name = `lamp:${r.id}`; group.add(l);
+      const lampI = Math.min(30, 4 + r.w * r.d * 0.12), lampD = Math.max(r.w, r.d) * 1.8;
+      if (lamps) lamps.push({ room: r.id, floor: r.floor || 0, x: cx, y: ly, z: cz, i: lampI, d: lampD });
+      else { const l = new THREE.PointLight(0xfff1d6, lampI, lampD, 1.6); l.position.set(cx, ly, cz); l.name = `lamp:${r.id}`; group.add(l); }
       const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.18, 16, 1, true), m('shade', 0x3a3530)); shade.material.side = THREE.DoubleSide; shade.position.set(cx, ly + 0.12, cz); shade.name = `lampshade:${r.id}`; group.add(shade);
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), mats.bulb ||= new THREE.MeshStandardMaterial({ color: 0xfff4dc, emissive: 0xffe0a8, emissiveIntensity: 2 })); bulb.position.set(cx, ly + 0.04, cz); bulb.name = `lampbulb:${r.id}`; group.add(bulb);
       const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.6 - 0.2 + 0.1, 4), m('cord', 0x1a1a1a)); cord.position.set(cx, (ly + 0.2 + y0 + H) / 2, cz); cord.name = `lampcord:${r.id}`; group.add(cord);   // from the ceiling to the shade (it was H long and hung to eye level)
@@ -228,7 +233,26 @@ export function buildWorld(plan, o = {}) {
     const api = { def: d, mesh, col, look: G, isOpen: false, barrier: true, locked: () => !isUnlocked(d.unlock), open() { return false; }, close() {}, snap() {} };
     doors.set(d.id, api); barriers.push(api);
   }
-  const updateBarriers = () => { for (const b of barriers) if (!b.isOpen && !b.locked()) { b.isOpen = true; b.look.visible = false; b.mesh.visible = false; b.col.off = true; const i = interactables.indexOf(b.mesh); if (i >= 0) interactables.splice(i, 1); } };
+  // a barrier in the middle of a corridor or a room (standard 1.13, 五人分の朝's flood boards): plan.barriers [{ id, x, z, w, along: 'x' | 'z', floor, kind, unlock, hint, label }]
+  // or world.addBarrier({ ..., locked: () => bool }) from code. Water and monsters are not stopped by it, the player is.
+  function addBarrier(d) {
+    const w = d.w ?? 4, alongX = d.along !== 'z', y0 = floorY(d.floor || 0), id = d.id || `barrier${barriers.length}`;
+    const { mesh, col } = alongX ? box(w, K.doorH, 0.12, doorHitM, d.x, y0 + K.doorH / 2, d.z, true, `door:${id}`) : box(0.12, K.doorH, w, doorHitM, d.x, y0 + K.doorH / 2, d.z, true, `door:${id}`);
+    mesh.userData.interact = { kind: 'door', id };
+    interactables.push(mesh);
+    const kind = d.kind || 'board', G = barrierLook(kind, w, `barrier:${id}`);
+    G.position.set(d.x, y0, d.z); G.rotation.y = alongX ? 0 : -Math.PI / 2;
+    group.add(G);
+    const b = { def: { ...d, id, barrier: kind }, mesh, col, look: G, isOpen: false, barrier: true, locked: d.locked || (() => !isUnlocked(d.unlock)), open() { return false; }, close() {}, snap() {} };
+    doors.set(id, b); barriers.push(b);
+    return b;
+  }
+  for (const d of plan.barriers || []) addBarrier(d);
+  // when its key opens: out of the way at once, and you see it go (W5): a board rises into the ceiling, a rope or tape sinks
+  const updateBarriers = (dt = 0) => { for (const b of barriers) {
+    if (!b.isOpen && !b.locked()) { b.isOpen = true; b.moving = dt > 0; if (!b.moving) b.look.visible = false; b.mesh.visible = false; b.col.off = true; const i = interactables.indexOf(b.mesh); if (i >= 0) interactables.splice(i, 1); if (api.onBarrierOpen) api.onBarrierOpen(b); }
+    if (b.moving) { const up = b.def.barrier === 'board', v = up ? 1.1 : 1.3; b.lift = (b.lift || 0) + dt * v; b.look.position.y += (up ? v : -v) * dt; if (b.lift >= (up ? 2.6 : 1.3)) { b.moving = false; b.look.visible = false; } }
+  } };
   const doorAnims = [];
   for (const d of plan.doors || []) {
     const a = byId.get(d.a);
@@ -411,7 +435,17 @@ export function buildWorld(plan, o = {}) {
   }
   const spawnRoom = S && S.room;
   if (spawn && spawn.floor == null && spawnRoom) spawn.floor = spawnRoom.floor || 0;
-  return { group, colliders, interactables, rooms: roomsById, doors, stairs, roomAt, place, bounds, spawn, floorY, yOf: (id) => roomsById.get(id)?.y || 0, K, edges, update: (dt) => { updateDoors(dt); updateBarriers(); } };
+  const pool = lamps ? Array.from({ length: LAMP_POOL }, (_, n) => { const l = new THREE.PointLight(0xfff1d6, 0, 10, 1.6); l.name = `lamppool:${n}`; group.add(l); return l; }) : null;
+  let lampFloor = null;
+  /** the pool's lights go to the lamps of this floor (the first LAMP_POOL of them); force: the lamps were changed */
+  const setLampFloor = (floor, force = false) => {
+    if (!pool || (floor === lampFloor && !force)) return; lampFloor = floor;
+    const here = lamps.filter((l) => l.floor === floor);
+    pool.forEach((l, n) => { const e = here[n]; if (e) { l.position.set(e.x, e.y, e.z); l.intensity = e.i; l.distance = e.d; } else l.intensity = 0; });
+  };
+  setLampFloor(spawn && spawn.floor != null ? spawn.floor : 0);
+  const api = { addBarrier, group, colliders, interactables, rooms: roomsById, doors, stairs, roomAt, place, bounds, spawn, floorY, lamps, setLampFloor, yOf: (id) => roomsById.get(id)?.y || 0, K, edges, update: (dt) => { updateDoors(dt); updateBarriers(dt); } };
+  return api;
 }
 
 // the interaction pick (rule W18, js/interact-select.js): the thing the camera looks at, with a cone assist, a 15 cm margin around the

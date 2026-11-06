@@ -1,4 +1,4 @@
-/* game-kit 6e0b6f0: js/props.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1b8c7db: js/props.js — edit in game-kit and run tools/kit-sync.js */
 // Procedural props. The general helpers and the desk / locker / telephone / bin / cardboard box are
 // reused from みる風車 (game-miru-fusha, js/props.js); the office furniture below them (steel desk,
 // chairs, shelves, monitor, printer, vending machine, ...) was added for the police station.
@@ -533,6 +533,75 @@ export function filingCabinet(T, h = 1.3) {
     out.userData.drawers.push({ obj: dr, kind: 'drawer', travel: 0.4 });
   }
   return out;
+}
+
+// A room's big fixture (standard 1.13, 五人分の朝: 「各部屋が似通っていて分かりずらい。大きな特徴をみんなつける」). Origin = floor centre, front = +z, L = the length along x.
+export function washerRow(L = 3) {
+  const g = new THREE.Group(), white = pm('paint', 0xeeeeea), steel = pm('steel', 0xb9c1c3), dark = pm('steel', 0x1d2224);
+  const glass = M(0x2c3f44, { roughness: 0.08, metalness: 0.3 });
+  const n = Math.max(1, Math.round(L)), cw = L / n;
+  for (let i = 0; i < n; i++) {
+    const x = -L / 2 + cw * (i + 0.5);
+    add(g, bb(cw - 0.06, 1.15, 0.7), white, x, 0.575, 0);
+    add(g, new THREE.CylinderGeometry(0.3, 0.3, 0.05, 24), steel, x, 0.6, 0.36, Math.PI / 2);
+    add(g, new THREE.CylinderGeometry(0.23, 0.23, 0.06, 24), glass, x, 0.6, 0.38, Math.PI / 2);
+    add(g, new THREE.CylinderGeometry(0.05, 0.05, 0.04, 12), dark, x + cw * 0.3, 1.0, 0.36, Math.PI / 2);
+  }
+  return finish(g, null, 'washer');
+}
+function rack(g, L, H, levels, D, post) {
+  for (const s of [-1, 1]) add(g, bb(0.04, H, D), post, s * (L / 2 - 0.02), H / 2, 0);
+  for (let j = 0; j <= levels; j++) add(g, bb(L, 0.03, D), post, 0, 0.08 + (j * (H - 0.1)) / levels, 0);
+}
+/** steel shelves of box files: the same spines row on row, a white label on each */
+export function fileRack(L = 2.4, H = 2.1) {
+  const g = new THREE.Group(), steel = pm('steel', 0xb9c1c3), grey = M(0x77808a, { roughness: 0.9 }), tan = M(0xa18f6c, { roughness: 0.9 }), label = M(0xeeeeea, { roughness: 0.9 }), levels = 5;
+  rack(g, L, H, levels, 0.5, steel);
+  for (let j = 0; j < levels; j++) {
+    const y = 0.1 + (j * (H - 0.1)) / levels;
+    let i = 0;
+    for (let x = -L / 2 + 0.12; x < L / 2 - 0.08; x += 0.115, i++) {
+      add(g, bb(0.1, 0.3, 0.3, 0), (i + j * 3) % 7 ? grey : tan, x, y + 0.16, 0.05);
+      add(g, bb(0.07, 0.1, 0.004, 0), label, x, y + 0.19, 0.203);
+    }
+  }
+  return finish(g, null, 'shelf');
+}
+/** wooden shelves stacked with folded white sheets */
+export function linenRack(L = 2.4, H = 2.1) {
+  const g = new THREE.Group(), wood = pm('wood', 0x8a6a48), white = M(0xeeeeea, { roughness: 0.95 }), cream = M(0xe6dfcc, { roughness: 0.95 }), levels = 4;
+  rack(g, L, H, levels, 0.5, wood);
+  for (let j = 0; j < levels; j++) {
+    const y = 0.1 + (j * (H - 0.1)) / levels;
+    let i = 0;
+    for (let x = -L / 2 + 0.25; x < L / 2 - 0.2; x += 0.42, i++) {
+      const n = 3 + (i + j) % 3;
+      for (let q = 0; q < n; q++) add(g, bb(0.36, 0.07, 0.38), (q + j) % 4 ? white : cream, x + 0.01 * (q % 2), y + 0.04 + q * 0.072, 0.02);
+    }
+  }
+  return finish(g, null, 'shelf');
+}
+/** a steel wall of square cabinet doors, three high, with handles and card slots (cold rooms, lockers of a records office) */
+export function bodyCabinets(L = 3) {
+  const g = new THREE.Group(), steel = pm('steel', 0xb9c1c3), door = pm('steel', 0xc9d0d2), dark = pm('steel', 0x1d2224), card = M(0xeeeeea, { roughness: 0.9 });
+  add(g, bb(L, 2.25, 0.6), steel, 0, 1.125, 0);
+  const cols = Math.max(2, Math.round(L / 0.78)), cw = L / cols;
+  for (let i = 0; i < cols; i++) for (let j = 0; j < 3; j++) {
+    const x = -L / 2 + cw * (i + 0.5), y = 0.42 + j * 0.68;
+    add(g, bb(cw - 0.06, 0.62, 0.02), door, x, y, 0.305);
+    add(g, bb(0.2, 0.04, 0.05), dark, x + cw * 0.22, y, 0.33);
+    add(g, bb(0.16, 0.07, 0.004, 0), card, x - cw * 0.2, y + 0.18, 0.317);
+  }
+  return finish(g, null, 'shelf');
+}
+/** a tall round tank with hoops and pipes up to the ceiling */
+export function tank(r = 1.25, h = 2.5) {
+  const g = new THREE.Group(), body = pm('paint', 0x6f7a6c), rust = M(0x6b4630, { roughness: 0.8 });
+  add(g, new THREE.CylinderGeometry(r, r, h, 28), body, 0, h / 2, 0);
+  for (const y of [0.16, 0.5, 0.84]) add(g, new THREE.TorusGeometry(r + 0.01, 0.035, 8, 36), rust, 0, y * h, 0, Math.PI / 2);
+  add(g, new THREE.CylinderGeometry(0.11, 0.11, 0.6, 12), rust, r * 0.4, h + 0.3, -r * 0.24);
+  add(g, new THREE.CylinderGeometry(0.08, 0.08, 0.6, 12), rust, -r * 0.32, h + 0.3, r * 0.32);
+  return finish(g, null, 'cabinet');
 }
 
 // Flat monitor + keyboard; returns { group, screen } where screen is the emissive plane.
