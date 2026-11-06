@@ -10,7 +10,8 @@ import path from 'node:path';
 // Without that file (standard 1.13): one link per stage (?scene=stage:<id>, js/test-scenes.js) from data/stages.json, unless the game keeps its own state in a host (js/ext/host.js).
 const file = path.resolve('js/ext/test-scenes.js');
 let SCENES = null;
-if (existsSync(file)) ({ SCENES } = await import(pathToFileURL(file).href));
+const stageLinks = () => (JSON.parse(readFileSync('data/stages.json', 'utf8')).levels || []).map((l, i) => ({ id: `stage:${l.id}`, group: '段階の頭', label: `${i + 1}. ${l.title || l.name || l.id}` }));
+if (existsSync(file)) { ({ SCENES } = await import(pathToFileURL(file).href)); if (existsSync('data/stages.json') && !existsSync('js/ext/host.js')) SCENES = [...SCENES, ...stageLinks()]; }   // the stage scenes work next to a game's own list
 else if (existsSync('js/ext/host.js') || !existsSync('data/stages.json')) { console.log('no js/ext/test-scenes.js and no plain stages: no scene links'); process.exit(0); }
 else SCENES = (JSON.parse(readFileSync('data/stages.json', 'utf8')).levels || []).map((l, i) => ({ id: `stage:${l.id}`, group: '段階の頭', label: `${i + 1}. ${l.title || l.name || l.id}` }));
 if (!SCENES.length) { console.log('no scenes'); process.exit(0); }

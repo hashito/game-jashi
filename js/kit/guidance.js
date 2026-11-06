@@ -1,4 +1,4 @@
-/* game-kit 1b8c7db: js/guidance.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1279a7c: js/guidance.js — edit in game-kit and run tools/kit-sync.js */
 // Guiding the player, from what several games built on their own (standard 1.13). All opt-in from game.json except ctx.lookTo and task "reach" / when().
 //   "pointer": true | { "range": 60 }     a diamond in the world over the next place: the station of the first required task that can start, or, from another
 //                                         room, the door to walk through. ctx.nextPlace() -> { task, room, x, y, z, door } | null (未然調書 1.6.0)
@@ -41,6 +41,9 @@ export function doorToward(plan, from, to, open = () => true) {
 
 /** the task the player should do next: required first, then optional; only those that can start now */
 export const nextTaskOf = (tasks, can) => tasks.find((t) => !t.optional && can(t)) || tasks.find(can) || null;
+
+/** the room a step with done: 'room' waits for: its own room, else the task's */
+export const stepRoom = (step, task) => step.room ?? task.room;
 
 /** is the player at a task's "reach"? */
 export function atReach(reach, p, floor, room) {

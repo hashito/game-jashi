@@ -1,4 +1,4 @@
-/* game-kit 1b8c7db: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 1279a7c: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -44,6 +44,7 @@ import { lockedLabel, exposeGf } from './interact-select.js';
 import { icon } from './icons.js';
 import { createWindowManager, hudLayout } from './win-manager.js';
 import { createTabMenu } from './tab-menu.js';
+import { installGuideAids, recapTab } from './guide-aids.js';
 import { createPauseMenu } from './pause-menu.js';
 import { createJournal } from './journal-ui.js';
 import { createMapSvg } from './map-svg.js';
@@ -62,11 +63,11 @@ import { PadInput } from './pad-input.js';
 import { roomGraph, roomOf, occlusion } from './audio-at.js';
 import { gfRegister, gfOk, gfFail, gfUnknown } from './gf-test.js';
 import { createExtensions } from './ext.js';
-import { installGuidance } from './guidance.js';
+import { installGuidance, stepRoom } from './guidance.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.13.0';
+export const CORE_VERSION = '1.14.4';
 // the mini game library's types (js/mg-library.js LIBRARY; test/story-hooks.test.mjs keeps the two equal): game.json "minigames" naming one of these loads the library
 export const MG_LIB_TYPES = ['pour', 'turn-dials', 'match-mark', 'timing', 'code-drums', 'tune-radio', 'trace-path', 'slide-tiles', 'search-dark', 'rotate-pipes', 'sort-items', 'memory-pairs', 'lock-pick', 'photo-focus', 'rhythm-taps', 'connect-dots', 'balance-scale', 'echo-bells', 'switch-panel', 'rotate-pieces', 'count-shadows', 'spot-difference', 'maze-path', 'cipher-wheel', 'steady-hand', 'pump-gauge', 'order-steps', 'compass-bearing', 'mirror-beam', 'kana-word', 'jug-measure', 'hold-breath', 'layer-board'];
 const $ = (id) => document.getElementById(id);
@@ -566,6 +567,7 @@ export function createGame(cfg) {
   tm.on('tab', (id) => { if (id === 'map') mapOn(); else mapOff(); });
   wm.on('open', (id) => { if (id === 'tab-menu' && tm.active === 'map') mapOn(); });
   wm.on('close', (id) => { if (id === 'tab-menu') mapOff(); });
+  { const rt = recapTab(ctx, data.stages); if (rt) tm.registerTab(rt); }   // これまで (standard 1.14, js/guide-aids.js)
   for (const t of ext.tabs()) tm.registerTab({ id: t.id, label: t.label, icon: t.icon, after: t.after, render: (el) => t.render(el, ctx), badge: t.badge ? () => t.badge(ctx) : undefined, onShow: t.onShow ? () => t.onShow(ctx) : undefined, onKey: t.onKey, focus: t.focus });
   const pm = ctx.pm = createPauseMenu({
     wm, tabMenu: tm, releaseNotes: rn, ...(uiDef('pause').renderSettings ? { renderSettings: (el, api) => uiDef('pause').renderSettings(el, api, ctx) } : {}), onTitle: () => (ctx.toTitle ? ctx.toTitle() : location.reload()), storage: safe(() => localStorage),
@@ -597,7 +599,7 @@ export function createGame(cfg) {
       onEmphasize: (tg, on) => { if (gd.onEmphasize) return gd.onEmphasize(tg, on, ctx); glow(tg && tg.game, on); return true; },
       steps: t.steps.map((s, i) => ({
         id: `${t.id}.${i}`, title: kt(s.text), body: kt(s.body || ''), hint: kt(s.hint || (i === 0 ? t.hint : undefined)), emphasize: 'glow', target: s.emphasis ? { game: s.emphasis } : undefined,
-        done: s.done === 'room' ? () => state.room === t.room : s.done === 'look' ? () => !!ctx.target && `${ctx.target.kind}:${ctx.target.id}` === s.emphasis : s.done === 'task' ? () => state.tasks.includes(t.id) : undefined,
+        done: s.done === 'room' ? () => state.room === stepRoom(s, t) : s.done === 'look' ? () => !!ctx.target && `${ctx.target.kind}:${ctx.target.id}` === s.emphasis : s.done === 'task' ? () => state.tasks.includes(t.id) : undefined,
       })),
     });
   }
@@ -762,6 +764,7 @@ export function createGame(cfg) {
     bus.on('player:respawn', () => { for (const t of timed) if (!state.tasks.includes(t.id)) state.timers[t.id] = 0; });
   }
   ctx.systems = systems;
+  installGuideAids(ctx, { bus, systems, tasks, stages: data.stages });   // **emphasis**, the wait bar, the recap, the map tip (standard 1.14)
   // guiding the player (standard 1.13, js/guidance.js): ctx.lookTo, task "reach" / when(), game.json "pointer" and "hud"
   const guidance = installGuidance(ctx, { manifest, tasks, plan: wdef ? null : plan, stationPos, taskReg: (id) => ext.reg.task.get(id), reachOk: (t) => ctx.levelIndex(t.stage) <= prog.index && (t.needs || []).every((n) => state.tasks.includes(n)) });
   systems.push({ id: 'guidance', def: { update: (dt, c, active) => guidance.update(dt, active) }, inst: null });

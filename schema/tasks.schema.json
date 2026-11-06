@@ -88,6 +88,10 @@
               "type": "string",
               "description": "what to point at in the UI or world (U22/U23)"
             },
+            "room": {
+              "type": "string",
+              "description": "the room a done: room step waits for (default: the task room)"
+            },
             "done": {
               "enum": [
                 "room",
