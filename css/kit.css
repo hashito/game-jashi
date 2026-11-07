@@ -1,4 +1,4 @@
-/* game-kit adcf19c: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 2246e71: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -2466,7 +2466,7 @@ body.hd-hiding #crosshair { display: none; }
 .cx-choices { display: flex; flex-direction: column; gap: 6px; padding: 0 16px; max-height: 45%; overflow-y: auto; flex: none; }
 .cx-choosing .cx-choices { padding: 10px 16px; background: rgba(255, 255, 255, 0.75); border-top: 1px solid rgba(0, 0, 0, 0.08); }
 .cx-prompt { font-size: 0.75em; color: var(--cx-meta); font-weight: 700; }
-.cx-choice { text-align: left; border: 1px solid var(--cx-accent); background: #fff; color: #1d2328; border-radius: 14px; padding: 10px 14px; line-height: 1.5; animation: cx-in 0.25s ease-out backwards; }
+.cx-choice { flex: none; min-height: 44px; text-align: left; border: 1px solid var(--cx-accent); background: #fff; color: #1d2328; border-radius: 14px; padding: 10px 14px; line-height: 1.5; animation: cx-in 0.25s ease-out backwards; }
 .cx-choice:hover, .cx-chip:hover { background: var(--cx-chip); }
 /* tapMine: the player's own line waiting in the input bar (a whole sentence: wraps, not a pill) */
 .cx-chip.cx-say { background: var(--cx-out); color: var(--cx-out-ink); border-color: var(--cx-accent); border-radius: 16px; line-height: 1.5; max-height: 8.5em; overflow-y: auto; white-space: normal; overflow-wrap: anywhere; }
@@ -2793,6 +2793,12 @@ body.touch .hb-tab { min-height: var(--gf-hit, 44px); } /* (U13) the notebook's 
 .wm-infobox[hidden], .wm-btn[hidden], .tm-badge[hidden], .tm-dot[hidden] { display: none; }   /* (a locked window hides its x: .wm-btn is display:grid, which beat the hidden attribute) */
 .wm-body { flex: 1; min-height: 0; overflow: auto; padding: var(--gf-win-pad, 16px); display: flex; flex-direction: column; line-height: 1.7; overscroll-behavior: contain; }
 .wm-body.wm-flush { padding: 0; overflow: hidden; }
+/* a phone held sideways (kit 1.16): a window that ends on its primary button (the controls card "タップで始める" of 汐返り・浦川・折り返し) keeps that
+   button at the foot of the window while the text above scrolls, instead of leaving it below the screen */
+@media (orientation: landscape) and (max-height: 500px) {
+  .wm-body > .btn.primary:last-child, .wm-body > :last-child > .btn.primary:last-child, .wm-body > :last-child > p:last-child > .btn.primary:only-child {
+    position: sticky; bottom: 0; z-index: 2; margin-top: 8px; box-shadow: 0 0 0 6px var(--gf-surface, var(--panel, #fffdf6)), 0 -14px 14px 4px var(--gf-surface, var(--panel, #fffdf6)); }
+}
 .wm-body img[data-wm-cap][style*="max-width"] { margin-left: auto; margin-right: auto; }   /* a capped picture (win-manager capImages) sits in the middle */
 @media (prefers-reduced-motion: no-preference) { .wm-layer { animation: wm-in 0.14s ease-out; } @keyframes wm-in { from { opacity: 0; } } }
 
@@ -3034,6 +3040,11 @@ html[data-gf-no-flash="1"] .wm-layer { animation: none; }
   .cx-cs-cap { min-height: 2.4em; line-height: 1.6; }
   .cx-cs-btns { margin-top: 4px; }
   .cx-cs-btn span { width: 48px; height: 48px; }
+  /* a phone on its side: the replies stand side by side and the empty input bar makes room, so the talk stays readable above them */
+  .cx-choosing .cx-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
+  .cx-choices .cx-prompt { grid-column: 1 / -1; }
+  .cx-app .cx-end .cx-end-photo img, .cx-app .cx-end .cx-end-photo .cx-ph { max-height: 34vh; object-fit: cover; } /* the name and text of the ending come into view with the photo */
+  .cx-choosing .cx-bar:not(:has([data-note], .cx-draft)) { display: none; }
   .cxt-box { padding-top: 10vh; gap: 8px; padding-bottom: 12px; }
   .cxt-logo { font-size: 2em; }
   .cxt-lead { font-size: 1em; line-height: 1.6; margin: 0; }

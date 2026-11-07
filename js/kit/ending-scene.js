@@ -1,4 +1,4 @@
-/* game-kit 17b29ea: js/ending-scene.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 2246e71: js/ending-scene.js — edit in game-kit and run tools/kit-sync.js */
 // The ending as a scene (standard 1.8.1, feedback 2026-11-01 "最後にも写真を置いて手前に文字をつけるなど雰囲気を出して"): the picture fills the
 // screen and slowly comes closer, the kicker and the title stand in front of it, the epilogue appears a line at a time, and the stats and
 // the buttons come last. A click / Enter / Space shows the rest at once; reduced motion (ctx.calm or the OS setting) shows it all still.
@@ -13,7 +13,11 @@
 // game-core's own ending (a game that registers no 'ending' screen) is this scene too (standard 1.8.2).
 // Pure parts: endingTimeline(paragraphs, o) gives when each part appears (seconds); endingsList(all, found, current) the list with the unfound
 // ones masked; both tested in test/ending-scene.test.mjs.
+// Kit 1.16 (all-games rule A21): below the buttons, the share row (js/share-bar.js: X で共有 / 共有 / リンクをコピー / 他のゲームを遊ぶ).
+// share: false leaves it out (a game that puts its own row there); share: { ending: '名前', tags, line } overrides; game.json "share": false
+// or { "ending": false } turns it off for the game, { "endingName": true } puts the ending's title in the text (only when that gives nothing away).
 import { Store } from "./store.js";
+import { mountShareBar } from "./share-bar.js";
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 export function endingTimeline(paras, o = {}) {
@@ -30,6 +34,15 @@ export function endingsList(all = [], found = [], current = null, mask = "？？
 /** the endings this player has reached (the core's record) */
 export function foundEndings(gameId) {
   try { return [...(Store.read(`${gameId}.endings.v1`) || [])]; } catch { return []; }
+}
+
+// what the share row of an ending gets (null: no row). Pure: tested in test/share-bar.test.mjs
+export function endingShareOptions(manifest, o = {}) {
+  const m = manifest ? manifest.share : undefined;
+  if (o.share === false || m === false || (m && m.ending === false)) return null;
+  const s = { ...(m && typeof m === "object" ? m : {}), ...(o.share && typeof o.share === "object" ? o.share : {}) };
+  const ending = s.ending != null ? s.ending : s.endingName && o.title ? o.title : "";
+  return { place: "ending", tags: s.tags, line: s.line, ending: typeof ending === "string" ? ending : "", fallbackName: manifest && manifest.title };
 }
 
 export function showEndingScene(ctx, o = {}) {
@@ -51,6 +64,8 @@ export function showEndingScene(ctx, o = {}) {
       ${en && en.length > 1 ? `<p class="gf-ending-found" ${d(tl.stats)}>見つけた結末 ${en.filter((x) => x.found).length} / ${en.length}：${en.map((x) => (x.current ? `<b>${esc(x.title)}</b>` : esc(x.title))).join("　／　")}</p>` : ""}
       <div class="gf-ending-buttons" ${d(tl.buttons)}>${(o.buttons || []).map((b, i) => `<button type="button" class="btn ${b.primary ? "primary" : ""}" data-i="${i}">${esc(b.label)}</button>`).join("")}</div>
     </div>`;
+  const so = endingShareOptions(ctx && ctx.manifest, o);
+  if (so) { const sh = document.createElement("div"); sh.className = "gf-ending-share"; sh.setAttribute("style", `--d:${tl.buttons.toFixed(2)}s`); el.querySelector(".gf-ending-text").appendChild(sh); mountShareBar(sh, so); }
   document.body.appendChild(el);
   const all = () => el.classList.add("all");
   el.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("button[data-i]"); if (b) { const f = (o.buttons || [])[+b.dataset.i]; f && f.fn && f.fn(); } else all(); });

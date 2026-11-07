@@ -397,6 +397,10 @@
   "share": {
    "type": "object",
    "properties": {
+    "title": {
+     "type": "boolean",
+     "description": "false: no share row (X / share / copy / other games) at the foot of the library hero (kit 1.16, rule A21)"
+    },
     "tags": {
      "type": "array",
      "items": {

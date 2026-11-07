@@ -1,4 +1,4 @@
-/* game-kit 17b29ea: css/shell.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 2246e71: css/shell.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: the standard 3D shell (js/game-core.js): title screen, prompt, endings, pause menu, custom mini-game layer.
    Tokens only (css/theme.css); loaded after kit.css and theme.css. A game restyles it through tokens in css/theme-game.css. */
 #title { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--gf-win-margin, 16px); overflow-y: auto; overscroll-behavior: contain;
@@ -137,6 +137,26 @@ body.gf-hidden #crosshair { opacity: 0.3; }
 /* a short screen (phone landscape): the box scrolls instead of losing its top and bottom (centred with margin:auto, so it never overflows upward) */
 #title > .gf-title-box { margin: auto; }
 .gf-boot-status { min-height: 1.5em; margin: 0; font-size: 0.85em; }
+/* the share row under the start buttons (kit 1.16, rule A21; js/share-bar.js brings its own look) */
+.gf-title-share:empty { display: none; }
+.gf-title-share .gf-sharebar { margin: var(--gf-space-2, 8px) auto 0; }
+/* a phone held sideways (kit 1.16): the start button and the share row are on the first screen without scrolling. The box widens, the buttons stand in a row,
+   and the longer lines (tagline, meta, note) come after them, still readable below. The order follows the classes game-core writes. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #title { padding: max(8px, var(--gf-safe-t, 0px)) max(12px, var(--gf-safe-r, 0px)) max(8px, var(--gf-safe-b, 0px)) max(12px, var(--gf-safe-l, 0px)); }
+  #title > .gf-title-box { display: flex; flex-direction: column; align-items: center; max-width: min(50rem, 100%); padding: 10px 18px 8px; }
+  .gf-title-box > * { order: 6; }
+  .gf-title-box > .gf-kicker { order: 0; margin: 0 0 2px; }
+  .gf-title-box > h1 { order: 1; font-size: clamp(1.5rem, 8vh, 2.3rem); margin: 0 0 2px; }
+  .gf-title-box > h1 + .gf-sub:not(.gf-meta):not(.gf-note):not(.gf-info) { order: 2; margin: 0 0 2px; }
+  .gf-title-box > .gf-title-btns { order: 3; flex-direction: row; flex-wrap: wrap; justify-content: center; margin: 8px 0 0; }
+  .gf-title-box > .gf-title-btns .btn { min-width: 10em; }
+  .gf-title-box > .gf-title-share { order: 4; }
+  .gf-title-box > .gf-title-share .gf-sharebar { margin-top: 6px; }
+  .gf-title-box > .gf-boot-status { order: 5; min-height: 0; }
+  .gf-title-box > .gf-tagline, .gf-title-box > .gf-meta, .gf-title-box > .gf-note, .gf-title-box > .gf-info { margin: 6px 0 0; font-size: 0.92em; }
+  .gf-title-box > .gf-ver { margin: 4px 0 0; }
+}
 
 /* ---- HUD slots + toast lane (rule U27, docs/hud-slots.md): one region per HUD part; notifications live in the lane (#hs-tc), below the top stacks ---- */
 #hud-slots { position: absolute; inset: 0; pointer-events: none; z-index: 3; }

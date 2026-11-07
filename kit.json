@@ -1,5 +1,5 @@
 {
-  "kit": "e82a687",
+  "kit": "2246e71",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -99,7 +99,8 @@
     "room-marks",
     "test-scenes",
     "guidance",
-    "guide-aids"
+    "guide-aids",
+    "share-bar"
   ],
   "css": "css/kit.css",
   "cssExtra": [
@@ -131,7 +132,7 @@
     "check-copy.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "68bc069a278a",
+    "js\\kit\\game-core.js": "5e152f026ca5",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
@@ -179,7 +180,7 @@
     "js\\kit\\ext.js": "3eac75e341e4",
     "js\\kit\\ambience.js": "b320fcda4aa7",
     "js\\kit\\game-data.js": "f436682bec94",
-    "js\\kit\\ending-scene.js": "38960229a610",
+    "js\\kit\\ending-scene.js": "28554e72ed39",
     "js\\kit\\schema-check.js": "ebccf998c09b",
     "js\\kit\\monster-ai.js": "9011fda4b7e9",
     "js\\kit\\things-data.js": "3aabd0a31ea1",
@@ -202,15 +203,15 @@
     "js\\kit\\env-props.js": "cc164232ed7a",
     "js\\kit\\texture-library.js": "3270ec79ed80",
     "js\\kit\\text-contrast.js": "7ee42856ab86",
-    "css/kit.css": "00ca55d38484",
+    "css/kit.css": "6312c2b31cb2",
     "css\\theme.css": "60b65f126021",
     "css\\themes.css": "a00eb3bd38fa",
-    "css\\shell.css": "b10ba41363e3",
+    "css\\shell.css": "4dbb1b304fae",
     "schema/chat-story.schema.json": "74021fbcd2f8",
     "schema/creation-brief.schema.json": "4a7c4e40cf74",
     "schema/docs.schema.json": "533be2902f17",
     "schema/endings.schema.json": "ec10b40dad12",
-    "schema/game.schema.json": "c9a9f8976d64",
+    "schema/game.schema.json": "08622f782238",
     "schema/items.schema.json": "faa2f5a7e22a",
     "schema/media-queue.schema.json": "2c674c764cb1",
     "schema/monsters.schema.json": "bc4bfb9d5cfe",
@@ -257,7 +258,7 @@
     "js\\kit\\barrier-look.js": "9e8a9707f8fb",
     "js\\kit\\station-looks.js": "d975e9cad2f9",
     "js\\kit\\mg-sound.js": "716108fa36d3",
-    "schema/chat-game.schema.json": "2aba9a135db4",
+    "schema/chat-game.schema.json": "4463a3812a3d",
     "js\\kit\\approach-fx.js": "c7a3996b7bcd",
     "js\\kit\\body-fx.js": "930d95ad9beb",
     "js\\kit\\plan-dress.js": "3bad408ffcdd",
@@ -266,7 +267,8 @@
     "js\\kit\\guidance.js": "744c14fa932f",
     "tools/scene-links.mjs": "a7c96d3e129b",
     "js\\kit\\guide-aids.js": "02b0f6be3aa9",
-    "tools/check-copy.mjs": "1fb89de372c0"
+    "tools/check-copy.mjs": "1fb89de372c0",
+    "js\\kit\\share-bar.js": "1e518dc38c2d"
   },
   "textures": []
 }

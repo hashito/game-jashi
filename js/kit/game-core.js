@@ -1,4 +1,4 @@
-/* game-kit e82a687: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit 2246e71: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -66,8 +66,9 @@ import { createExtensions } from './ext.js';
 import { installGuidance, stepRoom } from './guidance.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
+import { mountShareBar } from './share-bar.js';
 
-export const CORE_VERSION = '1.15.4';
+export const CORE_VERSION = '1.16.0';
 // the mini game library's types (js/mg-library.js LIBRARY; test/story-hooks.test.mjs keeps the two equal): game.json "minigames" naming one of these loads the library
 export const MG_LIB_TYPES = ['pour', 'turn-dials', 'match-mark', 'timing', 'code-drums', 'tune-radio', 'trace-path', 'slide-tiles', 'search-dark', 'rotate-pipes', 'sort-items', 'memory-pairs', 'lock-pick', 'photo-focus', 'rhythm-taps', 'connect-dots', 'balance-scale', 'echo-bells', 'switch-panel', 'rotate-pieces', 'count-shadows', 'spot-difference', 'maze-path', 'cipher-wheel', 'steady-hand', 'pump-gauge', 'order-steps', 'compass-bearing', 'mirror-beam', 'kana-word', 'jug-measure', 'hold-breath', 'layer-board'];
 const $ = (id) => document.getElementById(id);
@@ -826,9 +827,11 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
   const td = uiDef('title');
   const title = mk('div', 'title', `<div class="gf-title-box">${td.kicker ? `<p class="gf-sub gf-kicker">${esc(td.kicker)}</p>` : ''}<h1>${esc(manifest.title)}</h1>${manifest.subtitle ? `<p class="gf-sub">${esc(manifest.subtitle)}</p>` : ''}${td.tagline ? `<p class="gf-tagline">${esc(td.tagline)}</p>` : ''}${td.meta ? `<p class="gf-sub gf-meta">${esc(td.meta)}</p>` : ''}
     <div class="gf-title-btns"><button id="start-btn" class="btn primary" disabled>読み込み中…</button>${saved ? '<button id="continue-btn" class="btn hidden">つづきから</button>' : ''}<span id="title-extra" class="gf-title-extra"></span>
-    <button id="notes-btn" class="rn-link">更新情報<span id="rn-dot" class="rn-dot" hidden></span></button></div><p id="boot-status" class="gf-sub gf-boot-status" aria-live="polite"></p><p id="title-info" class="gf-sub gf-info"></p>${td.note ? `<p class="gf-sub gf-note">${esc(td.note)}</p>` : ''}<p class="gf-ver">v${esc(manifest.version)}</p></div>`);
+    <button id="notes-btn" class="rn-link">更新情報<span id="rn-dot" class="rn-dot" hidden></span></button></div><div id="gf-title-share" class="gf-title-share"></div><p id="boot-status" class="gf-sub gf-boot-status" aria-live="polite"></p><p id="title-info" class="gf-sub gf-info"></p>${td.note ? `<p class="gf-sub gf-note">${esc(td.note)}</p>` : ''}<p class="gf-ver">v${esc(manifest.version)}</p></div>`);
   // First-load screen (no flicker, docs/load-flicker.md): index.html carries a static #boot loader. The title is built hidden behind it (gf-prep),
   // the key art is its own layer that fades in once decoded, and ONE crossfade (boot -> title) happens when the fonts and the art are ready.
+  // the share row (kit 1.16, all-games rule A21): X で共有 / 共有 / リンクをコピー / 他のゲームを遊ぶ under the start buttons; game.json "share": false or { "title": false } leaves it out
+  { const so = manifest.share; if (so !== false && !(so && so.title === false)) mountShareBar($('gf-title-share'), { place: 'title', tags: so && so.tags, line: so && so.line, fallbackName: manifest.title }); }
   const bootEl = document.getElementById('boot');
   const artUrl = manifest.titleImage ? new URL(manifest.titleImage, location.href).href : null;
   const artP = cfg.titleArt || (artUrl ? preloadImage(artUrl) : Promise.resolve(null));
