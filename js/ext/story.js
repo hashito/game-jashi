@@ -143,7 +143,7 @@ export default function story(ext, shared) {
   } });
   ext.registerTask('T_PHONE', { run: async () => {
     snd.ring(0.3); await wait(1.4);
-    const v = await ctx.choose({ who: '着信', title: '泥の中の携帯電話', text: '圏外のはずの画面に「着信」とだけ出ている。誰からかは分からない。出ても出なくても、帰り道は変わらない。出れば、山を下りたあとに残るものが変わる。', options: [{ id: 'no', label: '出ない（声を聞かずに進む）' }, { id: 'yes', label: '出る（誰の声か確かめる）', primary: true }] });
+    const v = await ctx.choose({ who: '着信', title: '泥の中の携帯電話', text: '圏外のはずの画面に「着信」とだけ出ている。誰からかは分からない。出ても出なくても、帰り道は変わらない。出れば、その声を聞いたまま山を下りることになる。', options: [{ id: 'no', label: '出ない（声を聞かずに進む）' }, { id: 'yes', label: '出る（誰の声か確かめる）', primary: true }] });
     if (v === 'yes') { ctx.setFlag('phone', { silent: true }); await talk('phone', { title: '着信' }); }
     else await talk('phoneIgnore', { title: '着信' });
     return true;
