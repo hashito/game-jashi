@@ -44,6 +44,8 @@ body.js-gazing::after { /* pair-ok */ content: ""; position: fixed; inset: 0; z-
 .js-scope-count { margin: 6px 0 4px; color: var(--gf-text-dim); font-size: 12px; }
 .js-scope-bar { /* pair-ok */ height: 3px; background: var(--gf-surface-2); }
 .js-scope-bar i { /* pair-ok */ display: block; height: 100%; width: 0; background: var(--gf-accent, #c9805f); }
+.js-scope-next { pointer-events: auto; margin-top: 8px; width: 100%; min-height: 44px; }
+.js-scope-next[hidden] { display: none; }
 .js-scope[hidden] { display: none !important; }
 
 /* a found picture (top) and the face (the death) */

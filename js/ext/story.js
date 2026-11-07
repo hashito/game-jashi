@@ -43,7 +43,7 @@ export default function story(ext, shared) {
     telescope: 'まず、二階のベランダへ。三脚のついた望遠鏡を確かめてくれ。',
     radio: '一階の机にある黒い無線機だ。つまみを動かして、俺の声が聞こえる所で止めてくれ。',
     glasses: '無線機の右に、黒いサングラスと鍵束がある。両方持っていってくれ。',
-    bottle: '先に西の物置へ。床にある、蓋つきのボトルを二本持っていけ。近づかれたときに使える。',
+    bottle: '先に西の物置へ。棚にある、蓋つきのボトルを二本持っていけ。近づかれたときに使える。',
     crank: '次は東の避難小屋だ。床に置いた、赤い握りの鉄のハンドルを探してくれ。',
     gate: 'ハンドルと鍵が揃ったな。別荘の西の駐車場へ戻って、ゲートを開けてくれ。',
     car: 'ゲートの奥の車に乗るんだ。エンジンがかかるまで、その場を離れるな。',
@@ -143,7 +143,7 @@ export default function story(ext, shared) {
   } });
   ext.registerTask('T_PHONE', { run: async () => {
     snd.ring(0.3); await wait(1.4);
-    const v = await ctx.choose({ who: '着信', title: '泥の中の携帯電話', text: '圏外のはずの画面に「着信」とだけ出ている。出るか。', options: [{ id: 'no', label: '出ない' }, { id: 'yes', label: '出る', primary: true }] });
+    const v = await ctx.choose({ who: '着信', title: '泥の中の携帯電話', text: '圏外のはずの画面に「着信」とだけ出ている。誰からかは分からない。出ても出なくても、帰り道は変わらない。出れば、山を下りたあとに残るものが変わる。', options: [{ id: 'no', label: '出ない（声を聞かずに進む）' }, { id: 'yes', label: '出る（誰の声か確かめる）', primary: true }] });
     if (v === 'yes') { ctx.setFlag('phone', { silent: true }); await talk('phone', { title: '着信' }); }
     else await talk('phoneIgnore', { title: '着信' });
     return true;
@@ -154,7 +154,7 @@ export default function story(ext, shared) {
     await talk('gate', { title: '林道ゲート' });
   } });
   ext.registerTask('T_ENGINE', { run: async (c, task) => {
-    await talk('engine', { title: '叔父の車' });
+    await talk('engine', { title: '私の車' });
     // while the engine catches: the white figure in the mirror, behind the car (H4)
     if (!ctx.qa) { snd.engine(false); await wait(0.9); mirrorFigure(); snd.engine(false); await wait(1.2); }
     const ok = await playMG(task);
@@ -170,12 +170,12 @@ export default function story(ext, shared) {
   }
   ext.registerInteract('js-bell', { prompt: () => (done('T_BELL') ? '[E] 鐘を鳴らす（音の方へ誘う）' : ''), run: () => { if (done('T_BELL')) { ringBell(); say('鐘が鳴った。今のうちに、木の陰へ。', 4); } } });
 
-  // ---------------------------------------------------------------- the telescope (4.x TELESCOPE_SCENES): three beats, 17 s, the lens zooms in
-  // by itself; something moves between the cedars, a white back with a sickle, then only the head turns to the window. Nothing to press.
+  // ---------------------------------------------------------------- the telescope (4.x TELESCOPE_SCENES): three beats, the lens zooms in
+  // by itself; something moves between the cedars, a white back with a sickle, then only the head turns to the window. Each card waits for the button.
   const SCOPE = [
     { eyebrow: '二階のベランダ ／ 望遠鏡', title: '木の間に、動くもの。', text: '鳥かと思って、少しだけレンズを動かした。', sec: 5, fov: [30, 13] },
     { eyebrow: '録画中', title: 'まだ、誰かいる。', text: '白い背中。手には草刈りの鎌のようなもの。声をかける前に、顔を確かめようと思った。', sec: 6, fov: [13, 7] },
-    { eyebrow: '映像の乱れ', title: '頭だけが、こちらを向く。', text: '肩はまだ揺れている。顔だけが、窓の方へ向き始めた。', sec: 6, fov: [7, 3.6] },
+    { eyebrow: '映像の乱れ', title: '頭だけが、こちらを向く。', text: '肩はまだ揺れている。顔だけが、こちらのベランダへ向き始めた。', sec: 6, fov: [7, 3.6] },
   ];
   const REVEAL = { x: 3.2, z: -6.5 };   // on the trail below, between the cedars, seen from the balcony
   function scopeScene() {
@@ -184,12 +184,15 @@ export default function story(ext, shared) {
     st.scope = true; ctx.blockers.push(scopeBlock); ctx.fp.release();
     ctx.teleport({ x: eye.x, z: eye.z, floor: 1, yaw: 0 });
     let el = document.getElementById('js-scope');
-    if (!el) { document.body.insertAdjacentHTML('beforeend', '<div id="js-scope" class="js-scope" hidden><div class="js-scope-lens"></div><div class="js-scope-rec">● REC <span></span></div><div class="js-scope-card"><p class="js-scope-eyebrow"></p><h2 class="js-scope-title"></h2><p class="js-scope-text"></p><p class="js-scope-count"></p><div class="js-scope-bar"><i></i></div></div></div>'); el = document.getElementById('js-scope'); }
+    if (!el) { document.body.insertAdjacentHTML('beforeend', '<div id="js-scope" class="js-scope" hidden><div class="js-scope-lens"></div><div class="js-scope-rec">● REC <span></span></div><div class="js-scope-card"><p class="js-scope-eyebrow"></p><h2 class="js-scope-title"></h2><p class="js-scope-text"></p><p class="js-scope-count"></p><div class="js-scope-bar"><i></i></div><button type="button" class="btn primary js-scope-next" hidden></button></div></div>'); el = document.getElementById('js-scope'); }
     const q = (c) => el.querySelector(c), total = SCOPE.reduce((n, b) => n + b.sec, 0);
     const scope = ctx.scene.getObjectByName('telescope'); if (scope) scope.visible = false;   // we look through it: its own body must not fill the lens
     el.hidden = false; F.root.visible = true; document.body.classList.add('js-scoping');   // the thought band and the HUD stay out of the lens
     return new Promise((done) => {
-      let i = -1, tb = 0, tt = 0, last = performance.now();
+      let i = -1, tb = 0, tt = 0, last = performance.now(), waiting = false, closed = false;
+      const nextBtn = q('.js-scope-next');
+      const next = () => { waiting = false; nextBtn.hidden = true; if (i < SCOPE.length - 1) beat(i + 1); else finish(); };
+      nextBtn.onclick = next;
       const beat = (k) => { i = k; tb = 0; const b = SCOPE[k]; q('.js-scope-eyebrow').textContent = b.eyebrow; q('.js-scope-title').textContent = b.title; q('.js-scope-text').textContent = b.text; q('.js-scope-count').textContent = `0${k + 1} / 03`; if (k === 1) snd.sting(); if (k === 2) { fear.kick(0.5); ctx.fx && ctx.fx.glitch && ctx.fx.glitch(0.25, 0.4); } };
       beat(0);
       const frame = (now) => {
@@ -205,11 +208,12 @@ export default function story(ext, shared) {
         cam.fov = b.fov[0] + (b.fov[1] - b.fov[0]) * ease; cam.updateProjectionMatrix();
         q('.js-scope-bar i').style.width = `${Math.min(100, (tt / total) * 100)}%`;
         q('.js-scope-rec span').textContent = `00:00:${String(Math.floor(tt)).padStart(2, '0')}`;
-        if (tb >= b.sec) { if (i < SCOPE.length - 1) beat(i + 1); else { finish(); return; } }
+        if (tb >= b.sec && !waiting) { if (ctx.qa) { next(); if (closed) return; } else { waiting = true; nextBtn.textContent = i < SCOPE.length - 1 ? '次へ' : 'レンズから目を離す'; nextBtn.hidden = false; nextBtn.focus({ preventScroll: true }); } }
+        if (closed) return;
         requestAnimationFrame(frame);
       };
       const finish = () => {
-        cam.fov = fov0; cam.updateProjectionMatrix(); el.hidden = true; document.body.classList.remove('js-scoping'); F.root.visible = false; st.scope = false; if (scope) scope.visible = true;
+        closed = true; cam.fov = fov0; cam.updateProjectionMatrix(); el.hidden = true; document.body.classList.remove('js-scoping'); F.root.visible = false; st.scope = false; if (scope) scope.visible = true;
         const at = ctx.blockers.indexOf(scopeBlock); if (at >= 0) ctx.blockers.splice(at, 1);
         snd.sting(); fear.kick(0.8); done();
       };
@@ -333,7 +337,7 @@ export default function story(ext, shared) {
     if (G && i !== 3 && i !== 5) setTimeout(() => guide(G), 900);
     if (i === 1) setTimeout(() => say(`窓の外に、まだいる。目を合わせると胸が苦しい。${ctx.isTouch ? '「目を閉じる」ボタン' : 'Q'}で目を閉じられる。`, 7), 1200);
     if (i === 3) setTimeout(() => guide('bottle').then(() => say('外では、白い姿が林道を歩いている。目を合わせず、木の陰を選んで。', 6)), 1500);
-    if (i === 5) setTimeout(() => guide('gate').then(() => say('橋を渡って、南から戻る。', 4)), 1200);
+    if (i === 5) setTimeout(() => guide('gate').then(() => say('橋を渡って、北へ戻る。', 4)), 1200);
     if (i === 6) setTimeout(() => say('ゲートが上がった。駐車場の車まで。', 4), 800);
   });
   ext.on('player:room', ({ to }) => {

@@ -7,7 +7,7 @@
   "style": "ノーマル",
   "credit": "VOICEVOX:麒ヶ島宗麟",
   "licenseUrl": "https://www.virvoxproject.com/voicevoxの利用規約",
-  "text": "先に西の物置へ。床にある、蓋つきのボトルを二本持っていけ。近づかれたときに使える。",
+  "text": "先に西の物置へ。棚にある、蓋つきのボトルを二本持っていけ。近づかれたときに使える。",
   "querySettings": {
     "speedScale": 1.03,
     "pitchScale": -0.01,
@@ -20,15 +20,15 @@
   },
   "sampleRate": 24000,
   "channels": 1,
-  "durationSeconds": 6.228,
+  "durationSeconds": 6.174,
   "peakDbfs": -6.0,
-  "rmsDbfs": -23.61,
-  "rawPeakDbfs": -6.18,
+  "rmsDbfs": -22.98,
+  "rawPeakDbfs": -6.86,
   "clippedSamples": 0,
-  "silenceFractionBelowMinus50Db": 0.313,
+  "silenceFractionBelowMinus50Db": 0.31,
   "processing": "Trim silence with 120ms/200ms margins; 6ms edge fades; peak normalize to -6dBFS. No effects or altered words.",
   "file": "dist/assets/audio/guide-bottle.wav",
-  "generatedAt": "2026-10-29T22:39:32.911278+00:00",
-  "sha256": "1eba9b7b1af8f7205893c4442d86b6e7ccd639a6f5ae18be7eb8799513770a86",
-  "bytes": 298966
+  "generatedAt": "2026-11-07T00:04:17.269825+00:00",
+  "sha256": "65d8392dc671ee2a82ac7f69749557447c98c34850728f82dbd81ff0b905f2e0",
+  "bytes": 296406
 }
