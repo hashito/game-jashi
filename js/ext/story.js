@@ -208,7 +208,8 @@ export default function story(ext, shared) {
         cam.fov = b.fov[0] + (b.fov[1] - b.fov[0]) * ease; cam.updateProjectionMatrix();
         q('.js-scope-bar i').style.width = `${Math.min(100, (tt / total) * 100)}%`;
         q('.js-scope-rec span').textContent = `00:00:${String(Math.floor(tt)).padStart(2, '0')}`;
-        if (tb >= b.sec && !waiting) { if (ctx.qa) { next(); if (closed) return; } else { waiting = true; nextBtn.textContent = i < SCOPE.length - 1 ? '次へ' : 'レンズから目を離す'; nextBtn.hidden = false; nextBtn.focus({ preventScroll: true }); } }
+        // the lens moves on by itself (feedback 2026-11-02: the zoom plays, it is not a mini game); only the last card waits for the button
+        if (tb >= b.sec && !waiting) { if (i < SCOPE.length - 1) beat(i + 1); else if (ctx.qa) { next(); if (closed) return; } else { waiting = true; nextBtn.textContent = 'レンズから目を離す'; nextBtn.hidden = false; nextBtn.focus({ preventScroll: true }); } }
         if (closed) return;
         requestAnimationFrame(frame);
       };
