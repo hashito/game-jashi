@@ -1,5 +1,5 @@
 {
-  "kit": "adcf19c",
+  "kit": "e82a687",
   "dest": "js/kit",
   "modules": [
     "game-core",
@@ -131,7 +131,7 @@
     "check-copy.mjs"
   ],
   "hashes": {
-    "js\\kit\\game-core.js": "3904fa048e7f",
+    "js\\kit\\game-core.js": "68bc069a278a",
     "js\\kit\\item-kinds.js": "68e784c6f699",
     "js\\kit\\item-models.js": "df9d065d99aa",
     "js\\kit\\prop-geo.js": "0c660069f531",
