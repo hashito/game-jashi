@@ -4,6 +4,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+// a long page sweep (check-select-range) runs inside one call: 未然調書 needs about 77 s, more on a busy machine
+const CDP_LIMIT_MS = 300000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const EXES = [process.env.BROWSER, "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", "C:/Program Files/Microsoft/Edge/Application/msedge.exe", "C:/Program Files/Google/Chrome/Application/chrome.exe", "/usr/bin/google-chrome", "/usr/bin/chromium"].filter(Boolean);
@@ -59,7 +61,7 @@ export async function launch(o = {}) {
   const send = (method, params = {}) =>
     new Promise((res, rej) => {
       const id = ++seq;
-      const timer = setTimeout(() => { waits.delete(id); rej(new Error(`CDP timeout: ${method}`)); }, 60000);
+      const timer = setTimeout(() => { waits.delete(id); rej(new Error(`CDP timeout: ${method}`)); }, CDP_LIMIT_MS);
       waits.set(id, [res, rej, timer]);
       try { ws.send(JSON.stringify({ id, method, params })); }
       catch (e) { clearTimeout(timer); waits.delete(id); rej(e); }

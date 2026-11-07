@@ -1,4 +1,4 @@
-/* game-kit 1b8c7db: css/kit.css — edit in game-kit and run tools/kit-sync.js */
+/* game-kit adcf19c: css/kit.css — edit in game-kit and run tools/kit-sync.js */
 /* game-kit: shared styles for first-person browser games (windows, HUD, buttons, touch controls,
    status chips, steppers, kanban, app-like software screens, tabs, stamps, share buttons; at the end
    progression pg-*, sim UI nt-/tb-/dl-/ch-*, journal jr-* / stream veil st-* / hiding hd-*, chat cx-*).
@@ -2730,6 +2730,16 @@ body.touch .hb-tab { min-height: var(--gf-hit, 44px); } /* (U13) the notebook's 
 .ms-key li { display: inline-flex; align-items: center; gap: 5px; }
 .ms-k { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
 .ms-k-me { background: var(--gf-accent, #3a7a5a); border-radius: 50%; } .ms-k-door { background: var(--gf-map-door, #8a5a00); height: 5px; border-radius: 0; } .ms-k-lock { background: var(--gf-danger, #c0502a); } .ms-k-pin { background: var(--gf-accent-2, #e8a040); border-radius: 50%; }
+/* a short window (a landscape phone): the map gets the height. The floor tabs stand in a column beside it, the legend goes, the selected room's name lies over the map (standard 1.15.3) */
+@media (max-height: 520px) {
+  .ms-wrap { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: var(--gf-space-1, 4px) 0; }
+  .ms-wrap > * { grid-column: 1 / -1; }
+  .ms-wrap > .ms-tabs { grid-column: 1; grid-row: 2; flex-direction: column; flex-wrap: nowrap; overflow-y: auto; margin-right: var(--gf-space-1, 4px); }
+  .ms-wrap > .ms-view { grid-column: 2; grid-row: 2; }
+  .ms-wrap > .ms-tabs[hidden] + .ms-view { grid-column: 1 / -1; }
+  .ms-key { display: none; }
+  .ms-info { position: absolute; left: var(--gf-space-2, 8px); bottom: var(--gf-space-2, 8px); max-width: 55%; z-index: 1; }
+}
 .ms-bg { fill: transparent; }
 .ms-grid { stroke: var(--gf-map-grid, #eee); } .ms-grid5 { stroke: var(--gf-map-grid-2, #ccc); }
 .ms-room { stroke: var(--gf-text, #333); stroke-width: 1.5; }
@@ -2753,7 +2763,7 @@ body.touch .hb-tab { min-height: var(--gf-hit, 44px); } /* (U13) the notebook's 
 .ms-lock { fill: var(--gf-danger, #c0502a); stroke: #fff; stroke-width: 1; }
 .ms-stairs { fill: none; stroke: var(--gf-map-door, #8a5a00); stroke-width: 1.2; }
 .ms-station { fill: #c33; }
-.ms-pin { fill: var(--gf-accent, #e8a040); stroke: #fff; stroke-width: 1.5; } .ms-pin--item { fill: var(--gf-ok, #2e7a4a); }
+.ms-pin { r: calc(5.5px * var(--ms-mk, 1)); fill: var(--gf-accent, #e8a040); stroke: #fff; stroke-width: 1.5; } .ms-pin--item { fill: var(--gf-ok, #2e7a4a); }
 .ms-player { fill: var(--gf-accent, #3a7a5a); stroke: #fff; stroke-width: 1.5; }
 .ms-player-ring { fill: none; stroke: var(--gf-accent, #3a7a5a); stroke-width: 1.5; opacity: 0.5; transform-box: fill-box; transform-origin: center; animation: ms-pulse 1.8s ease-out infinite; }
 .ms-calm .ms-player-ring { animation: none; }

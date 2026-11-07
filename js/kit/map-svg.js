@@ -1,4 +1,4 @@
-/* game-kit 1b8c7db: js/map-svg.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit adcf19c: js/map-svg.js — edit in game-kit and run tools/kit-sync.js */
 // SVG floor map (rule U18 of docs/3d-game-rules.md). Game-agnostic: the input is the plan.json used by js/plan-check.js
 // (rooms / doors / stations; x east, z toward the bottom of the map, metres) plus runtime state.
 // Floors as tabs, room names, corridors, doors (locked ones marked), stairs, the player marker with heading,
@@ -103,7 +103,7 @@ export function renderFloor(plan, floor, opts = {}) {
     out += `<g class="ms-r" data-room="${esc(r.id)}"><rect class="${cls}" x="${X(r.x)}" y="${Z(r.z)}" width="${(r.w * scale).toFixed(1)}" height="${(r.d * scale).toFixed(1)}"/>`;
     const showName = named ? named.has(r.id) : o.names === "visited" ? seen : true;
     const label = showName ? r.name || r.id : "？";
-    const cx = X(r.x + r.w / 2), cz = Z(r.z + r.d / 2), vertical = r.d > r.w * 1.5;
+    const cx = X(r.x + r.w / 2), cz = Z(r.z + r.d / 2), vertical = r.d > r.w * 1.5 && [...String(label)].length > 1; // one character ("？") stays upright
     out += `<text class="ms-label${r.kind === "corridor" ? " ms-label--small" : ""}${showName ? "" : " ms-label--dim"}" x="${cx}" y="${cz}"${vertical ? ` transform="rotate(-90 ${cx} ${cz})"` : ""}>${esc(label)}</text></g>`;
   }
   // stairs / lifts: a step glyph at the room centre of each end on this floor
@@ -139,13 +139,24 @@ export function renderFloor(plan, floor, opts = {}) {
     const s = byId.get(plan.start);
     if (s && fl(s) === floor) out += `<text class="ms-start" x="${X(s.x) + 3}" y="${Z(s.z) + 12}">START</text>`;
   }
+  const pinRow = new Map(); // room id -> pin names so far: each pin name takes the next line under the room name
   for (const p of st.pins || []) {
     const r = p.room ? byId.get(p.room) : null;
     const pf = p.floor ?? (r ? fl(r) : 0);
     if (pf !== floor) continue;
     const px = p.x ?? (r ? r.x + r.w / 2 : null), pz = p.z ?? (r ? r.z + r.d / 2 : null);
     if (px == null) continue;
-    out += `<g class="ms-pinG" data-pin="${esc(p.id)}"><circle class="ms-pin${p.kind === "item" ? " ms-pin--item" : ""}" cx="${X(px)}" cy="${Z(pz)}" r="5.5"/>${p.label ? `<text class="ms-pin-t" x="${X(px) + 8}" y="${Z(pz) + 3}">${esc(p.label)}</text>` : ""}</g>`;
+    let txt = "";
+    if (p.label) {
+      // the name of a pin in a room goes on its own line under the room name (same direction as that name), shortened, so the two never overlap (1.15.3)
+      const home = r || roomAt(plan, px, pz, floor), short = pinLabel(p.label);
+      if (home) {
+        const row = (pinRow.get(home.id) || 0) + 1, cx = X(home.x + home.w / 2), cz = Z(home.z + home.d / 2);
+        pinRow.set(home.id, row);
+        txt = `<text class="ms-pin-t" x="${cx}" y="${cz}" dy="${(row * 1.25).toFixed(2)}em" text-anchor="middle"${home.d > home.w * 1.5 ? ` transform="rotate(-90 ${cx} ${cz})"` : ""}>${esc(short)}</text>`;
+      } else txt = `<text class="ms-pin-t" x="${X(px) + 8}" y="${Z(pz) + 3}">${esc(short)}</text>`;
+    }
+    out += `<g class="ms-pinG" data-pin="${esc(p.id)}">${p.label ? `<title>${esc(p.label)}</title>` : ""}<circle class="ms-pin${p.kind === "item" ? " ms-pin--item" : ""}" cx="${X(px)}" cy="${Z(pz)}" r="5.5"/>${txt}</g>`;
   }
   if (pos && (pos.floor || 0) === floor) {
     const h = st.heading || 0;
@@ -153,6 +164,10 @@ export function renderFloor(plan, floor, opts = {}) {
   }
   return { svg: out, w: W, h: H, bounds: b };
 }
+
+// a pin name on the map: a task title can be a whole sentence; 8 characters is what fits a room of about 100 px (the full text is the pin's <title>) (pure)
+export const PIN_LABEL_MAX = 8;
+export const pinLabel = (s) => { const c = [...String(s)]; return c.length > PIN_LABEL_MAX ? `${c.slice(0, PIN_LABEL_MAX - 1).join("")}…` : c.join(""); };
 
 export function floorLabel(f) {
   return f === 0 ? "1F" : f > 0 ? `${f + 1}F` : `B${-f}`;
@@ -175,12 +190,12 @@ export function mapSvgString(plan, floor, opts = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${maxW.toFixed(0)}" height="${H.toFixed(0)}" viewBox="0 0 ${maxW.toFixed(0)} ${H.toFixed(0)}" font-family="sans-serif"><style>${MAP_SVG_CSS}</style><rect class="ms-bg" width="100%" height="100%"/>\n${body}${legend}</svg>\n`;
 }
 
-// the label font size in MAP units so that it is >= 12px on screen (11px on phones < 500 wide); never tiny, never huge (pure)
+// the label font size in MAP units so that it is >= 12px on screen (11px on phones < 500 wide) however far the map is zoomed out; never below 8 units when zoomed in (pure)
 export function labelSize(pxW, pxH, mapW, mapH, viewportW = 1280) {
   const k = Math.min(pxW / mapW, pxH / mapH); // px per map unit
   if (!(k > 0)) return 12;
   const target = viewportW < 500 ? 11 : 12;
-  return Math.round(Math.min(28, Math.max(8, target / k)) * 10) / 10;
+  return Math.round(Math.max(8, target / k) * 10) / 10;
 }
 
 // the SVG viewBox for a view { zoom, x, y } over a floor of vw x vh map units: zoom 1 = the whole floor with `pad` units of padding all round (pure)
@@ -190,10 +205,10 @@ export function viewBoxOf(v, vw, vh, pad = MAP_PAD) {
   return { x: v.x - pad / z, y: v.y - pad / z, w: vw / z + (2 * pad) / z, h: vh / z + (2 * pad) / z };
 }
 // the zoom-1 view that fits the whole floor into a container of cw x ch px: the scale in px per map unit and the empty margin left over on each axis (pure)
-// grow a viewBox {x,y,w,h} to the panel aspect (width / height) around its centre; when zoomed in (zoom > 1) never beyond the floor's own edge (+ padding): shift instead
+// grow a viewBox {x,y,w,h} to the panel aspect (width / height) around its centre; when zoomed in (zoom > 1) never beyond the floor's own edge (+ padding): shift instead, and when the box is wider than the floor put the floor in the middle
 export function aspectBox(b, a, zoom, vw, vh, pad = MAP_PAD) {
   if (!(a > 0)) return b;
-  const grow = (o, len, nlen, max) => { let n = o - (nlen - len) / 2; if (!(zoom > 1)) return n; const lo = Math.min(o, -pad), hi = Math.max(o + len, max + pad); if (n < lo) n = lo; if (n + nlen > hi) n = Math.max(lo, hi - nlen); return n; };
+  const grow = (o, len, nlen, max) => { let n = o - (nlen - len) / 2; if (!(zoom > 1)) return n; const lo = Math.min(o, -pad), hi = Math.max(o + len, max + pad); if (nlen >= hi - lo) return (lo + hi - nlen) / 2; if (n < lo) n = lo; if (n + nlen > hi) n = Math.max(lo, hi - nlen); return n; };
   if (b.w / b.h > a) { const h2 = b.w / a; return { x: b.x, y: grow(b.y, b.h, h2, vh), w: b.w, h: h2 }; }
   const w2 = b.h * a;
   return { x: grow(b.x, b.w, w2, vw), y: b.y, w: w2, h: b.h };
@@ -201,6 +216,23 @@ export function aspectBox(b, a, zoom, vw, vh, pad = MAP_PAD) {
 export function fitScale(cw, ch, vw, vh, pad = MAP_PAD) {
   const bw = vw + 2 * pad, bh = vh + 2 * pad, k = Math.min(cw / bw, ch / bh);
   return { k, offX: (cw - bw * k) / 2, offY: (ch - bh * k) / 2, fits: bw * k <= cw + 0.01 && bh * k <= ch + 0.01 };
+}
+
+// ---- the first view (pure) ------------------------------------------------------------------------------------
+// The size of "a room" in map units: the median side of the rooms of the floor (corridors and outdoor areas only when there is nothing else).
+export function roomSide(plan, floor, scale = 16) {
+  const rs = roomsOnFloor(plan, floor), inner = rs.filter((r) => (r.kind || "room") === "room"), use = inner.length ? inner : rs;
+  if (!use.length) return 0;
+  const a = use.map((r) => Math.sqrt(r.w * r.d) * scale).sort((p, q) => p - q);
+  return a[a.length >> 1];
+}
+// The zoom a fresh map starts at (standard 1.15.3, 八尺様「マップが初期値に小さすぎます」): zoom 1 when rooms are readable and the panel is tall enough; otherwise
+// the zoom that makes a room AUTO_ZOOM.target px. roomPx = the room at zoom 1 on screen, panelH = the height of the panel.
+export const AUTO_ZOOM = { minRoom: 60, minPanelH: 200, target: 100, max: 8 };
+export function autoZoom(roomPx, panelH) {
+  if (!(roomPx > 0)) return 1;
+  if (roomPx >= AUTO_ZOOM.minRoom && panelH >= AUTO_ZOOM.minPanelH) return 1;
+  return Math.round(Math.min(AUTO_ZOOM.max, Math.max(1, AUTO_ZOOM.target / roomPx)) * 100) / 100;
 }
 
 // ---- pan / zoom maths (pure) ----------------------------------------------------------------------------------
@@ -219,7 +251,7 @@ export function zoomAt(v, w, h, factor, px, py) {
 export const MAP_KEY = { title: "記号の意味", me: "いまいる場所", door: "ドア", lock: "鍵がかかっている", pin: "印" };
 export function createMapSvg(cfg) {
   const KEY = { ...MAP_KEY, ...(cfg.key || {}) }; // the legend of the marker meanings (colour is only for markers; room names are plain text)
-  const { plan, container, getState = () => ({}), onRoom, onSelect, photo, scale = 16, names = "all", calm = false, floorNames = null } = cfg;
+  const { plan, container, getState = () => ({}), onRoom, onSelect, photo, scale = 16, names = "all", calm = false, floorNames = null, autoFit = true } = cfg;
   const labelOf = (f) => (floorNames && floorNames[f]) || floorLabel(f); // a game names its floors ("3階" for the hillside level that is storey 1 of the grid)
   const floors = floorsOf(plan);
   const root = document.createElement("div");
@@ -228,11 +260,13 @@ export function createMapSvg(cfg) {
   const tabs = root.querySelector(".ms-tabs"), view = root.querySelector(".ms-view"), info = root.querySelector(".ms-info");
   container.appendChild(root);
   let floor = floors[0], userFloor = null, sel = null, vw = 1, vh = 1, v = { zoom: 1, x: 0, y: 0 }, svgEl = null, lastPlayerFloor = null;
+  // autoOn: the view is still the automatic first view (autoZoom, on the player): it follows the panel size until the player zooms or pans. autoFit: false = the whole floor first (a game with game.json mapView)
+  let autoOn = !!autoFit;
 
   const curState = () => getState() || {};
   // (perf) the static layer (rooms, doors, pins, labels) is rebuilt only when what it shows changed (floor, the room the player is in, visited / named /
   // locked / pins / selection); otherwise only the player marker moves (a transform). Opening the map twice in a row costs nothing.
-  let lastKey = null, tabsKey = null, playerEl = null, bounds = null;
+  let lastKey = null, tabsKey = null, playerEl = null, playerT = "", markK = 1, bounds = null;
   function draw() {
     const st = curState();
     const pf = st.pos ? st.pos.floor || 0 : null;
@@ -250,7 +284,7 @@ export function createMapSvg(cfg) {
       svgEl.setAttribute("role", "img");
       svgEl.setAttribute("aria-label", "マップ");
       view.insertBefore(svgEl, view.firstChild);
-      if (typeof ResizeObserver === "function") new ResizeObserver(() => { rcCache = null; }).observe(svgEl);
+      if (typeof ResizeObserver === "function") new ResizeObserver(() => { rcCache = null; if (svgEl) applyView(); }).observe(svgEl);
     }
     const here = st.pos ? roomAt(plan, st.pos.x, st.pos.z, st.pos.floor || 0) : null;
     const key = JSON.stringify([floor, here && here.id, st.visited ? [...st.visited] : null, st.named ? [...st.named] : null, st.locked ? [...st.locked] : null, st.pins || null, sel, names]);
@@ -268,7 +302,8 @@ export function createMapSvg(cfg) {
         svgEl.insertAdjacentHTML("beforeend", '<g class="ms-playerG"><circle class="ms-player-ring" r="9"/><path class="ms-player" d="M0 -8 L5.5 6 L0 3 L-5.5 6 Z"/></g>');
         playerEl = svgEl.lastElementChild;
       }
-      playerEl.setAttribute("transform", `translate(${+((pos.x - bounds.x0) * scale).toFixed(1)} ${+((pos.z - bounds.z0) * scale).toFixed(1)}) rotate(${st.heading || 0}) scale(1.4)`);
+      playerT = `translate(${+((pos.x - bounds.x0) * scale).toFixed(1)} ${+((pos.z - bounds.z0) * scale).toFixed(1)}) rotate(${st.heading || 0})`;
+      playerEl.setAttribute("transform", `${playerT} scale(${(1.4 * markK).toFixed(2)})`);
     } else if (playerEl) { playerEl.remove(); playerEl = null; }
     applyView();
   }
@@ -285,11 +320,29 @@ export function createMapSvg(cfg) {
   function fitText() {
     const rc = rcCache || (rcCache = svgEl.getBoundingClientRect());
     if (!rc.width || !rc.height) { rcCache = null; return; }
-    const fs = String(labelSize(rc.width, rc.height, boxOf().w, boxOf().h, typeof innerWidth === "number" ? innerWidth : 1280));
+    const bx = boxOf();
+    const fs = String(labelSize(rc.width, rc.height, bx.w, bx.h, typeof innerWidth === "number" ? innerWidth : 1280));
     if (fs !== lastFs) { lastFs = fs; svgEl.style.setProperty("--ms-fs", fs); }
+    // the markers keep a visible size when the whole floor is shown small (the player's arrow was 5 px on 八尺様's map)
+    const mk = Math.round(Math.max(1, 0.7 / Math.min(rc.width / bx.w, rc.height / bx.h)) * 10) / 10;
+    if (mk !== markK) { markK = mk; svgEl.style.setProperty("--ms-mk", String(mk)); if (playerEl) playerEl.setAttribute("transform", `${playerT} scale(${(1.4 * mk).toFixed(2)})`); }
+  }
+  // the zoom of the automatic first view for the panel as it is now: the size of a room at zoom 1 on screen -> autoZoom(); 0 = the panel has no size yet
+  function autoTarget() {
+    const rc = rcCache || (svgEl && (rcCache = svgEl.getBoundingClientRect()));
+    if (!rc || !rc.width || !rc.height) return 0;
+    const b = aspectBox(viewBoxOf({ zoom: 1, x: 0, y: 0 }, vw, vh), rc.width / rc.height, 1, vw, vh), k = Math.min(rc.width / b.w, rc.height / b.h);
+    return autoZoom(roomSide(plan, floor, scale) * k, rc.height);
+  }
+  // centre the view on the player, or on the floor when the player is on another floor
+  function viewOn(z) {
+    const p = curState().pos, here = p && (p.floor || 0) === floor, b = floorBounds(plan, floor);
+    const cx = here ? (p.x - b.x0) * scale : vw / 2, cy = here ? (p.z - b.z0) * scale : vh / 2;
+    return clampView({ zoom: z, x: cx - vw / z / 2, y: cy - vh / z / 2 }, vw, vh);
   }
   if (typeof addEventListener === "function") addEventListener("resize", () => { rcCache = null; svgEl && applyView(); });
   function applyView() {
+    if (autoOn) { const z = autoTarget(); v = z > 0 ? viewOn(z) : { zoom: 1, x: 0, y: 0 }; }
     v = clampView(v, vw, vh);
     { const b = boxOf(); svgEl.setAttribute("viewBox", `${b.x.toFixed(1)} ${b.y.toFixed(1)} ${b.w.toFixed(1)} ${b.h.toFixed(1)}`); }
     fitText();
@@ -302,8 +355,8 @@ export function createMapSvg(cfg) {
   function centerOnPlayer(zoom) {
     const p = curState().pos;
     if (!p || (p.floor || 0) !== floor) return;
-    const b = floorBounds(plan, floor), z = zoom ?? Math.max(v.zoom, 2);
-    v = clampView({ zoom: z, x: (p.x - b.x0) * scale - vw / z / 2, y: (p.z - b.z0) * scale - vh / z / 2 }, vw, vh);
+    autoOn = false;
+    v = viewOn(zoom ?? Math.max(v.zoom, 2, (autoFit && autoTarget()) || 0));
     applyView();
   }
   function select(id) {
@@ -321,18 +374,20 @@ export function createMapSvg(cfg) {
   tabs.addEventListener("click", (e) => {
     const b = e.target.closest("[data-f]");
     if (!b) return;
-    userFloor = +b.dataset.f; sel = null; info.classList.remove("ms-on"); v = { zoom: 1, x: 0, y: 0 };
+    userFloor = +b.dataset.f; sel = null; info.classList.remove("ms-on"); v = { zoom: 1, x: 0, y: 0 }; autoOn = !!autoFit;
     draw();
   });
   root.querySelector(".ms-ctl").addEventListener("click", (e) => {
     const a = e.target.closest("[data-a]")?.dataset.a;
     if (!a) return;
     if (a === "me") { userFloor = null; draw(); centerOnPlayer(); return; }
+    autoOn = false;
     v = zoomAt(v, vw, vh, a === "in" ? 1.5 : 1 / 1.5, v.x + vw / v.zoom / 2, v.y + vh / v.zoom / 2);
     applyView();
   });
   view.addEventListener("wheel", (e) => {
     e.preventDefault();
+    autoOn = false;
     const m = toMap(e.clientX, e.clientY);
     v = zoomAt(v, vw, vh, e.deltaY < 0 ? 1.2 : 1 / 1.2, m.x, m.y);
     applyView();
@@ -352,12 +407,14 @@ export function createMapSvg(cfg) {
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
     moved += Math.abs(dx) + Math.abs(dy);
     if (ptr.size === 1 && moved > 6) {
+      autoOn = false;
       const k = toMap(0, 0).k;
       v = { ...v, x: v.x - dx / k, y: v.y - dy / k };
       applyView();
     }
     p.x = e.clientX; p.y = e.clientY;
     if (ptr.size === 2 && pinch0) {
+      autoOn = false;
       const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y), m = toMap((a.x + b.x) / 2, (a.y + b.y) / 2);
       v = zoomAt(v, vw, vh, (pinch0.zoom * d) / pinch0.d / v.zoom, m.x, m.y);
       applyView();
@@ -387,7 +444,7 @@ export function createMapSvg(cfg) {
     g.getBBox();
     g.remove();
   } catch { /* detached / no layout */ }
-  // the whole floor is fitted into the view (with padding) on every size; the labels keep >= 11-12px on screen (labelSize), so no auto-zoom
+  // the first view: see autoZoom(); the - button goes down to the whole floor; the labels keep >= 11-12px on screen at any zoom (labelSize)
   const mapApi = {
     el: root,
     update: draw,
@@ -399,7 +456,7 @@ export function createMapSvg(cfg) {
     toSVGString: (o = {}) => mapSvgString(plan, o.floor ?? floor, { scale, state: curState(), names, ...o }),
     // back to the state of a fresh map (the player's floor, no zoom, nothing selected): a tab that re-attaches `el` calls this instead of building a new map
     reset() {
-      userFloor = null; sel = null; info.classList.remove("ms-on"); v = { zoom: 1, x: 0, y: 0 };
+      userFloor = null; sel = null; info.classList.remove("ms-on"); v = { zoom: 1, x: 0, y: 0 }; autoOn = !!autoFit;
       draw();
     },
     destroy() { root.remove(); },

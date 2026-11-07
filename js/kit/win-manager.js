@@ -1,4 +1,4 @@
-/* game-kit 4b9f6fa: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit adcf19c: js/win-manager.js — edit in game-kit and run tools/kit-sync.js */
 // The window manager of the standard UI shell (rules U12 / U14 / U21): ONE window at a time, a fixed size per breakpoint
 // (never changed by tabs or content: the content scrolls inside), larger on big screens (>= 900 x 700), ALWAYS top-anchored
 // (windows shown one after another keep their top edge in one place: a size s window after a size m one does not jump down),
@@ -109,7 +109,8 @@ export function createWindowManager(o = {}) {
     st.setProperty("--wm-band", `${z.band}px`);
     st.setProperty("--wm-zoom", String(z.zoom || 1));
     cur.layer.dataset.mode = z.mode;
-    refit();
+    // before render() the body is empty and would count as "text only": the window would have the height of nothing while the content is built and measured (map-svg got 150 px; 八尺様, 1.15.3)
+    if (cur.rendered) refit();
   }
   function refit() {
     if (!cur || !cur.layer || !cur.body) return;
@@ -233,6 +234,7 @@ export function createWindowManager(o = {}) {
       if (merged.render && cur.body) merged.render(cur.body, ctx);
       else if (merged.render) merged.render(null, ctx);
       if (dom() && cur && cur.body) {
+        cur.rendered = true;
         refit();
         if (typeof MutationObserver === "function") (cur.mo = new MutationObserver(refit)).observe(cur.body, { childList: true, subtree: true });
       }

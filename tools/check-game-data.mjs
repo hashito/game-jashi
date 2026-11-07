@@ -24,6 +24,14 @@ try { game = read(path.join(dir, 'game.json')); } catch (e) { console.error(`gam
 const schemaOf = (n) => read(path.join(schemaDir, `${n}.schema.json`));
 for (const p of validate(schemaOf('game'), game)) errors.push(`game.json ${p}`);
 
+// the pixel-art style keeps a ledger of every gameplay item (docs/pixel-style.md); the full audit is tools/audit-pixel-items.mjs
+if (game.style === 'pixel') {
+  if (game.noPrewarm) errors.push('game.json: noPrewarm cannot be used with style pixel (pixel games load everything before play, docs/pixel-style.md)');
+  const f = path.join(dir, 'pixel-items.json');
+  if (!fs.existsSync(f)) errors.push('pixel-items.json: file not found (game.json style is pixel)');
+  else { let v = null; try { v = read(f); } catch (e) { errors.push(`pixel-items.json: invalid JSON (${e.message})`); } if (v && !(v.items && v.items.length)) warns.push('pixel-items.json: no item yet (list every gameplay item and near prop)'); }
+}
+
 const keyToSchema = { plan: 'plan', items: 'items', docs: 'docs', tasks: 'tasks', stages: 'stages', endings: 'endings', releaseNotes: 'release-notes', monsters: 'monsters', things: 'things', terminals: 'terminals' };
 const data = { game };
 for (const [key, file] of Object.entries(game.data || {})) {

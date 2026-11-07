@@ -33,6 +33,8 @@ if (fs.existsSync(path.join(ROOT, 'assets/og-image.png'))) fs.copyFileSync(path.
 fs.copyFileSync(path.join(ROOT, 'assets/favicon.svg'), path.join(OUT, 'favicon.svg'));
 // the standard 3D format (standard 1.1): game-core fetches game.json at runtime (it names the data files)
 if (fs.existsSync(path.join(ROOT, 'game.json'))) fs.copyFileSync(path.join(ROOT, 'game.json'), path.join(OUT, 'game.json'));
+// the pixel style reads its ledger at boot to load every picture before play
+if (fs.existsSync(path.join(ROOT, 'pixel-items.json'))) fs.copyFileSync(path.join(ROOT, 'pixel-items.json'), path.join(OUT, 'pixel-items.json'));
 
 // site.json: titleSuffix (after the name), genre (JSON-LD), ogImageAlt
 const title = site.titleSuffix ? `${site.name}｜${site.titleSuffix}` : site.name;

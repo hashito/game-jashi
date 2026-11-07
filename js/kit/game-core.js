@@ -1,4 +1,4 @@
-/* game-kit 1279a7c: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
+/* game-kit adcf19c: js/game-core.js — edit in game-kit and run tools/kit-sync.js */
 // The standard bootstrap of a 3D first-person game (docs/standard-3d.md). Wires the standard modules from DATA (game.json + data/*.json):
 //   runtime base  render-presets (renderer, lights, fog, post, quality tiers; the preset may be a name or { base, ...overrides }),
 //                 frame-guard (?perf overlay, dynamic resolution, job queue), controller (walk / look / touch),
@@ -67,7 +67,7 @@ import { installGuidance, stepRoom } from './guidance.js';
 import { buildProgressionDef, taskAtStation, pickEnding } from './game-data.js';
 import { showEndingScene, foundEndings } from './ending-scene.js';
 
-export const CORE_VERSION = '1.14.4';
+export const CORE_VERSION = '1.15.3';
 // the mini game library's types (js/mg-library.js LIBRARY; test/story-hooks.test.mjs keeps the two equal): game.json "minigames" naming one of these loads the library
 export const MG_LIB_TYPES = ['pour', 'turn-dials', 'match-mark', 'timing', 'code-drums', 'tune-radio', 'trace-path', 'slide-tiles', 'search-dark', 'rotate-pipes', 'sort-items', 'memory-pairs', 'lock-pick', 'photo-focus', 'rhythm-taps', 'connect-dots', 'balance-scale', 'echo-bells', 'switch-panel', 'rotate-pieces', 'count-shadows', 'spot-difference', 'maze-path', 'cipher-wheel', 'steady-hand', 'pump-gauge', 'order-steps', 'compass-bearing', 'mirror-beam', 'kana-word', 'jug-measure', 'hold-breath', 'layer-board'];
 const $ = (id) => document.getElementById(id);
@@ -100,6 +100,7 @@ export async function loadGame(manifestUrl = 'game.json', o = {}) {
   const mods = { ...(o.mods || {}) };
   if (data.monsters && !mods.monsters) mods.monsters = await import('./monster-std.js');
   if (manifest.fx && !mods.fx) mods.fx = await import('./fx-std.js');
+  if (manifest.style === 'pixel' && !mods.pixel) mods.pixel = await import('./pixel-style.js');   // the pixel-art style (docs/pixel-style.md)
   if (manifest.things && data.things && !mods.things) mods.things = await import('./things.js');   // opt-in: a game's own legacy things.json (other format) is not touched
   if (data.terminals && !mods.terminals) mods.terminals = await import('./terminal-screen.js');
   if (manifest.voice && !mods.voice) mods.voice = await import('./voice-fx.js');
@@ -213,7 +214,8 @@ export function createGame(cfg) {
   scene.add(camera);
   const { base: presetBase, ...presetOver } = typeof manifest.preset === 'object' && manifest.preset ? manifest.preset : { base: manifest.preset || 'office' };
   const preset = Object.keys(presetOver).length ? extendPreset(presetBase || 'office', presetOver) : presetBase || 'office';   // a name, or { base, ...overrides } (JSON)
-  const renderer = ctx.renderer = createRenderer({ canvas, preset, antialias: !matchMedia('(pointer: coarse)').matches });
+  const pixelLowres = manifest.style === 'pixel' && !!manifest.pixel && manifest.pixel.world === 'lowres';
+  const renderer = ctx.renderer = createRenderer({ canvas, preset, antialias: !pixelLowres && !matchMedia('(pointer: coarse)').matches });
   let quality = null;
   if (manifest.quality !== false) {
     quality = new QualityTier({ storage: safe(() => localStorage), key: `${manifest.id}.quality`, env: browserEnv(renderer.getContext()), downMs: 1e9 });   // chosen once; no switching during play
@@ -222,9 +224,10 @@ export function createGame(cfg) {
   const look = ctx.look = applyPreset(renderer, scene, camera, preset, { cssParent: body, ...(quality ? { quality } : {}) });
   ctx.tier = look.tier;
   if (manifest.fx && cfg.mods && cfg.mods.fx) cfg.mods.fx.attachFx(look, ctx, manifest.fx);   // old-TV noise, scanlines, vignette, glitch, danger tint, red-black mist (manifest "fx", js/fx-std.js)
-  addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); look.resize && look.resize(); });
+  addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); ctx.pixelStyle && ctx.pixelStyle.resize(); look.resize && look.resize(); });
   renderer.setSize(innerWidth, innerHeight, false);
-  const fg = ctx.frameGuard = new FrameGuard({ renderer, overlay: FrameGuard.query(), dynres: { targetMs: 1000 / 40, min: ctx.isTouch ? 0.6 : 0.8, max: Math.min(devicePixelRatio || 1, look.tier === 'high' ? 2 : 1.5) } });   // ?perf shows hitches
+  if (manifest.style === 'pixel' && cfg.mods && cfg.mods.pixel) ctx.pixelStyle = cfg.mods.pixel.createPixelStyle({ THREE, renderer, scene, canvas, options: manifest.pixel || {} });
+  const fg = ctx.frameGuard = new FrameGuard({ renderer, overlay: FrameGuard.query(), dynres: pixelLowres ? undefined : { targetMs: 1000 / 40, min: ctx.isTouch ? 0.6 : 0.8, max: Math.min(devicePixelRatio || 1, look.tier === 'high' ? 2 : 1.5) } });   // ?perf shows hitches
   ctx.jobs = new JobQueue({ budgetMs: 3, guard: fg });
 
   // progression: the tasks ARE the goals
@@ -550,7 +553,7 @@ export function createGame(cfg) {
     };
     return mapDef.state ? { ...base, ...mapDef.state(ctx, base) } : base;
   };
-  tm.registerTab({ id: 'map', label: mapDef.label || '地図', icon: 'map', render: (el) => { el.innerHTML = ''; if (mapView) { el.appendChild(mapView.el); mapView.reset(); return; } mapView = createMapSvg({ plan: mapDef.plan ? mapDef.plan(ctx) : plan, container: el, getState: mapState, ...(mapDef.photo ? { photo: (id) => mapDef.photo(id, ctx) } : {}), ...(mapDef.names ? { names: mapDef.names } : {}), ...(mapDef.floorNames ? { floorNames: mapDef.floorNames } : {}), calm: settings.calm }); }, onShow: () => { if (mapView) { mapView.update(); focusMap(); } } });
+  tm.registerTab({ id: 'map', label: mapDef.label || '地図', icon: 'map', render: (el) => { el.innerHTML = ''; if (mapView) { el.appendChild(mapView.el); mapView.reset(); return; } mapView = createMapSvg({ plan: mapDef.plan ? mapDef.plan(ctx) : plan, container: el, getState: mapState, ...(mapDef.photo ? { photo: (id) => mapDef.photo(id, ctx) } : {}), ...(mapDef.names ? { names: mapDef.names } : {}), ...(mapDef.floorNames ? { floorNames: mapDef.floorNames } : {}), autoFit: !manifest.mapView && mapDef.autoFit !== false, calm: settings.calm }); }, onShow: () => { if (mapView) { mapView.update(); focusMap(); } } });
   // game.json "mapView" (standard 1.13, 五人分の朝: 「小さすぎて」): { "follow": true, "zoom": 2.4, "guide": "text", "revealAll": true, "minHeight": "min(40vh, 340px)" };
   // bus "map:open" and "map:close" { seconds } tell a game how long the map was looked at (a task "look at the map" done on a real look)
   const focusMap = () => setTimeout(() => {
@@ -884,11 +887,16 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     // compile every shader and upload every texture / mesh now, hidden parts included (a field, a monster, a held item shown later): the first
     // light switch, the first look into a new room or the first fast turn must not link programs mid-play (the hitches at 「電気をつけた / 素早く移動」)
     if (status) status.textContent = '描画を準備中…';
+    if (ctx.pixelStyle) {   // pixel games load first: every texture and every picture in the ledger is ready before the start button opens
+      ctx.pixelStyle.sweep();
+      try { ctx.warmImages = [...(ctx.warmImages || []), ...cfg.mods.pixel.pixelLedgerImages(await (await fetch(new URL('pixel-items.json', location.href).href)).json())]; } catch (e) { console.warn('pixel-items.json', e); }
+    }
     if (!manifest.noPrewarm) { try { ctx.prewarmReport = await prewarm(renderer, scene, camera, { hidden: true, extra: ctx.warmObjects || [] }); fg.armPrograms(); ctx.sceneAudit = auditScene(scene, renderer); if (ctx.sceneAudit.length && (ctx.debug || FrameGuard.query())) console.warn('[frame-guard] hitch risks: ' + ctx.sceneAudit.join(' / ')); } catch (e) { console.warn('prewarm', e); } }
     // pre-paint every standard window (invisible): the first real open must not pay for layout / glyphs / image decode (perf: 150-450 ms at 4x CPU)
     if (status) status.textContent = '画面を準備中…';
     ctx.warmReport = await warmStandardUi({ text: corpusOf([data, manifest]), images: [...imagesOf(data.items, data.docs, data.things), ...(ctx.warmImages || [])], wm, tm, pm, rn, inv, owned: () => ctx.owned(), minigames: Object.keys(MG.TASKS), minigame: (id) => ctx.minigame(id), abortMinigame: MG.abort, steps: ctx.warmSteps });
     ctx.booted = true;
+    if (ctx.pixelStyle) ctx.pixelStyle.booted = true;
     if (status) status.textContent = '';
     if (btn) { btn.disabled = false; btn.textContent = saved ? (td.restartLabel || 'はじめから') : 'はじめる'; }
     if ($('continue-btn')) $('continue-btn').classList.remove('hidden');
@@ -926,6 +934,7 @@ ${it.desc}` : ''}`, ...(it.photo ? { img: it.photo } : {}) };
     for (const s of systems) s.def.update(dt, ctx, active, s.inst);
     if (ctx.approach) ctx.approach.update(dt, active);
     if (ctx.audio.ctx) safe(() => ctx.audio.setListener(camera));
+    if (ctx.pixelStyle) ctx.pixelStyle.update(dt);
     const own = ext.reg.render.get('render');
     if (own) own.render(dt, ctx, look); else { look.update(dt, t / 1000, camera.position); look.render(); }   // registerRender: the game draws the frame (arakawa, heiengo)
   });

@@ -10,6 +10,8 @@
     "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "semver of the game; equals the newest release-notes entry" },
     "standard": { "type": "string", "description": "the game-kit standard it was built on, e.g. 1.0" },
     "theme": { "type": "string", "minLength": 1, "description": "data-theme value (a LIST of words): a base dark-industrial | paper-light | retro-crt, a mood theme of css/themes.css (shrine-night, summer-rural, hospital-cold, school-dusk, vhs-tape, snow-silence, deep-water, blood-washi, office-night, candle-room, fog-forest, pencil-diary), and/or the game's own" },
+    "style": { "enum": ["standard", "pixel"], "description": "the look of the game, chosen before making it (docs/pixel-style.md). standard (default): photos and normal materials. pixel: pixel art under rules PX01-PX09" },
+    "pixel": { "type": "object", "description": "style pixel only. world: texture (default, low-resolution textures on normal meshes) | lowres (the world is drawn small and enlarged). short: short side of the view in pixels with lowres (default 180)", "properties": { "world": { "enum": ["texture", "lowres"] }, "short": { "type": "integer", "minimum": 60, "maximum": 720 } }, "additionalProperties": false },
     "preset": { "type": ["string", "object"], "description": "render-presets preset: horror | dusk | office | zoo ... Or { base, ...overrides } (extendPreset; colours as numbers).", "properties": { "base": { "type": "string" } } },
     "modules": { "type": "array", "items": { "type": "string" }, "description": "kit modules the game uses (kit.json modules is derived from it)" },
     "titleImage": { "type": "string", "description": "title screen background image (relative to the game root)" },

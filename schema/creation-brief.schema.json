@@ -14,6 +14,7 @@
         "$schema": { "type": "string" }, "version": { "const": 1 }, "kind": { "const": "fps" },
         "id": { "$ref": "#/$defs/id" }, "title": { "$ref": "#/$defs/text" }, "premise": { "$ref": "#/$defs/text" }, "goal": { "$ref": "#/$defs/text" },
         "theme": { "enum": ["dark-industrial", "paper-light", "retro-crt"] },
+        "style": { "enum": ["standard", "pixel"], "description": "the look: standard (default) or pixel art, docs/pixel-style.md" },
         "rooms": { "type": "array", "minItems": 2, "maxItems": 6, "uniqueBy": "id", "items": {
           "type": "object", "additionalProperties": false, "required": ["id", "name", "kit", "task"], "properties": {
             "id": { "$ref": "#/$defs/key" }, "name": { "$ref": "#/$defs/text" },
