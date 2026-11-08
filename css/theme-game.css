@@ -46,6 +46,7 @@ body.js-gazing::after { /* pair-ok */ content: ""; position: fixed; inset: 0; z-
 .js-scope-bar i { /* pair-ok */ display: block; height: 100%; width: 0; background: var(--gf-accent, #c9805f); }
 .js-scope-next { pointer-events: auto; margin-top: 8px; width: 100%; min-height: 44px; }
 .js-scope-next[hidden] { display: none; }
+.js-scope.js-scope-wait { pointer-events: auto; cursor: pointer; }
 .js-scope[hidden] { display: none !important; }
 
 /* a found picture (top) and the face (the death) */

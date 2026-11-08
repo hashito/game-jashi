@@ -193,6 +193,13 @@ export default function story(ext, shared) {
       const nextBtn = q('.js-scope-next');
       const next = () => { waiting = false; nextBtn.hidden = true; if (i < SCOPE.length - 1) beat(i + 1); else finish(); };
       nextBtn.onclick = next;
+      // 5.6.1 (feedback 2026-11-08 「望遠鏡が解除できない」): a pointer lock that lands after release() (the lock asked for when the talk
+      // window closed) hid the cursor and sent every click to the canvas, so the button could not be pressed. The scene keeps the
+      // pointer free, the keys close it too, and 8 s after the button shows the whole lens takes a click or a tap as well.
+      let waitT = 0;
+      const onKey = (e) => { if (!waiting || closed || !['Enter', 'NumpadEnter', 'Space', 'Escape', 'KeyE'].includes(e.code)) return; e.preventDefault(); e.stopPropagation(); next(); };
+      const onLens = (e) => { if (!waiting || closed || waitT < 8 || e.target === nextBtn) return; e.preventDefault(); next(); };
+      addEventListener('keydown', onKey, true); el.addEventListener('click', onLens);
       const beat = (k) => { i = k; tb = 0; const b = SCOPE[k]; q('.js-scope-eyebrow').textContent = b.eyebrow; q('.js-scope-title').textContent = b.title; q('.js-scope-text').textContent = b.text; q('.js-scope-count').textContent = `0${k + 1} / 03`; if (k === 1) snd.sting(); if (k === 2) { fear.kick(0.5); ctx.fx && ctx.fx.glitch && ctx.fx.glitch(0.25, 0.4); } };
       beat(0);
       const frame = (now) => {
@@ -209,12 +216,14 @@ export default function story(ext, shared) {
         q('.js-scope-bar i').style.width = `${Math.min(100, (tt / total) * 100)}%`;
         q('.js-scope-rec span').textContent = `00:00:${String(Math.floor(tt)).padStart(2, '0')}`;
         // the lens moves on by itself (feedback 2026-11-02: the zoom plays, it is not a mini game); only the last card waits for the button
+        if (document.pointerLockElement) document.exitPointerLock();   // the button needs the cursor
+        if (waiting) { waitT += Math.min(0.1, dt); if (nextBtn.hidden) nextBtn.hidden = false; el.classList.toggle('js-scope-wait', waitT >= 8); }
         if (tb >= b.sec && !waiting) { if (i < SCOPE.length - 1) beat(i + 1); else if (ctx.qa) { next(); if (closed) return; } else { waiting = true; nextBtn.textContent = 'レンズから目を離す'; nextBtn.hidden = false; nextBtn.focus({ preventScroll: true }); } }
         if (closed) return;
         requestAnimationFrame(frame);
       };
       const finish = () => {
-        closed = true; cam.fov = fov0; cam.updateProjectionMatrix(); el.hidden = true; document.body.classList.remove('js-scoping'); F.root.visible = false; st.scope = false; if (scope) scope.visible = true;
+        closed = true; removeEventListener('keydown', onKey, true); el.classList.remove('js-scope-wait'); cam.fov = fov0; cam.updateProjectionMatrix(); el.hidden = true; document.body.classList.remove('js-scoping'); F.root.visible = false; st.scope = false; if (scope) scope.visible = true;
         const at = ctx.blockers.indexOf(scopeBlock); if (at >= 0) ctx.blockers.splice(at, 1);
         snd.sting(); fear.kick(0.8); done();
       };
