@@ -21,6 +21,11 @@ test('the lock opens on 3-1-4 and every wrong number gets a reply that helps', (
   const one = checkLock([3, 2, 4]); assert.deepEqual(one.wrong, [1]); assert.match(one.text, /林道の奥の杉/);
   assert.match(checkLock([1, 1, 1], 3).text, /南は三、北は一、西は四/);
 });
+test('the key box window shows sketches and never prints the direction', () => {
+  const src = fs.readFileSync(new URL('../js/ext/tower.js', import.meta.url), 'utf8');
+  assert.ok(src.includes('eyeSketch(t)'));
+  assert.ok(!src.includes('目の向き：'));
+});
 test('the aim wins after the needed seconds on target', () => {
   const a = createAim(); let ev = null, t = 0;
   while (!ev && t < 10) { ev = stepAim(a, { dt: 0.05, onTarget: true, closed: false }); t += 0.05; }

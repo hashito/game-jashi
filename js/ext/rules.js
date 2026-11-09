@@ -79,7 +79,7 @@ export function checkLock(digits, tries = 1) {
   const wrong = LOCK.answer.map((a, i) => (digits[i] === a ? -1 : i)).filter((i) => i >= 0);
   let text;
   if (digits.some((d) => d < 1 || d > 4)) text = '動かない。方角の数字は、一から四までだ。上の札の数字だけを使う。';
-  else text = `動かない。${wrong.map((i) => LOCK.trees[i].name).join('と')}の目は、その向きではない。写真の横の向きを、札で数字にする。`;
+  else text = `動かない。${wrong.map((i) => LOCK.trees[i].name).join('と')}の目は、その向きではない。写真の横の図で、とがった方の向きを読み、札で数字にする。`;
   if (tries >= 3) text += '　落ち着いて順に読む。南は三、北は一、西は四。';
   return { ok: false, wrong, text };
 }

@@ -1,5 +1,5 @@
 // 5.7: the two windows of the new stages.
-//   numberLock  the key cabinet of the old forestry post (L6): three dials, the compass plate and the three eye photos are in the window (G4)
+//   numberLock  the key cabinet of the old forestry post (L6): three dials, the compass plate, the three eye photos and a sketch of where each eye looks are in the window (G4); the player reads the sketch, the window never prints the direction
 //   createReflector  the board on the fire tower (L7): keep looking at the figure on the bridge while the light stays on it. It drains the mind;
 //               closing the eyes, or the mind running out, only resets the aim, never the game (rules.js AIM)
 import * as THREE from 'three';
@@ -8,6 +8,9 @@ import { AIM, LOCK, checkLock, createAim, stepAim } from './rules.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const KANJI = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 const PLATE = [['北', 1], ['東', 2], ['南', 3], ['西', 4]];
+const TURN = { 北: 0, 東: 90, 南: 180, 西: 270 };
+// a compass ring with only north marked, and a drop-shaped eye whose point is the way it looks
+const eyeSketch = (t) => `<svg class="js-eye-map" viewBox="0 0 64 72" role="img" aria-label="${esc(t.name)}の目の図。${esc(t.dir)}を見ている"><text x="32" y="11" text-anchor="middle" font-size="12" fill="currentColor">北</text><circle cx="32" cy="42" r="25" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/><g transform="rotate(${TURN[t.dir]} 32 42)"><path d="M32 17 C43 31 45 55 32 55 C19 55 21 31 32 17 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="miter"/><circle cx="32" cy="38" r="5.5" fill="currentColor"/></g></svg>`;
 
 export function numberLock(ctx, { sound } = {}) {
   if (ctx.qa) return Promise.resolve(true);
@@ -18,12 +21,11 @@ export function numberLock(ctx, { sound } = {}) {
     ctx.wm.open('js-lock', { title: '壁の鍵箱', size: 'm', onClose: () => resolve(ok), render: (el) => {
       el.innerHTML = `<div class="js-lock">
         <p class="js-lock-lead">三本の杉の目が見ている向きを、順に数字にする。</p>
-        <p class="js-lock-plate">${PLATE.map(([d, n]) => `<span><b>${d}</b>${KANJI[n]}</span>`).join('')}</p>
+        <p class="js-lock-plate">${PLATE.map(([d, n]) => `<span><b>${d}</b>${KANJI[n]}</span>`).join('')}<span class="js-lock-note">図は上が北で、とがった方が目の見ている向き。</span></p>
         <div class="js-lock-main">
           <div class="js-lock-dials">${LOCK.trees.map((t, i) => `<div class="js-dial" data-i="${i}"><span class="js-dial-name">${esc(t.short)}</span><button type="button" class="btn js-dial-b" data-d="1" aria-label="${esc(t.short)}の数字を増やす">▲</button><output class="js-dial-n">〇</output><button type="button" class="btn js-dial-b" data-d="-1" aria-label="${esc(t.short)}の数字を減らす">▼</button></div>`).join('')}</div>
-          <ol class="js-lock-recs">${LOCK.trees.map((t) => `<li><img src="${esc(t.photo)}" alt=""><span><b>${esc(t.name)}</b>目の向き：${esc(t.dir)}</span></li>`).join('')}</ol>
+          <div class="js-lock-side"><ol class="js-lock-recs">${LOCK.trees.map((t) => `<li><img src="${esc(t.photo)}" alt="">${eyeSketch(t)}<span><b>${esc(t.name)}</b></span></li>`).join('')}</ol><p class="js-lock-reply" role="status"></p></div>
         </div>
-        <p class="js-lock-reply" role="status"></p>
         <div class="js-choices js-lock-acts"><button type="button" class="btn primary" data-open>開ける</button><button type="button" class="btn" data-quit>やめる</button></div>
       </div>`;
       const reply = el.querySelector('.js-lock-reply'), dials = [...el.querySelectorAll('.js-dial')];

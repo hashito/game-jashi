@@ -242,7 +242,7 @@ export function dressMountain(ctx) {
     const kb = named('crank-box'); kb.position.set(-14.9, 0, 13.6);
     box(0.5, 1.0, 0.36, M.iron, 0, 0.5, 0, kb); box(0.52, 0.06, 0.4, M.rust, 0, 1.03, 0, kb);
     const hub = cyl(0.07, 0.07, 0.08, M.brass, 0.27, 0.7, 0, 12, kb); hub.rotation.z = Math.PI / 2; api.parts.crankHub = hub;
-    { const l = named('box_lock', kb); l.position.set(0.3, 0.9, 0); l.scale.setScalar(1.6); box(0.05, 0.1, 0.09, M.brass, 0, 0, 0, l); const sh = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.007, 6, 14, Math.PI), M.iron); sh.position.set(0, 0.05, 0); sh.rotation.y = Math.PI / 2; l.add(sh); }   // 5.7: 葛西さん's new padlock
+    { const l = named('box_lock', kb); l.position.set(0.3, 0.9, 0); l.scale.setScalar(2.4); box(0.05, 0.1, 0.09, M.brass, 0, 0, 0, l); const sh = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.007, 6, 14, Math.PI), M.iron); sh.position.set(0, 0.05, 0); sh.rotation.y = Math.PI / 2; l.add(sh); }   // 5.7: 葛西さん's new padlock
     const arm = named('crank-arm', kb); arm.position.set(0.32, 0.7, 0); cyl(0.02, 0.02, 0.3, M.iron, 0, 0.15, 0, 6, arm); cyl(0.03, 0.03, 0.12, M.red, 0.06, 0.3, 0, 8, arm).rotation.z = Math.PI / 2; arm.visible = false; api.parts.crankArm = arm;
     const door = world.doors.get('D_GATE'); if (door && door.mesh) door.mesh.material = new THREE.MeshBasicMaterial({ visible: false });
   }

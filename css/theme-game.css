@@ -80,8 +80,10 @@ body.js-gazing::after { /* pair-ok */ content: ""; position: fixed; inset: 0; z-
 .js-dial-b { min-height: 44px; padding: 0; }
 .js-dial-n { display: block; text-align: center; font: 700 1.9em/1.25 var(--js-serif); color: var(--gf-text); background: var(--gf-surface-2); border: 1px solid var(--gf-border); border-radius: var(--gf-radius, 4px); touch-action: none; cursor: ns-resize; }
 .js-lock-recs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.js-lock .js-lock-recs li { display: grid; grid-template-columns: auto 1fr; justify-items: start; justify-content: start; align-items: center; gap: 10px; font-size: 0.95em; line-height: 1.5; }
-.js-lock-recs img { width: 96px; height: 62px; margin: 0; object-fit: cover; border-radius: var(--gf-radius, 4px); flex: none; }
+.js-lock .js-lock-reply { margin-top: 6px; }
+.js-eye-map { width: 50px; height: 56px; color: var(--gf-text); flex: none; }
+.js-lock .js-lock-recs li { display: grid; grid-template-columns: auto auto 1fr; justify-items: start; justify-content: start; align-items: center; gap: 10px; font-size: 0.95em; line-height: 1.5; }
+.js-lock-recs img { width: 88px; height: 56px; margin: 0; object-fit: cover; border-radius: var(--gf-radius, 4px); flex: none; }
 .js-lock-recs b { display: block; font-weight: 600; }
 .js-lock-reply { min-height: 1.6em; line-height: 1.6; color: var(--gf-warn-label, var(--gf-accent-2)); }
 .js-lock-reply[data-ok="1"] { color: var(--gf-text); }
@@ -91,6 +93,7 @@ body.js-gazing::after { /* pair-ok */ content: ""; position: fixed; inset: 0; z-
 .js-lock-acts [hidden] { display: none; }
 @media (max-width: 499px) { .js-lock-main { grid-template-columns: 1fr; } .js-lock-dials { justify-content: center; } }
 @media (max-height: 499px) { .js-lock { gap: 5px; } .js-dial-b { min-height: 34px; } .js-dial-n { font-size: 1.5em; line-height: 1.15; } .js-lock-recs img { width: 54px; height: 36px; } .js-lock-recs { gap: 3px; } .js-lock-recs li { line-height: 1.3; } }
+@media (max-height: 499px) { .js-lock-recs { flex-direction: row; gap: 8px; } .js-lock .js-lock-recs li { flex: 1 1 0; min-width: 0; grid-template-columns: minmax(0, 60px) 42px; gap: 4px 6px; font-size: 0.85em; } .js-lock-recs img { width: 100%; height: 47px; } .js-eye-map { width: 42px; height: 47px; } .js-lock-recs li span { grid-column: 1 / -1; white-space: nowrap; } }
 
 /* 5.7: the hole of the reflector: a dark ring round the view, the card at the top (U14), the way out */
 .js-aim { position: fixed; inset: 0; z-index: 44; pointer-events: none; }
@@ -106,6 +109,7 @@ body.js-gazing::after { /* pair-ok */ content: ""; position: fixed; inset: 0; z-
 .js-flash { /* pair-ok */ position: fixed; inset: 0; z-index: 46; pointer-events: none; background: #ffe9c4; animation: js-flash 0.9s ease-out both; }
 @keyframes js-flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
 body.js-aiming #prompt { visibility: hidden; }
+@media (max-height: 499px) { body.js-aiming #say { visibility: hidden; } }
 @media (max-height: 499px) { .js-aim-eyebrow { display: none; } .js-aim-title { font-size: 1.1em; } .js-aim-text { font-size: 0.9em; margin-bottom: 4px; } .js-aim-quit { bottom: 8px; } }
 .js-aim[hidden], .js-flash[hidden] { display: none !important; }
 
