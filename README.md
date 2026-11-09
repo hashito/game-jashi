@@ -35,7 +35,7 @@ npm run smoke:mobile
 
 ## 声
 
-修司の無線の声は VOICEVOX で作った（**VOICEVOX:麒ヶ島宗麟**、ノーマル）。台詞と設定は `tools/local-media-voices.json`、制作の手順は `tools/local-media-README.md` にある。ゲームではタイトルの注記にクレジットを出している。
+修司の無線の声は VOICEVOX で作った（**VOICEVOX:麒ヶ島宗麟**、ノーマル）。電話の声は **VOICEVOX:白上虎太郎**（ふつう、speaker 12、速さ0.88、`assets/audio/phone-*.wav`）。声の点検と不足分の生成は `node tools/check-voices.mjs`（`--resynth`、`--make`）。台詞と設定は `tools/local-media-voices.json`、制作の手順は `tools/local-media-README.md` にある。ゲームではタイトルの注記にクレジットを出している。
 
 <!-- scene-links:start -->
 ## テスト用の場面リンク

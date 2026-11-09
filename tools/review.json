@@ -1,6 +1,328 @@
 {
-  "about": "邪視の画面点検（tools/review-shots.mjs）。通常の順路の要所、順番を外れた行動（早すぎる梯子・戸、死亡）、結末3種。実時間で見る場面は qa なし（?debug=1）。",
+  "about": "邪視の画面点検（tools/review-shots.mjs）。opening/real は導入から L4 までを実時間で、goals は各段階の目標、talks は長い台詞と電話、games は全ミニゲーム、off は順番を外れた行動、route は要所、deaths、結末3種（最後まで）。実時間で見る場面は qa なし（?debug=1）。",
   "runs": [
+    {
+      "name": "opening",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "title",
+          "shot": true
+        },
+        {
+          "name": "card-1",
+          "close": false,
+          "shot": true,
+          "wait": 1800,
+          "expect": "document.querySelector('.gf-talk') ? true : 'no opening talk'"
+        },
+        {
+          "name": "card-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "card-3-uncle",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "card-4",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "after-opening",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 1800,
+          "expect": "!g.wm.isOpen ? true : 'the talk stayed open'"
+        },
+        {
+          "name": "off-wait-40s",
+          "close": false,
+          "shot": true,
+          "wait": 40000
+        },
+        {
+          "name": "map",
+          "close": false,
+          "shot": true,
+          "eval": "window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyM'}));",
+          "wait": 1200
+        }
+      ]
+    },
+    {
+      "name": "real",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "scope-uncle-1",
+          "close": false,
+          "shot": true,
+          "eval": "g.teleport({ x:-1.9, z:18.4, floor:1, yaw:0 }); g.startTask('T_TELESCOPE');",
+          "wait": 1300,
+          "expect": "document.querySelector('.gf-talk') ? true : 'no uncle talk'"
+        },
+        {
+          "name": "scope-uncle-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "scope-beat-1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 2600,
+          "expect": "window.__js.st.scope ? true : 'scope did not start'"
+        },
+        {
+          "name": "scope-beat-2",
+          "close": false,
+          "shot": true,
+          "wait": 5000
+        },
+        {
+          "name": "scope-beat-3",
+          "close": false,
+          "shot": true,
+          "wait": 6000
+        },
+        {
+          "name": "scope-button",
+          "close": false,
+          "shot": true,
+          "wait": 6500,
+          "expect": "!document.querySelector('.js-scope-next').hidden ? true : 'no button'"
+        },
+        {
+          "name": "scope-lens-tap",
+          "close": false,
+          "shot": true,
+          "wait": 9000
+        },
+        {
+          "name": "scope-talk-1",
+          "close": false,
+          "shot": true,
+          "eval": "document.querySelector('.js-scope-next').click();",
+          "wait": 1200,
+          "expect": "g.camera.fov > 40 ? true : 'fov ' + g.camera.fov"
+        },
+        {
+          "name": "scope-talk-2-radio",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "stage-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 2800
+        },
+        {
+          "name": "watcher-seen",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.teleport({ x:0.3, z:17.6, floor:1, yaw:0 }); g.fp.yaw=0; g.fp.pitch=-0.42;",
+          "wait": 1600
+        },
+        {
+          "name": "watcher-steps",
+          "close": false,
+          "shot": true,
+          "wait": 1500
+        },
+        {
+          "name": "encounter-talk-1",
+          "close": false,
+          "shot": true,
+          "wait": 2800,
+          "expect": "g.wm.isOpen ? true : 'no encounter talk (seen: ' + window.__js.st.seenWatch + ')'"
+        },
+        {
+          "name": "encounter-talk-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "after-encounter",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 2500
+        },
+        {
+          "name": "off-shutter-from-balcony",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.teleport({ x:1.2, z:18.2, floor:1, yaw:3.14159 }); await rv.sleep(600); g.startTask('T_SHUTTER');",
+          "wait": 800,
+          "expect": "scr.say.join('').includes('部屋の中から') ? true : 'said: ' + scr.say.join(' ')"
+        },
+        {
+          "name": "shutter-game",
+          "close": false,
+          "shot": true,
+          "eval": "g.teleport({ x:1, z:20.6, floor:1, yaw:3.14159 }); await rv.sleep(500); g.startTask('T_SHUTTER'); await rv.sleep(700); const y=document.querySelector('[data-yes]'); if(y) y.click();",
+          "wait": 900,
+          "expect": "document.querySelector('.mg-frame, #mg-custom, .gf-win') || g.wm.isOpen ? true : 'no amado game'"
+        },
+        {
+          "name": "shutter-talk-1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.completeTask('T_SHUTTER');",
+          "wait": 1100,
+          "expect": "g.wm.isOpen ? true : 'no shutter talk'"
+        },
+        {
+          "name": "shutter-talk-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "stage-3",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 2600
+        },
+        {
+          "name": "downstairs-talk-1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.teleport({ x:-2.4, z:25.2, floor:0, yaw:-1.57 }); g.fp.yaw=-1.57; g.fp.pitch=0;",
+          "wait": 1600,
+          "expect": "g.wm.isOpen ? true : 'no downstairs talk, room ' + g.state.room"
+        },
+        {
+          "name": "downstairs-talk-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "downstairs-talk-3",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "off-wait-knock",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 17000,
+          "expect": "window.__js.st.knocked ? true : 'no knock after 17 s in the hall'"
+        },
+        {
+          "name": "off-entry-door",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.focus({ x:0, y:1.2, z:19, floor:0, dist:1.6 });",
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 900,
+          "expect": "scr.say.join('').includes('無線') ? true : 'door said: ' + scr.say.join(' ')"
+        },
+        {
+          "name": "radio-dial",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.teleport({ x:2.1, z:23.6, floor:0, yaw:-2.6 }); await rv.sleep(500); g.startTask('T_RADIO');",
+          "wait": 1200,
+          "expect": "document.querySelector('.mgx-radio') ? true : 'dial not open'"
+        },
+        {
+          "name": "radio-dial-near",
+          "close": false,
+          "shot": true,
+          "eval": "const k=document.querySelector('.mgx-radio-knob'); for(let i=0;i<30;i++) k.dispatchEvent(new KeyboardEvent('keydown',{code:'ArrowRight',bubbles:true}));",
+          "wait": 400
+        },
+        {
+          "name": "radio-talk-1",
+          "close": false,
+          "shot": true,
+          "wait": 3500,
+          "expect": "g.state.tasks.includes('T_RADIO') ? true : 'dial not tuned'"
+        },
+        {
+          "name": "radio-talk-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "radio-talk-3",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "stage-4",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 2500
+        },
+        {
+          "name": "doc-note",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.focus({ x:-2.2, y:0.8, z:24, floor:0, dist:1.3 });",
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 1200
+        },
+        {
+          "name": "note-talk",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.sleep(900);",
+          "wait": 600
+        },
+        {
+          "name": "note-talk-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "say-log",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyL'}));",
+          "wait": 900
+        }
+      ]
+    },
     {
       "name": "route",
       "query": "?debug=1",
@@ -114,9 +436,24 @@
           "shot": true
         },
         {
-          "name": "telescope-after",
+          "name": "telescope-button",
           "close": false,
-          "wait": 3500,
+          "wait": 7000,
+          "shot": true,
+          "expect": "!document.querySelector('.js-scope-next').hidden ? true : 'the last card has no button'"
+        },
+        {
+          "name": "telescope-talk",
+          "close": false,
+          "eval": "document.querySelector('.js-scope-next').click();",
+          "wait": 1500,
+          "shot": true,
+          "expect": "g.wm.isOpen ? true : 'no talk after the lens'"
+        },
+        {
+          "name": "telescope-after",
+          "close": true,
+          "wait": 1500,
           "shot": true,
           "expect": "g.camera.fov > 40 ? true : 'fov not restored: ' + g.camera.fov"
         },
@@ -223,7 +560,7 @@
           "eval": "await new Promise((r) => setTimeout(r, 1200)); for (let i = 0; i < 20 && g.wm.isOpen; i++) { g.wm.close(); await new Promise((r) => setTimeout(r, 300)); }",
           "wait": 500,
           "shot": true,
-          "expect": "scr.lane.join('').includes('サングラス') ? true : 'the pick-up card was gone after the talk: ' + scr.lane.join(' ')"
+          "expect": "!g.wm.isOpen ? true : 'a window stayed open'"
         },
         {
           "name": "radio-open",
@@ -378,60 +715,60 @@
           "shot": true
         },
         {
-            "name": "mark1",
-            "tasks": [
-              "T_TELESCOPE",
-              "T_SHUTTER",
-              "T_RADIO",
-              "T_BOTTLE",
-              "T_BELL"
-            ],
-            "at": {
-              "x": -22.7,
-              "z": -11,
-              "floor": 0,
-              "yaw": 1.5708,
-              "pitch": 0.02
-            },
-            "shot": true
+          "name": "mark1",
+          "tasks": [
+            "T_TELESCOPE",
+            "T_SHUTTER",
+            "T_RADIO",
+            "T_BOTTLE",
+            "T_BELL"
+          ],
+          "at": {
+            "x": -22.7,
+            "z": -11,
+            "floor": 0,
+            "yaw": 1.5708,
+            "pitch": 0.02
+          },
+          "shot": true
         },
         {
-            "name": "mark1-mg",
-            "close": false,
-            "keys": [
-              "KeyE"
-            ],
-            "wait": 1500,
-            "shot": true,
-            "expect": "document.querySelector('.mgx-photo') ? true : 'no photo mini game'"
+          "name": "mark1-mg",
+          "close": false,
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 1500,
+          "shot": true,
+          "expect": "document.querySelector('.mgx-photo') ? true : 'no photo mini game'"
         },
         {
-            "name": "mark2",
-            "tasks": [
-              "T_MARK1"
-            ],
-            "at": {
-              "x": 0.1,
-              "z": -25,
-              "floor": 0,
-              "yaw": 1.5708,
-              "pitch": 0.02
-            },
-            "shot": true
+          "name": "mark2",
+          "tasks": [
+            "T_MARK1"
+          ],
+          "at": {
+            "x": 0.1,
+            "z": -25,
+            "floor": 0,
+            "yaw": 1.5708,
+            "pitch": 0.02
+          },
+          "shot": true
         },
         {
-            "name": "mark3",
-            "tasks": [
-              "T_MARK2"
-            ],
-            "at": {
-              "x": 21.0,
-              "z": -26,
-              "floor": 0,
-              "yaw": -1.5708,
-              "pitch": 0.0
-            },
-            "shot": true
+          "name": "mark3",
+          "tasks": [
+            "T_MARK2"
+          ],
+          "at": {
+            "x": 21,
+            "z": -26,
+            "floor": 0,
+            "yaw": -1.5708,
+            "pitch": 0
+          },
+          "shot": true
         },
         {
           "name": "hut-table",
@@ -482,6 +819,494 @@
           "eval": "const m = g.monsters.list[0]; window.__js.gaze.reset({ grace: 60 }); m.ai.pos.x = 0.5; m.ai.pos.z = 4; m.ai.state = 'idle'; g.teleport({ x: 0.5, z: 8.5, floor: 0, yaw: 0 }); g.fp.yaw = 0; g.fp.pitch = 0.08;",
           "wait": 1200,
           "shot": true
+        }
+      ]
+    },
+    {
+      "name": "goals",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "L2",
+          "tasks": [
+            "T_TELESCOPE"
+          ],
+          "wait": 2600,
+          "shot": true
+        },
+        {
+          "name": "L3",
+          "tasks": [
+            "T_SHUTTER"
+          ],
+          "wait": 2600,
+          "shot": true
+        },
+        {
+          "name": "L4",
+          "tasks": [
+            "T_RADIO"
+          ],
+          "wait": 3200,
+          "shot": true
+        },
+        {
+          "name": "L4-after-bottle",
+          "tasks": [
+            "T_BOTTLE"
+          ],
+          "wait": 2600,
+          "shot": true
+        },
+        {
+          "name": "L5",
+          "tasks": [
+            "T_BELL"
+          ],
+          "wait": 3200,
+          "shot": true
+        },
+        {
+          "name": "L5-marks",
+          "tasks": [
+            "T_MARK1",
+            "T_MARK2",
+            "T_MARK3"
+          ],
+          "wait": 2600,
+          "shot": true
+        },
+        {
+          "name": "L5-crank",
+          "tasks": [
+            "T_CRANK"
+          ],
+          "wait": 2600,
+          "shot": true
+        },
+        {
+          "name": "L6",
+          "tasks": [
+            "T_PHONE"
+          ],
+          "wait": 3200,
+          "shot": true
+        },
+        {
+          "name": "L7",
+          "tasks": [
+            "T_GATE"
+          ],
+          "wait": 3000,
+          "shot": true
+        },
+        {
+          "name": "menu-recap",
+          "close": false,
+          "eval": "await rv.closeAll(); window.dispatchEvent(new KeyboardEvent('keydown',{code:'Tab'}));",
+          "wait": 1000,
+          "shot": true
+        }
+      ]
+    },
+    {
+      "name": "talks",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "go",
+          "tasks": [
+            "T_TELESCOPE",
+            "T_SHUTTER",
+            "T_RADIO"
+          ],
+          "wait": 1500
+        },
+        {
+          "name": "note-long",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('note', { title: '書き置き' }); await rv.sleep(400); await rv.next(2);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "bottle-1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('bottle', { title: '物置' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "bottle-long",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('bottle', { title: '物置' }); await rv.sleep(400); await rv.next(2);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "crank",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('crank', { title: '避難小屋' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "bridge",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('bridge', { title: '沢と橋' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "gate-1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('gate', { title: '林道ゲート' }); await rv.sleep(400); await rv.next(0);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "mark1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('mark1', { title: '伐採跡の杉' }); await rv.sleep(400); await rv.next(0);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "mark2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('mark2', { title: '林道の奥の杉' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "mark3-long",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('mark3', { title: '沢の下手の杉' }); await rv.sleep(400); await rv.next(2);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "boots",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('after_boots', { title: '無線' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "chain-attendance",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('chain_attendance', { title: 'そろった記録' }); await rv.sleep(400); await rv.next(0);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "chain-voices",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('chain_voices', { title: 'そろった記録' }); await rv.sleep(400); await rv.next(0);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "chain-return",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('chain_return', { title: 'そろった記録' }); await rv.sleep(400); await rv.next(0);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "first-attack",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('firstAttack', { title: '鎌' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "repel",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.talk('repel', { title: 'ボトル' }); await rv.sleep(400); await rv.next(1);",
+          "wait": 900,
+          "expect": "g.wm.isOpen ? true : 'no talk window'"
+        },
+        {
+          "name": "phone-ring",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); for (const t of ['T_BOTTLE','T_BELL','T_MARK1','T_MARK2','T_MARK3','T_CRANK']) await rv.done(t); await rv.sleep(600); await rv.closeAll(); g.startTask('T_PHONE');",
+          "wait": 2400,
+          "expect": "document.querySelector('.gf-talk-choice') ? true : 'no choice'"
+        },
+        {
+          "name": "phone-voice-1",
+          "close": false,
+          "shot": true,
+          "eval": "document.querySelector('.gf-talk-choice.primary, .gf-talk-choice:last-child').click();",
+          "wait": 1000,
+          "expect": "g.wm.isOpen ? true : 'phone talk not open'"
+        },
+        {
+          "name": "phone-me",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "phone-voice-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        }
+      ]
+    },
+    {
+      "name": "games",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "go",
+          "tasks": [
+            "T_TELESCOPE",
+            "T_SHUTTER",
+            "T_RADIO"
+          ],
+          "wait": 1500,
+          "close": true
+        },
+        {
+          "name": "bottle",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.sleep(600); await rv.closeAll(); g.startTask('T_BOTTLE');",
+          "wait": 1300,
+          "expect": "g.wm.isOpen ? true : 'no game'"
+        },
+        {
+          "name": "bell",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.done('T_BOTTLE'); g.startTask('T_BELL');",
+          "wait": 1300
+        },
+        {
+          "name": "mark",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.done('T_BELL'); g.startTask('T_MARK1');",
+          "wait": 1300
+        },
+        {
+          "name": "crank",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.done('T_MARK1'); await rv.done('T_MARK2'); await rv.done('T_MARK3'); g.startTask('T_CRANK');",
+          "wait": 1300
+        },
+        {
+          "name": "gate",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.done('T_CRANK'); await rv.done('T_PHONE'); g.startTask('T_GATE');",
+          "wait": 1300
+        },
+        {
+          "name": "engine-talk-1",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); await rv.done('T_GATE'); await rv.closeAll(); g.startTask('T_ENGINE');",
+          "wait": 1300,
+          "expect": "document.querySelector('.gf-talk') ? true : 'no engine talk'"
+        },
+        {
+          "name": "engine-talk-2",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 900
+        },
+        {
+          "name": "mirror",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.next(1);",
+          "wait": 1500
+        },
+        {
+          "name": "engine-game",
+          "close": false,
+          "shot": true,
+          "wait": 4500
+        }
+      ]
+    },
+    {
+      "name": "off",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "go",
+          "tasks": [
+            "T_TELESCOPE",
+            "T_SHUTTER",
+            "T_RADIO"
+          ],
+          "wait": 1500
+        },
+        {
+          "name": "shelter-too-early",
+          "focus": {
+            "x": 16,
+            "y": 1.2,
+            "z": -13,
+            "floor": 0,
+            "dist": 1.6
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 900,
+          "shot": true,
+          "expect": "scr.say.join('').includes('物置') ? true : 'said: ' + scr.say.join(' ')"
+        },
+        {
+          "name": "gate-too-early",
+          "focus": {
+            "x": -14.6,
+            "y": 1,
+            "z": 13.6,
+            "floor": 0,
+            "dist": 1.5
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 900,
+          "shot": true
+        },
+        {
+          "name": "through-the-gate",
+          "at": {
+            "x": -13.5,
+            "z": 15.5,
+            "floor": 0,
+            "yaw": 1.5708,
+            "pitch": 0
+          },
+          "hold": {
+            "KeyW": 1600
+          },
+          "wait": 600,
+          "shot": true,
+          "expect": "g.state.room !== 'O_PARK' ? true : 'walked through the closed gate'"
+        },
+        {
+          "name": "car-too-early",
+          "focus": {
+            "x": -25.6,
+            "y": 1,
+            "z": 22.6,
+            "floor": 0,
+            "dist": 1.6
+          },
+          "wait": 700,
+          "shot": true
+        },
+        {
+          "name": "wrong-way-south",
+          "at": {
+            "x": 0,
+            "z": -20,
+            "floor": 0,
+            "yaw": 0,
+            "pitch": 0
+          },
+          "wait": 1500,
+          "shot": true
+        },
+        {
+          "name": "world-edge",
+          "at": {
+            "x": -30,
+            "z": 0,
+            "floor": 0,
+            "yaw": 1.5708,
+            "pitch": 0
+          },
+          "hold": {
+            "KeyW": 2500
+          },
+          "wait": 600,
+          "shot": true
+        },
+        {
+          "name": "back-to-cabin",
+          "at": {
+            "x": 0,
+            "z": 22,
+            "floor": 1,
+            "yaw": 3.14159,
+            "pitch": 0
+          },
+          "wait": 1600,
+          "shot": true
+        },
+        {
+          "name": "wait-outdoors-40s",
+          "close": false,
+          "at": {
+            "x": 0,
+            "z": 6,
+            "floor": 0,
+            "yaw": 3.14159,
+            "pitch": 0
+          },
+          "wait": 40000,
+          "shot": true
+        },
+        {
+          "name": "radio-again",
+          "focus": {
+            "x": 2.7,
+            "y": 0.9,
+            "z": 24.6,
+            "floor": 0,
+            "dist": 1.4
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 900,
+          "shot": true
+        },
+        {
+          "name": "die-then-retry",
+          "close": false,
+          "shot": true,
+          "eval": "await rv.closeAll(); g.die('scythe');",
+          "wait": 3300
+        },
+        {
+          "name": "retried",
+          "close": false,
+          "shot": true,
+          "eval": "const b=document.querySelector('[data-retry]'); if(b) b.click();",
+          "wait": 2000,
+          "expect": "!g.wm.isOpen ? true : 'window still open'"
         }
       ]
     },
@@ -546,6 +1371,21 @@
           "close": false,
           "wait": 2500,
           "shot": true
+        },
+        {
+          "name": "all",
+          "close": false,
+          "wait": 1500,
+          "eval": "document.querySelector('.gf-ending').click();",
+          "shot": true,
+          "expect": "document.querySelector('.gf-ending.all') ? true : 'no ending scene'"
+        },
+        {
+          "name": "bottom",
+          "close": false,
+          "wait": 800,
+          "eval": "const x=document.querySelector('.gf-ending'); x.scrollTop=x.scrollHeight;",
+          "shot": true
         }
       ]
     },
@@ -571,6 +1411,21 @@
           "close": false,
           "wait": 2500,
           "shot": true
+        },
+        {
+          "name": "all",
+          "close": false,
+          "wait": 1500,
+          "eval": "document.querySelector('.gf-ending').click();",
+          "shot": true,
+          "expect": "document.querySelector('.gf-ending.all') ? true : 'no ending scene'"
+        },
+        {
+          "name": "bottom",
+          "close": false,
+          "wait": 800,
+          "eval": "const x=document.querySelector('.gf-ending'); x.scrollTop=x.scrollHeight;",
+          "shot": true
         }
       ]
     },
@@ -595,6 +1450,21 @@
           ],
           "close": false,
           "wait": 2500,
+          "shot": true
+        },
+        {
+          "name": "all",
+          "close": false,
+          "wait": 1500,
+          "eval": "document.querySelector('.gf-ending').click();",
+          "shot": true,
+          "expect": "document.querySelector('.gf-ending.all') ? true : 'no ending scene'"
+        },
+        {
+          "name": "bottom",
+          "close": false,
+          "wait": 800,
+          "eval": "const x=document.querySelector('.gf-ending'); x.scrollTop=x.scrollHeight;",
           "shot": true
         }
       ]

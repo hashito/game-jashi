@@ -65,7 +65,7 @@ export default function story(ext, shared) {
 
   const MGX = useMinigames(ext, [
     [steadyHand, { type: 'steady-hand' }],
-    [tuneRadio, { type: 'tune-radio', hooks: { sound: (k, c, v) => snd && snd.radioStatic(k !== 'ok' && k !== 'done', typeof v === 'number' ? v : 0) } }],
+    [tuneRadio, { type: 'tune-radio', hooks: { sound: (k, c, v) => { if (snd) snd.radioStatic(k !== 'ok' && k !== 'done', typeof v === 'number' ? v : 0); if (k === 'turn' && v > 0.75 && !st.dialHeard && ctx.voiceLine) { st.dialHeard = true; ctx.voiceLine('assets/audio/uncle-dial.wav', 'radio'); } } } }],
     [sortItems, { type: 'sort-items' }], [timing, { type: 'timing' }], [photoFocus, { type: 'photo-focus' }], [searchDark, { type: 'search-dark' }], [pumpGauge, { type: 'pump-gauge', hooks: { sound: () => snd && snd.chain() } }],
     [holdBreath, { type: 'hold-breath', hooks: { sound: (k) => { if (!snd) return; if (k === 'near' || k === 'step') snd.steps({ gain: 0.8 }); if (k === 'fail') snd.breath(); } } }],
   ]);
@@ -80,7 +80,7 @@ export default function story(ext, shared) {
     kicker: 'JASHI ／ A FIRST-PERSON MOUNTAIN HORROR',
     tagline: '叔父の別荘の二階、ベランダの望遠鏡で見てしまった白い姿。目が合えば心を削られ、近づかれれば鎌が振り下ろされる。日が暮れる前に、山を下りる。',
     meta: '七つの段階 ・ 約15分 ・ PC・スマホ ・ ヘッドホン推奨',
-    note: '怪異の姿、襲われて倒れる場面、驚かせる表現があります（設定の「おだやか」で弱められます）。ネット怪談「邪視」の骨組みを借りた創作です。修司の声：VOICEVOX:麒ヶ島宗麟。',
+    note: '怪異の姿、襲われて倒れる場面、驚かせる表現があります（設定の「おだやか」で弱められます）。ネット怪談「邪視」の骨組みを借りた創作です。修司の声：VOICEVOX:麒ヶ島宗麟、電話の声：VOICEVOX:白上虎太郎。',
   });
   ext.registerPersist('jashi', {
     serialize: () => ({ uncleGone: st.uncleGone, deaths: st.deaths, played: st.played, charges: gaze ? gaze.charges : st.charges, seenWatch: st.seenWatch, knocked: st.knocked, chainsTold: st.chainsTold }),
@@ -203,7 +203,8 @@ export default function story(ext, shared) {
       const beat = (k) => { i = k; tb = 0; const b = SCOPE[k]; q('.js-scope-eyebrow').textContent = b.eyebrow; q('.js-scope-title').textContent = b.title; q('.js-scope-text').textContent = b.text; q('.js-scope-count').textContent = `0${k + 1} / 03`; if (k === 1) snd.sting(); if (k === 2) { fear.kick(0.5); ctx.fx && ctx.fx.glitch && ctx.fx.glitch(0.25, 0.4); } };
       beat(0);
       const frame = (now) => {
-        const dt = Math.min(0.1, (now - last) / 1000) * (ctx.qa ? 40 : 1); last = now; tb += dt; tt += dt;
+        if (closed) return;   // 5.6.2: the frame already queued when the button closed the scene put the zoomed-in field of view back (a stuck 3.6-degree view for the rest of the game)
+        const dt =Math.min(0.1, (now - last) / 1000) * (ctx.qa ? 40 : 1); last = now; tb += dt; tt += dt;
         const b = SCOPE[i], k = Math.min(1, tb / b.sec), ease = k * k * (3 - 2 * k);
         // the figure: walking across the trail, then still with its back to the villa, then the head turning (the body does not)
         const away = Math.atan2(REVEAL.x - eye.x, REVEAL.z - eye.z);   // facing away from the balcony
@@ -322,6 +323,9 @@ export default function story(ext, shared) {
     F = makeJashi({ detail: 1 }); F.root.visible = false; c.scene.add(F.root);
     gaze = createGaze(c, { shared, mountain: M, sound: snd, fear, onDeath: (r) => c.die(r) });
     gaze.charges = st.charges;
+    // 5.6.2: the things you can walk up to too early say what is missing and where, not the kit's plain "not yet"
+    { const early = { T_GATE: '巻上げの箱だ。差し込むハンドルが要る。東の避難小屋の床にあるはずだ。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_CRANK: '先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
+      const base = c.canStart; c.canStart = (t) => { const r = base(t); return r !== true && early[t.id] && !c.state.tasks.includes(t.id) ? early[t.id] : r; }; }
     // the bell is something to use once its muffle is back (T_BELL): an invisible handle on the frame
     const bm = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.8), new THREE.MeshBasicMaterial({ visible: false })); bm.position.set(-12.7, 1.4, -6.6); bm.name = 'js-bell'; bm.userData.interact = { kind: 'js-bell', id: 'bell' }; c.world.group.add(bm);
     // the station is the first use; afterwards the frame stays usable
@@ -353,6 +357,7 @@ export default function story(ext, shared) {
   ext.on('player:room', ({ to }) => {
     if (st.firstRoom[to]) return; st.firstRoom[to] = true;
     if (to === 'CAB_HALL' && lvl() === 2 && !done('T_RADIO')) setTimeout(() => talk('downstairs', { title: '一階' }), 500);
+    if (to === 'CAB_UP' && lvl() >= 3 && !done('T_ENGINE')) setTimeout(() => talk('nearCabin', { title: '二階' }), 500);   // 5.6.2: the player who walks back up to wait
     if (to === 'O_BRIDGE' && lvl() >= 4) setTimeout(() => talk('bridge', { title: '沢と橋' }), 600);
     if (to === 'SHELTER') snd.rustle({ gain: 0.5 });
   });

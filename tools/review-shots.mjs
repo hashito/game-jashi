@@ -1,7 +1,7 @@
 // Screenshot review (feedback 2026-11-02: "screenshot every key point, and check more than the normal route").
 // Runs headless (tools/cdp.mjs, never a visible window), takes every shot listed in a review plan and writes a report with what the screen
 // said at each one (the [E] prompt, the thought band, the open window), so a person (or Claude) can look at every picture.
-//   node tools/review-shots.mjs [review.json] [--out shots/review] [--only name,name] [--mobile]
+//   node tools/review-shots.mjs [review.json] [--out shots/review] [--only name,name] [--mobile] [--portrait]
 // review.json: { "runs": [ { "name", "query": "?qa=1", "steps": [ step, ... ] } ] }   (each run is a fresh page load)
 // step: { "name", "tasks": [ids to complete first], "flags": [..], "items": [ids to own], "close": true,
 //         "focus": { "x", "y", "z", "floor", "dist" }  -> stand at a clear spot `dist` m away and look at the point (picks a direction no wall blocks)
@@ -15,9 +15,10 @@ import { launch } from './cdp.mjs';
 const args = process.argv.slice(2);
 const opt = (k, d) => (args.includes(`--${k}`) ? args[args.indexOf(`--${k}`) + 1] : d);
 const planFile = args.filter((a, i) => !a.startsWith('--') && !['--out', '--only'].includes(args[i - 1]))[0] || 'tools/review.json';
-const mobile = args.includes('--mobile');
+const portrait = args.includes('--portrait');
+const mobile = args.includes('--mobile') || portrait;
 const only = opt('only', '') ? opt('only').split(',') : null;
-const out = opt('out', mobile ? 'shots/review-mobile' : 'shots/review');
+const out = opt('out', portrait ? 'shots/review-portrait' : mobile ? 'shots/review-mobile' : 'shots/review');
 const plan = JSON.parse(fs.readFileSync(planFile, 'utf8'));
 fs.mkdirSync(out, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,6 +29,9 @@ for (let i = 0; i < 50; i++) { if (await fetch(base).then((r) => r.ok).catch(() 
 
 // in-page helpers: close every window (level-up notes arrive a moment after a task), aim at a point from a clear side, read the screen
 const HELPERS = `window.__rv = {
+  sleep(ms) { return new Promise((r) => setTimeout(r, ms)); },
+  async next(n) { for (let i = 0; i < n; i++) { const b = document.querySelector('.gf-talk-next'); if (b) b.click(); await new Promise((r) => setTimeout(r, 120)); } },
+  async done(id) { const g = window.__game; if (!g.state.tasks.includes(id)) g.completeTask(id, { quiet: true, noSave: true }); await this.closeAll(); },
   async closeAll() { const g = window.__game; let calm = 0;
     for (let i = 0; i < 40 && calm < 3; i++) { const mg = document.getElementById('mg-custom'); if ((g.wm && g.wm.isOpen) || (g.ui && g.ui.open) || mg) { calm = 0; g.wm && g.wm.isOpen && g.wm.close(); g.ui && g.ui.open && g.ui.close && g.ui.close(); if (mg) { const x = [...mg.querySelectorAll('button')].find((b) => /閉じる|やめる|戻る/.test(b.textContent)); x ? x.click() : document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true })); } } else calm++; await new Promise((r) => setTimeout(r, 150)); } },
   async focus(f) { const g = window.__game, THREE = await import('three'); const T = new THREE.Vector3(f.x, f.y ?? 1, f.z), floorY = (f.floor || 0) * 3.2;
@@ -53,7 +57,7 @@ const report = [`# 画面の点検（${new Date().toISOString().slice(0, 10)}${m
 let problems = 0, n = 0;
 for (const run of plan.runs) {
   if (only && !only.includes(run.name) && !run.steps.some((s) => only.includes(s.name))) continue;
-  const p = await launch(mobile ? { width: 844, height: 390, mobile: true } : { width: 1280, height: 720 });
+  const p = await launch(portrait ? { width: 390, height: 844, mobile: true } : mobile ? { width: 844, height: 390, mobile: true } : { width: 1280, height: 720 });
   report.push(`## ${run.name}`, '');
   try {
     await p.goto(base + (run.query ?? '?qa=1') + (mobile ? '&touch=1' : ''));

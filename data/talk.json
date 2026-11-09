@@ -328,7 +328,9 @@
   "phone": [
     {
       "who": "受話器の声",
-      "text": "「先に乗ってて。ドア、開けといて」"
+      "text": "「先に乗ってて。ドア、開けといて」",
+      "voice": "assets/audio/phone-0.wav",
+      "vfx": "phone"
     },
     {
       "who": "私",
@@ -336,7 +338,9 @@
     },
     {
       "who": "受話器の声",
-      "text": "「帰れる方へ行って」"
+      "text": "「帰れる方へ行って」",
+      "voice": "assets/audio/phone-2.wav",
+      "vfx": "phone"
     }
   ],
   "phoneIgnore": [
