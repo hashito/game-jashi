@@ -64,5 +64,32 @@ export function threatDirection({player,yaw=0,monster}={}){
 }
 
 // 5.0: the related records (docs.json "chain") and how many chains are complete (two or more: the flag records2, ending E_WITNESS)
-export const CHAINS = Object.freeze({ attendance: ['N_BOOTS', 'N_LEDGER', 'N_TAG'], voices: ['N_CASSETTE', 'N_MIRROR', 'N_TOY'], return: ['N_RIBBON', 'N_PHOTO'] });
+export const CHAINS = Object.freeze({ attendance: ['N_BOOTS', 'N_LEDGER', 'N_TAG'], voices: ['N_CASSETTE', 'N_MIRROR', 'N_TOY'], return: ['N_RIBBON', 'N_PHOTO'], post: ['N_ROLL', 'N_STOP'] });
 export const completedChains = (read) => Object.values(CHAINS).filter((ids) => ids.every((d) => read.includes(d))).length;
+
+// 5.7: the key cabinet of the old post. The number is the direction each carved eye looks at, in the order of the diary (data/docs.json N_DIARY).
+export const LOCK = Object.freeze({ answer: [3, 1, 4], trees: Object.freeze([
+  { name: '伐採跡の杉', short: '伐採跡', dir: '南', photo: 'assets/photos/mark-1.webp' },
+  { name: '林道の奥の杉', short: '林道の奥', dir: '北', photo: 'assets/photos/mark-2.webp' },
+  { name: '沢の下手の杉', short: '沢の下手', dir: '西', photo: 'assets/photos/mark-3.webp' },
+]) });
+// a wrong number gets an answer that helps (never a dead end): only one to four, which tree is off, and after three tries the whole reading
+export function checkLock(digits, tries = 1) {
+  if (digits.every((d, i) => d === LOCK.answer[i])) return { ok: true, wrong: [], text: 'かちり、と音がして、鍵箱の扉が開いた。中に、札のついた小さな鍵がある。' };
+  const wrong = LOCK.answer.map((a, i) => (digits[i] === a ? -1 : i)).filter((i) => i >= 0);
+  let text;
+  if (digits.some((d) => d < 1 || d > 4)) text = '動かない。方角の数字は、一から四までだ。上の札の数字だけを使う。';
+  else text = `動かない。${wrong.map((i) => LOCK.trees[i].name).join('と')}の目は、その向きではない。写真の横の向きを、札で数字にする。`;
+  if (tries >= 3) text += '　落ち着いて順に読む。南は三、北は一、西は四。';
+  return { ok: false, wrong, text };
+}
+// 5.7: the reflector board on the fire tower. Keep the light on the figure with the eyes open; off it the progress drains, closing the eyes resets it.
+export const AIM = Object.freeze({ need: 4, decay: 0.3, wobble: 0.018, tolerance: 0.05, closeAt: 10, closedHold: 3, recoverTo: 60, recoverRate: 22, winSeconds: 3 });
+export const createAim = () => ({ progress: 0, won: false });
+export function stepAim(aim, { dt, onTarget, closed }) {
+  if (aim.won) return null;
+  if (closed) { const had = aim.progress > 0; aim.progress = 0; return had ? 'reset' : null; }
+  aim.progress = onTarget ? aim.progress + dt / AIM.need : Math.max(0, aim.progress - AIM.decay * dt);
+  if (aim.progress >= 1) { aim.progress = 1; aim.won = true; return 'won'; }
+  return null;
+}

@@ -3,7 +3,8 @@
 //   mountain.js  the mountain, the villa, the huts, the gate and the car dressed on top of the standard world
 //   rules.js     the gaze / scythe / bottle rules (unchanged from 4.3.0, tested in Node)
 //   gaze.js      those rules on the standard monster: the mind and body meters, eyes closed, the scythe warning, the bottle
-//   story.js     the seven stages: conversations, the figure below the balcony, records, death and the ending
+//   story.js     the nine stages: conversations, the figure below the balcony, records, death and the ending
+//   tower.js     5.7: the number lock of the old post and the reflector on the fire tower
 //   sound.js     the beds (kit sound library) and the synthesized scythe, radio, phone and engine
 import * as THREE from 'three';
 import { jashiLook } from './jashi.js';

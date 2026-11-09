@@ -82,6 +82,7 @@ export function dressMountain(ctx) {
     [4, -30, 4, -120, 3.2], [-34, 20.5, -130, 20.5, 3.6],
   ];
   const keepOut = plan.rooms.map((r) => ({ minX: r.x, maxX: r.x + r.w, minZ: r.z, maxZ: r.z + r.d }));
+  keepOut.push({ minX: -36, maxX: 4, minZ: -17, maxZ: -8 });   // 5.7: no cedar between the fire tower and the bridge (the reflector's line of sight)
   for (const [x0, z0, x1, z1, w] of strips) {
     const len = Math.hypot(x1 - x0, z1 - z0), m = new THREE.Mesh(new THREE.PlaneGeometry(w, len), M.soil);
     m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.atan2(x1 - x0, z1 - z0) + Math.PI; m.position.set((x0 + x1) / 2, 0.004, (z0 + z1) / 2); m.receiveShadow = true; G.add(m);
@@ -212,7 +213,16 @@ export function dressMountain(ctx) {
   { const w = new THREE.Mesh(new THREE.PlaneGeometry(90, 2.6), M.water); w.rotation.x = -Math.PI / 2; w.position.set(0, 0.012, -10.2); w.name = 'creek'; G.add(w); api.parts.water = w;
     const B = named('bridge'); B.position.set(0.8, 0, -10.2);
     box(3.4, 0.14, 4.2, M.plank, 0, 0.3, 0, B); for (const x of [-1.65, 1.65]) { box(0.1, 0.9, 4.2, M.weathered, x, 0.75, 0, B); for (const z of [-2, 0, 2]) box(0.12, 1.1, 0.12, M.bark, x, 0.55, z, B); }
-    const knot = cyl(0.03, 0.03, 0.5, M.red, 2.4, 1.02, 1.2, 6); knot.rotation.z = 0.3; }
+    const knot = cyl(0.03, 0.03, 0.5, M.red, 2.4, 1.02, 1.2, 6); knot.rotation.z = 0.3;
+    // 5.7: the water that rises when the figure stands on the bridge. The colliders leave the deck as the only way over; no eye-blocking (they are water)
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; { const g = cv.getContext('2d'); for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(220,214,190,${0.08 + rnd() * 0.22})`; g.fillRect(rnd() * 256, rnd() * 64, 16 + rnd() * 70, 1 + rnd() * 2); } }
+    const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(14, 1); tex.colorSpace = THREE.SRGBColorSpace;
+    const foam = new THREE.Mesh(new THREE.PlaneGeometry(90, 3.4), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false })); foam.rotation.x = -Math.PI / 2; foam.position.set(0, 0.03, -10.2); foam.name = 'flood-foam'; G.add(foam);
+    const solid2 = (x0, z0, x1, z1) => { const c = { box: new THREE.Box3(V3(x0, -1, z0), V3(x1, 2.4, z1)), off: true }; colliders.push(c); return c; };
+    const banks = [solid2(-30, -11.6, -0.9, -8.8), solid2(2.5, -11.6, 30, -8.8)], gate = solid2(-1, -12, 2.6, -11.6);
+    api.parts.flood = { foam, tex, t: 0, target: 0, banks, gate, dry: new THREE.Color(0x2b3a3b), wet: new THREE.Color(0x3b3425) };
+    api.setFlood = (on, solid = on) => { const f = api.parts.flood; f.target = on ? 1 : 0; for (const c of f.banks) c.off = !solid; };
+    api.setBridgeShut = (on) => { api.parts.flood.gate.off = !on; }; }
   // the work tag's wire (N_TAG hangs from it at x -10, z -13): two stakes and a wire, so the tag is not in mid-air
   { const w = named('tag-wire'); w.position.set(-10, 0, -13);
     for (const x of [-0.95, 0.95]) box(0.1, 1.75, 0.1, M.bark, x, 0.875, 0, w);
@@ -232,6 +242,7 @@ export function dressMountain(ctx) {
     const kb = named('crank-box'); kb.position.set(-14.9, 0, 13.6);
     box(0.5, 1.0, 0.36, M.iron, 0, 0.5, 0, kb); box(0.52, 0.06, 0.4, M.rust, 0, 1.03, 0, kb);
     const hub = cyl(0.07, 0.07, 0.08, M.brass, 0.27, 0.7, 0, 12, kb); hub.rotation.z = Math.PI / 2; api.parts.crankHub = hub;
+    { const l = named('box_lock', kb); l.position.set(0.3, 0.9, 0); l.scale.setScalar(1.6); box(0.05, 0.1, 0.09, M.brass, 0, 0, 0, l); const sh = new THREE.Mesh(new THREE.TorusGeometry(0.033, 0.007, 6, 14, Math.PI), M.iron); sh.position.set(0, 0.05, 0); sh.rotation.y = Math.PI / 2; l.add(sh); }   // 5.7: 葛西さん's new padlock
     const arm = named('crank-arm', kb); arm.position.set(0.32, 0.7, 0); cyl(0.02, 0.02, 0.3, M.iron, 0, 0.15, 0, 6, arm); cyl(0.03, 0.03, 0.12, M.red, 0.06, 0.3, 0, 8, arm).rotation.z = Math.PI / 2; arm.visible = false; api.parts.crankArm = arm;
     const door = world.doors.get('D_GATE'); if (door && door.mesh) door.mesh.material = new THREE.MeshBasicMaterial({ visible: false });
   }
@@ -262,6 +273,56 @@ export function dressMountain(ctx) {
   { const c = makeCharacter({ detail: 1, build: 0.2, skin: '#c89f86', hair: '#2a2622', top: '#4d5a4a', bottom: '#33302c', shoes: '#2a2420' });
     const u = named('uncle'); u.position.set(2.3, FY(1), 24.2); u.rotation.y = -2.2; u.add(c.root); api.people.uncle = { root: u, character: c }; }
 
+  // ---------------------------------------------------------------- 5.7: the old forestry post, dark and left as it was
+  const NO_LAMP = /^(lamp|lampshade|lampbulb|lampcord):(POST|POST_BUNK|TOWER_[012])$/;
+  world.group.traverse((o) => { if (NO_LAMP.test(o.name)) { if (o.isLight && o.name === 'lamp:TOWER_2') { api.parts.towerLamp = o; o.color.setHex(0xffa860); o.intensity = 0; } else o.visible = false; } });
+  roofOn(-34, -28, -26, -18.6, wallTop(['POST', 'POST_BUNK']), { pitch: 0.42 });
+  { const put = (o, x, z, ry = 0, sol = true) => { o.position.set(x, 0, z); o.rotation.y = ry; G.add(o); if (sol) solid(o); return o; };
+    put(P.steelDesk({}, 1.6, 0.7), -30.8, -27.4);                 // the desk of the diary
+    put(P.steelDesk({}, 1.3, 0.7), -27.9, -27.4);                 // the roll book lies open here
+    put(P.officeChair(), -30.9, -26.5, Math.PI + 0.5, false);
+    put(P.filingCabinet({}, 1.3), -33.5, -27.5);
+    put(P.filingCabinet({}, 1.3), -32.9, -27.5);
+    put(P.coatRack(), -26.6, -27.5, 0, false);
+    const s = P.shelf({}, 1.4, 1.8, 0.4, 4, 'boxes'); put(s, -33.7, -23.9 + 1.5 - 1.5, Math.PI / 2);
+    // a mug left on the desk, a stopped clock on the wall
+    cyl(0.04, 0.04, 0.09, M.white, -30.0, 0.77, -27.5, 12);
+    { const c = named('post-clock'); c.position.set(-29.5, 2.1, -27.94); const f = cyl(0.17, 0.17, 0.04, M.white, 0, 0, 0, 22, c); f.rotation.x = Math.PI / 2; box(0.012, 0.13, 0.01, M.black, 0.02, 0.05, 0.03, c).rotation.z = -0.4; box(0.016, 0.09, 0.01, M.black, -0.03, -0.03, 0.03, c).rotation.z = 2.4; }
+    // the key cabinet on the west wall: shut until the number is found, then open with its hooks showing
+    { const shut = named('keybox_shut'); shut.position.set(-33.93, 1.45, -25.2); box(0.1, 0.58, 0.46, M.iron, 0, 0, 0, shut);
+      for (let i = 0; i < 3; i++) { const d = cyl(0.03, 0.03, 0.03, M.brass, 0.06, 0, -0.12 + i * 0.12, 12, shut); d.rotation.z = Math.PI / 2; }
+      const open = named('keybox_open'); open.position.set(-33.93, 1.45, -25.2); box(0.1, 0.58, 0.46, M.black, 0, 0, 0, open);
+      const leaf = box(0.03, 0.58, 0.46, M.iron, 0.25, 0, -0.42, open); leaf.rotation.y = 1.2;
+      for (const z of [-0.12, 0.04, 0.16]) box(0.06, 0.02, 0.02, M.brass, 0.05, 0.12, z, open); }
+    // the bunk room: three cots, the table of the notice, and nine pairs of boots against the wall (the roll book had eight names)
+    for (const x of [-32.6, -28.4, -26.9]) put(P.bed({}, {}), x, -19.9, Math.PI / 2);
+    put(P.table({}, 0.7, 0.5, 0.74, 0x4a3a2c), -27.6, -21.55);
+    const rubber = mat(0x2a3530, { roughness: 0.55 }), leg = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.06, 0.055, 0.34, 8), rubber, 18), foot = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.07, 0.24), rubber, 18);
+    for (let i = 0; i < 18; i++) { const pair = Math.floor(i / 2), side = i % 2 ? 0.075 : -0.075, x = -33.7 + 0.08, z = -21.7 + pair * 0.36 + side; leg.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x, 0.19, z)); foot.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x + 0.07, 0.035, z).multiply(new THREE.Matrix4().makeRotationY(Math.PI / 2))); }
+    leg.instanceMatrix.needsUpdate = foot.instanceMatrix.needsUpdate = true; leg.computeBoundingSphere(); foot.computeBoundingSphere(); leg.name = 'boots'; foot.name = 'boots-feet'; G.add(leg, foot);
+    // a finger post where the old trail leaves the road (no writing, W: the map and the talk name it)
+    { const f = named('trail-post'); f.position.set(-5.4, 0, -21.4); box(0.1, 1.9, 0.1, M.bark, 0, 0.95, 0, f); box(0.8, 0.14, 0.04, M.weathered, -0.4, 1.7, 0, f); }
+  }
+  // ---------------------------------------------------------------- 5.7: the fire tower: a boarded base, two open floors, a roof with the alarm bell
+  { const y1 = FY(1), y2 = FY(2), top = y2 + 2.7, x0 = -35.2, x1 = -32, z0 = -16.6, z1 = -13.4;
+    world.group.traverse((o) => { if (o.isMesh && (/^wall:TOWER_[12]:/.test(o.name) || /^ceil:TOWER_[12]$/.test(o.name))) o.visible = false; });
+    for (const x of [x0, x1]) for (const z of [z0, z1]) box(0.2, top, 0.2, M.bark, x, top / 2, z);
+    for (const y of [y1, y2]) { box(3.5, 0.14, 0.14, M.weathered, -33.6, y, z0, G); box(3.5, 0.14, 0.14, M.weathered, -33.6, y, z1, G); box(0.14, 0.14, 3.5, M.weathered, x0, y, -15, G); box(0.14, 0.14, 3.5, M.weathered, x1, y, -15, G); }
+    // cross braces on the two open storeys of the south and north sides
+    for (const [y, h] of [[y1 / 2, y1], [(y1 + y2) / 2, y2 - y1]]) for (const z of [z0, z1]) for (const s of [-1, 1]) { const b = box(Math.hypot(3.2, h), 0.08, 0.08, M.plank, -33.6, y, z + (z === z0 ? -0.1 : 0.1)); b.rotation.z = s * Math.atan2(h, 3.2); }
+    for (const y of [y1, y2]) for (const [x, z, len, ry] of [[-33.6, z0 + 0.03, 3.2, 0], [-33.6, z1 - 0.03, 3.2, 0], [x0 + 0.03, -15, 3.2, Math.PI / 2], [x1 - 0.03, -15, 3.2, Math.PI / 2]]) { const r = E.railing({ len, h: 1.05, color: 0x4a4038 }); r.position.set(x, y, z); r.rotation.y = ry; G.add(r); }
+    const rf = roofOn(x0, z0, x1, z1, top, { pitch: 0.5 }); rf.name = 'tower-roof';
+    const b = cyl(0.11, 0.2, 0.32, M.brass, -34.7, y2 + 2.1, -16.1, 14); b.name = 'tower-bell'; box(0.03, 0.5, 0.03, M.iron, -34.7, y2 + 2.5, -16.1);
+    // the tin board on its post at the east rail. It lives in a parent the reflector can hide while we look through its hole
+    const board = named('board'); board.position.set(-32.42, y2, -15); api.parts.board = board;
+    box(0.08, 1.5, 0.08, M.bark, 0, 0.75, 0, board);
+    const tin = mat(0x7d7a6e, { metalness: 0.7, roughness: 0.42 });
+    const whole = named('board_whole', board); box(0.03, 0.8, 0.8, tin, -0.06, 1.42, 0, whole); { const h = cyl(0.05, 0.05, 0.04, M.black, -0.06, 1.42, 0, 14, whole); h.rotation.z = Math.PI / 2; }
+    const cracked = named('board_cracked', board); { const a = box(0.03, 0.8, 0.38, tin, -0.06, 1.42, -0.21, cracked); a.rotation.x = 0.06; const c = box(0.03, 0.74, 0.34, tin, -0.08, 1.38, 0.2, cracked); c.rotation.x = -0.18; }
+    api.parts.sun = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffb070, transparent: true, depthWrite: false, fog: false, map: (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 4, 64, 64, 64); r.addColorStop(0, 'rgba(255,240,205,1)'); r.addColorStop(0.3, 'rgba(255,170,96,.8)'); r.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })() }));
+    api.parts.sun.position.set(-118, 24, -18); api.parts.sun.scale.set(46, 46, 1); api.parts.sun.visible = false; api.parts.sun.name = 'low-sun'; G.add(api.parts.sun);
+  }
+
   // the amado's pull (the S_SHUTTER station) on the frame by the door
   box(0.07, 0.34, 0.09, M.iron, 1.4, balcY + 1.05, 19.13); box(0.16, 0.05, 0.05, M.iron, 1.4, balcY + 1.22, 19.13);
   // the stations that have a model here (telescope, radio, shelf, bell, crank box, car, phone, the hut floor, the amado pull): their
@@ -287,7 +348,9 @@ export function dressMountain(ctx) {
       if (sm) { const was = new THREE.Box3().setFromObject(sm), c0 = was.getCenter(V3(0, 0, 0)); sm.position.y += 0.8; sm.scale.set(1.25, 1, 2.2); sm.updateMatrixWorld(true); for (const c of world.colliders) if (c.box && c.box.containsPoint(c0) && Math.abs(c.box.max.y - was.max.y) < 0.01) c.box.setFromObject(sm); }
     }
   }
-  for (const id of ['S_TELESCOPE', 'S_SHUTTER', 'S_RADIO', 'S_SHELF', 'S_BELL', 'S_CRANK', 'S_PHONE', 'S_GATE', 'S_CAR', 'S_MARK1', 'S_MARK2', 'S_MARK3']) {
+  // 5.7: the cabinet on the wall and the board on the rail are at eye height: their station boxes go up with them
+  for (const id of ['S_KEYBOX', 'S_REFLECT']) { const sm = world.group.getObjectByName(`station:${id}`); if (!sm) continue; const was = new THREE.Box3().setFromObject(sm), c0 = was.getCenter(V3(0, 0, 0)); sm.position.y += 0.85; sm.updateMatrixWorld(true); for (const c of world.colliders) if (c.box && c.box.containsPoint(c0) && Math.abs(c.box.max.y - was.max.y) < 0.01) c.box.setFromObject(sm); }
+  for (const id of ['S_TELESCOPE', 'S_SHUTTER', 'S_RADIO', 'S_SHELF', 'S_BELL', 'S_CRANK', 'S_PHONE', 'S_GATE', 'S_CAR', 'S_MARK1', 'S_MARK2', 'S_MARK3', 'S_DIARY', 'S_KEYBOX', 'S_REFLECT']) {
     const m = world.group.getObjectByName(`station:${id}`); if (!m) continue;
     m.traverse((o) => { if (o.isMesh) o.material = unseen; });
   }
@@ -300,6 +363,11 @@ export function dressMountain(ctx) {
     if (api.parts.carRing) api.parts.carRing.material.opacity = 0.22 + 0.2 * (0.5 + 0.5 * Math.sin(t * 3));
     if (api.parts.phoneScreen) { const on = Math.sin(t * 6) > -0.2; api.parts.phoneLight.intensity = on ? 1.4 : 0.2; api.parts.phoneScreen.material.color.setHex(on ? 0x9fd2ff : 0x223344); }
     if (api.parts.water) api.parts.water.material.opacity = 0.82 + Math.sin(t * 0.7) * 0.04;
+    const fl = api.parts.flood; if (fl) {
+      fl.t += (fl.target - fl.t) * Math.min(1, dt * 0.5); fl.tex.offset.x -= dt * 0.55;
+      const w = api.parts.water; w.position.y = 0.012 + fl.t * 0.24; w.scale.y = 1 + fl.t * 0.32; M.water.color.copy(fl.dry).lerp(fl.wet, fl.t);
+      fl.foam.position.y = w.position.y + 0.015; fl.foam.material.opacity = fl.t * 0.8;
+    }
     const uc = api.people.uncle; if (uc && uc.root.visible && uc.character.update) uc.character.update(dt);
   };
   return api;

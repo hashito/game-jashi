@@ -97,7 +97,7 @@ export function createGaze(ctx, { shared, mountain, sound, fear, onDeath }) {
     if (st.throwFx) { const f = st.throwFx; f.t += dt / 0.45; const k = Math.min(1, f.t); bottleMesh.position.lerpVectors(f.from, f.to, k); bottleMesh.position.y += Math.sin(k * Math.PI) * 0.8; bottleMesh.rotation.x += dt * 14; if (k >= 1) { st.throwFx = null; bottleMesh.visible = false; landBottle(); } }
     if (st.frozen > 0) st.frozen = Math.max(0, st.frozen - dt);
     const touch = document.body.querySelector('#eyes.on');
-    setClosed(active && (st.keyClosed || !!touch));
+    setClosed(active && (st.keyClosed || !!touch || !!shared.forceClose));
     const s = source(), fp = ctx.fp;
     let input = { active: false };
     if (active && s && (s.floor === (ctx.floor || 0) || s.ai == null)) {
@@ -105,11 +105,11 @@ export function createGaze(ctx, { shared, mountain, sound, fear, onDeath }) {
       const dist = Math.hypot(s.x - eye.x, s.z - eye.z);
       const dir = new THREE.Vector3(); cam.getWorldDirection(dir); const to = head.clone().sub(eye); const dl = to.length(); to.divideScalar(dl || 1);
       const inView = dir.dot(to) > 0.8 && dl < 38;
-      const isBlocked = !!ctx.hidden || blocked(eye.clone(), head.clone());
+      const isBlocked = !shared.aim && (!!ctx.hidden || blocked(eye.clone(), head.clone()));   // 5.7: through the reflector's hole nothing stands between
       const th = threatDirection({ player: { x: eye.x, z: eye.z }, yaw: fp ? fp.yaw : 0, monster: { x: s.x, z: s.z } });
       // it faces you (within 70 degrees) to swing; it never starts from behind you
       const face = Math.atan2(eye.x - s.x, eye.z - s.z); let dy = face - (s.yaw || 0); while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
-      input = { active: true, moving: !!(fp && fp.moving), run: false, closed: st.closed, gaze: inView, blocked: isBlocked, distance: s.ai ? dist : Infinity, glasses: ctx.state.inv.includes('I_GLASSES') && ctx.state.tasks.includes('T_RADIO'), attackAligned: Math.abs(dy) < 1.25, attackVisible: th.side !== 'behind' };
+      input = { active: true, moving: !!(fp && fp.moving), run: false, closed: st.closed, gaze: inView, blocked: isBlocked, distance: s.ai ? dist : Infinity, glasses: ctx.state.inv.includes('I_GLASSES') && ctx.state.tasks.includes('T_RADIO') && !shared.aim, attackAligned: Math.abs(dy) < 1.25, attackVisible: th.side !== 'behind' };
       threatSide = th;
       if (s.ai && (S.phase === 'windup' || S.phase === 'strike')) { s.ai.yaw = face; }
     }

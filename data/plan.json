@@ -253,6 +253,102 @@
    "kind": "outdoor",
    "floorTex": "moss",
    "edge": "none"
+  },
+  {
+   "id": "O_POST_TRAIL",
+   "name": "旧詰所への山道",
+   "x": -20,
+   "z": -27,
+   "w": 14,
+   "d": 6,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  },
+  {
+   "id": "O_POST_FRONT",
+   "name": "旧詰所の前",
+   "x": -26,
+   "z": -29,
+   "w": 6,
+   "d": 10,
+   "kind": "outdoor",
+   "floorTex": "soil",
+   "edge": "none"
+  },
+  {
+   "id": "POST",
+   "name": "旧詰所・事務室",
+   "shutHide": true,
+   "x": -34,
+   "z": -28,
+   "w": 8,
+   "d": 6,
+   "kind": "room",
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "POST_BUNK",
+   "name": "旧詰所・仮眠室",
+   "x": -34,
+   "z": -22,
+   "w": 8,
+   "d": 3.4,
+   "kind": "room",
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "O_UPPER",
+   "name": "沢の上手",
+   "x": -32,
+   "z": -18,
+   "w": 6,
+   "d": 6,
+   "kind": "outdoor",
+   "floorTex": "moss",
+   "edge": "none"
+  },
+  {
+   "id": "TOWER_0",
+   "name": "火の見櫓の下",
+   "x": -35.2,
+   "z": -16.6,
+   "w": 3.2,
+   "d": 3.2,
+   "kind": "room",
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "TOWER_1",
+   "name": "火の見櫓の中段",
+   "x": -35.2,
+   "z": -16.6,
+   "w": 3.2,
+   "d": 3.2,
+   "kind": "room",
+   "floor": 1,
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
+  },
+  {
+   "id": "TOWER_2",
+   "name": "火の見櫓の見張り台",
+   "x": -35.2,
+   "z": -16.6,
+   "w": 3.2,
+   "d": 3.2,
+   "kind": "room",
+   "floor": 2,
+   "floorTex": "planks_grey_old",
+   "wallTex": "panel_wood_wall",
+   "step": "wood"
   }
  ],
  "doors": [
@@ -542,6 +638,136 @@
    "width": 4,
    "open": true,
    "reason": "outdoors: the trail goes on (no wall between the strips)"
+  },
+  {
+   "id": "G_SOUTH_POST",
+   "a": "O_SOUTH",
+   "b": "O_POST_TRAIL",
+   "x": -6,
+   "z": -24,
+   "width": 4,
+   "open": true,
+   "reason": "outdoors: the old trail to the forestry post leaves the road here"
+  },
+  {
+   "id": "G_TRAIL_FRONT",
+   "a": "O_POST_TRAIL",
+   "b": "O_POST_FRONT",
+   "x": -20,
+   "z": -24,
+   "width": 5,
+   "open": true,
+   "reason": "outdoors: the trail reaches the yard of the post"
+  },
+  {
+   "id": "D_POST",
+   "a": "POST",
+   "b": "O_POST_FRONT",
+   "x": -26,
+   "z": -25,
+   "width": 1.6,
+   "look": "slide",
+   "label": "旧詰所の引戸",
+   "closable": true,
+   "unlock": "post",
+   "hint": "古い詰所だ。今は用がない。先に、いまの目標を進めよう。"
+  },
+  {
+   "id": "D_BUNK",
+   "a": "POST",
+   "b": "POST_BUNK",
+   "x": -30,
+   "z": -22,
+   "width": 1.2,
+   "look": "slide",
+   "label": "仮眠室の引戸",
+   "reason": "a small post: the bunk room opens off the office"
+  },
+  {
+   "id": "G_TW_UPPER",
+   "a": "O_TIMBER_W",
+   "b": "O_UPPER",
+   "x": -26,
+   "z": -14,
+   "width": 3.6,
+   "open": true,
+   "unlock": "tower",
+   "barrier": "rope",
+   "label": "沢の上手への縄",
+   "hint": "縄が張ってある。この先は沢の上手で、今は用がない。先に、いまの目標を進めよう。",
+   "reason": "outdoors: the path up the creek, roped off until the tower is needed"
+  },
+  {
+   "id": "G_UPPER_TOWER",
+   "a": "TOWER_0",
+   "b": "O_UPPER",
+   "x": -32,
+   "z": -15,
+   "width": 1.6,
+   "open": true,
+   "reason": "the open doorway at the foot of the fire tower"
+  },
+  {
+   "id": "ST_TOWER1",
+   "a": "TOWER_0",
+   "b": "TOWER_1",
+   "width": 1.2,
+   "kind": "stairs",
+   "label": "梯子を登る",
+   "reason": "the ladder inside the tower",
+   "ends": {
+    "a": {
+     "x": -33.6,
+     "z": -16.2,
+     "dir": "n",
+     "arrive": [
+      -33.6,
+      -14.9
+     ],
+     "yaw": -1.5708
+    },
+    "b": {
+     "x": -33.6,
+     "z": -16.2,
+     "dir": "n",
+     "arrive": [
+      -33.6,
+      -14.9
+     ],
+     "yaw": 3.1416
+    }
+   }
+  },
+  {
+   "id": "ST_TOWER2",
+   "a": "TOWER_1",
+   "b": "TOWER_2",
+   "width": 1.2,
+   "kind": "stairs",
+   "label": "梯子を登る",
+   "reason": "the ladder inside the tower",
+   "ends": {
+    "a": {
+     "x": -33.6,
+     "z": -13.8,
+     "dir": "s",
+     "arrive": [
+      -33.6,
+      -15.2
+     ],
+     "yaw": 0
+    },
+    "b": {
+     "x": -33.6,
+     "z": -13.8,
+     "dir": "s",
+     "arrive": [
+      -33.6,
+      -15.2
+     ],
+     "yaw": -1.5708
+    }
+   }
   }
  ],
  "stations": [
@@ -628,6 +854,27 @@
    "x": -25.6,
    "z": 22.6,
    "label": "私の車"
+  },
+  {
+   "id": "S_DIARY",
+   "room": "POST",
+   "x": -30.8,
+   "z": -27.25,
+   "label": "奥の机の引き出し"
+  },
+  {
+   "id": "S_KEYBOX",
+   "room": "POST",
+   "x": -33.62,
+   "z": -25.2,
+   "label": "壁の鍵箱"
+  },
+  {
+   "id": "S_REFLECT",
+   "room": "TOWER_2",
+   "x": -33.0,
+   "z": -15,
+   "label": "手すりの反射板"
   }
  ],
  "hides": [
@@ -672,6 +919,21 @@
    "x": -21,
    "z": 26.5,
    "label": "車の陰"
+  },
+  {
+   "id": "H_POST",
+   "room": "POST",
+   "x": -33.4,
+   "z": -23,
+   "label": "詰所の物入れ",
+   "look": "cabinet"
+  },
+  {
+   "id": "H_UPPER",
+   "room": "O_UPPER",
+   "x": -30.8,
+   "z": -17.2,
+   "label": "沢の上手の岩の陰"
   }
  ],
  "routes": [

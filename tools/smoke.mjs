@@ -115,7 +115,8 @@ try {
     for (const t of tasks) {
       if (await G('!!g.state.ended')) break;   // an ending was reached: optional tasks left over are not pressed
       if ((await G(`g.state.tasks.includes(${JSON.stringify(t.id)})`)) || (await G(`g.canStart(g.data.tasks.find((x) => x.id === ${JSON.stringify(t.id)}))`)) !== true) continue;
-      await press(`station:${t.station}`, t.title);
+      if (t.reach) await G(`g.teleport(${JSON.stringify(t.reach.room || { x: t.reach.x, z: t.reach.z, floor: t.reach.floor || 0 })})`);   // a task done by standing there (standard 1.13)
+      else await press(`station:${t.station}`, t.title);
       await p.waitFor(`__game.state.tasks.includes(${JSON.stringify(t.id)})`, 15000);
       expect(await G(`g.state.tasks.includes(${JSON.stringify(t.id)})`), `task ${t.id} done (${t.title})`);
       await shot(`task_${t.id}`);

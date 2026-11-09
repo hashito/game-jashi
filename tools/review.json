@@ -893,7 +893,41 @@
           "shot": true
         },
         {
+          "name": "L6-post",
+          "tasks": [
+            "T_POST"
+          ],
+          "wait": 2500,
+          "shot": true
+        },
+        {
           "name": "L7",
+          "tasks": [
+            "T_DIARY",
+            "T_KEYBOX"
+          ],
+          "wait": 3200,
+          "shot": true
+        },
+        {
+          "name": "L7-tower",
+          "tasks": [
+            "T_BRIDGE",
+            "T_TOWER"
+          ],
+          "wait": 2500,
+          "shot": true
+        },
+        {
+          "name": "L8",
+          "tasks": [
+            "T_REFLECT"
+          ],
+          "wait": 3200,
+          "shot": true
+        },
+        {
+          "name": "L9",
           "tasks": [
             "T_GATE"
           ],
@@ -906,6 +940,649 @@
           "eval": "await rv.closeAll(); window.dispatchEvent(new KeyboardEvent('keydown',{code:'Tab'}));",
           "wait": 1000,
           "shot": true
+        }
+      ]
+    },
+    {
+      "name": "new-stages",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "gate-locked-talk",
+          "tasks": [
+            "T_TELESCOPE",
+            "T_SHUTTER",
+            "T_RADIO",
+            "T_BOTTLE",
+            "T_CRANK",
+            "T_MARK1",
+            "T_MARK2",
+            "T_MARK3"
+          ],
+          "close": false,
+          "wait": 36000,
+          "shot": true,
+          "expect": "g.prog.index===5 ? true : 'stage '+g.prog.index"
+        },
+        {
+          "name": "gate-locked-talk-2",
+          "close": false,
+          "eval": "await rv.next(1);",
+          "wait": 900,
+          "shot": true
+        },
+        {
+          "name": "box-padlock",
+          "wait": 1000,
+          "shot": true,
+          "focus": {
+            "x": -14.6,
+            "y": 0.7,
+            "z": 13.6,
+            "floor": 0,
+            "dist": 1.3
+          }
+        },
+        {
+          "name": "box-early",
+          "wait": 600,
+          "focus": {
+            "x": -14.6,
+            "y": 1,
+            "z": 13.6,
+            "floor": 0,
+            "dist": 1.5
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "shot": true,
+          "expect": "scr.say.join('').includes('旧詰所') ? true : 'said: '+scr.say.join(' ')"
+        },
+        {
+          "name": "trail-junction",
+          "at": {
+            "x": -3,
+            "z": -23.5,
+            "yaw": 1.5707963267948966
+          },
+          "wait": 1300,
+          "shot": true
+        },
+        {
+          "name": "trail-post-sign",
+          "at": {
+            "x": -14,
+            "z": -23.5,
+            "yaw": 0
+          },
+          "eval": "g.fp.yaw=Math.PI;",
+          "wait": 1300,
+          "shot": true
+        },
+        {
+          "name": "post-outside",
+          "at": {
+            "x": -21.5,
+            "z": -25,
+            "yaw": 1.5707963267948966
+          },
+          "wait": 1300,
+          "shot": true
+        },
+        {
+          "name": "post-door-keys",
+          "at": {
+            "x": -24.6,
+            "z": -25,
+            "yaw": 1.5707963267948966
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 1500,
+          "shot": "post-door-open",
+          "expect": "g.world.doors.get('D_POST').isOpen ? true : 'door did not open'"
+        },
+        {
+          "name": "post-arrive-talk",
+          "at": {
+            "x": -27.4,
+            "z": -25,
+            "yaw": 1.5707963267948966
+          },
+          "close": false,
+          "wait": 2400,
+          "shot": true,
+          "expect": "g.state.tasks.includes('T_POST') ? true : 'T_POST not done'"
+        },
+        {
+          "name": "post-room",
+          "at": {
+            "x": -26.8,
+            "z": -24.2,
+            "yaw": 2.1207963267948964
+          },
+          "wait": 1200,
+          "shot": true
+        },
+        {
+          "name": "post-bunk",
+          "eval": "g.world.doors.get('D_BUNK').open();",
+          "at": {
+            "x": -28,
+            "z": -20.6,
+            "yaw": 1.5707963267948966
+          },
+          "wait": 1200,
+          "shot": true
+        },
+        {
+          "name": "keybox-too-early",
+          "at": {
+            "x": -32.8,
+            "z": -25.2,
+            "yaw": 1.5707963267948966
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 800,
+          "shot": true,
+          "expect": "scr.say.join('').includes('日誌') ? true : 'said: '+scr.say.join(' ')"
+        },
+        {
+          "name": "diary-desk",
+          "at": {
+            "x": -30.8,
+            "z": -26.1,
+            "yaw": 0,
+            "pitch": -0.45
+          },
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "diary-search",
+          "at": {
+            "x": -30.8,
+            "z": -26.1,
+            "yaw": 0,
+            "pitch": -0.45
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "close": false,
+          "wait": 1800,
+          "shot": true,
+          "expect": "document.querySelector('.gf-overlay,#mg-custom') ? true : 'no mini game'"
+        },
+        {
+          "name": "diary-doc",
+          "close": false,
+          "eval": "await rv.closeAll(); g.completeTask('T_DIARY',{quiet:true,noSave:true});",
+          "wait": 1200,
+          "shot": true,
+          "expect": "g.state.docsRead.includes('N_DIARY') ? true : 'no record'"
+        },
+        {
+          "name": "diary-talk",
+          "close": false,
+          "eval": "g.wm.isOpen&&g.wm.close();",
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "lock-window",
+          "at": {
+            "x": -32.8,
+            "z": -25.2,
+            "yaw": 1.5707963267948966
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 1200,
+          "shot": true,
+          "expect": "document.querySelector('.js-lock') ? true : 'no lock window'"
+        },
+        {
+          "name": "lock-wrong",
+          "close": false,
+          "eval": "document.querySelector('[data-open]').click();",
+          "wait": 500,
+          "shot": true,
+          "expect": "document.querySelector('.js-lock-reply').textContent.includes('一から四') ? true : 'reply: '+document.querySelector('.js-lock-reply').textContent"
+        },
+        {
+          "name": "lock-right",
+          "close": false,
+          "eval": "const d=[...document.querySelectorAll('.js-dial')];const up=(i,n)=>{for(let k=0;k<n;k++)d[i].querySelector('[data-d=\"1\"]').click();};up(0,3);up(1,1);up(2,4);document.querySelector('[data-open]').click();",
+          "wait": 500,
+          "shot": true,
+          "expect": "document.querySelector('.js-lock-reply').dataset.ok==='1' ? true : 'not open'"
+        },
+        {
+          "name": "lock-take",
+          "close": false,
+          "eval": "document.querySelector('[data-open]').click();",
+          "wait": 1200,
+          "shot": true,
+          "expect": "g.state.inv.includes('I_BOXKEY') && g.prog.index===6 ? true : 'stage '+g.prog.index"
+        },
+        {
+          "name": "keybox-open",
+          "at": {
+            "x": -32.4,
+            "z": -25.2,
+            "yaw": 1.5707963267948966
+          },
+          "wait": 1200,
+          "shot": true
+        },
+        {
+          "name": "bridge-far",
+          "eval": "await rv.closeAll();",
+          "at": {
+            "x": -3,
+            "z": -15.4,
+            "yaw": 3.141592653589793
+          },
+          "close": false,
+          "wait": 1800,
+          "shot": "bridge-blocked-talk",
+          "expect": "g.state.tasks.includes('T_BRIDGE') ? true : 'T_BRIDGE not done'"
+        },
+        {
+          "name": "flood-view",
+          "at": {
+            "x": 0.8,
+            "z": -15,
+            "yaw": 3.141592653589793
+          },
+          "wait": 3000,
+          "shot": true
+        },
+        {
+          "name": "flood-side",
+          "at": {
+            "x": -12,
+            "z": -13,
+            "yaw": 2.441592653589793
+          },
+          "wait": 800,
+          "shot": true
+        },
+        {
+          "name": "bridge-walk-in",
+          "at": {
+            "x": 0.8,
+            "z": -12.6,
+            "yaw": 3.141592653589793
+          },
+          "wait": 900,
+          "shot": true,
+          "expect": "g.camera.position.z<-13.5 ? true : 'not pushed back: z='+g.camera.position.z"
+        },
+        {
+          "name": "rope-gone",
+          "at": {
+            "x": -24,
+            "z": -14.2,
+            "yaw": 1.5707963267948966
+          },
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "tower-view",
+          "at": {
+            "x": -27.4,
+            "z": -16.2,
+            "yaw": 1.3207963267948966,
+            "pitch": 0.45
+          },
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "tower-inside",
+          "at": {
+            "x": -32.8,
+            "z": -15,
+            "yaw": 1.5707963267948966
+          },
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "tower-climb-1",
+          "at": {
+            "x": -33.6,
+            "z": -14.9,
+            "yaw": 0,
+            "floor": 0
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 1500,
+          "shot": true,
+          "expect": "g.floor===1 ? true : 'floor '+g.floor"
+        },
+        {
+          "name": "tower-mid",
+          "at": {
+            "x": -33.6,
+            "z": -15,
+            "yaw": 3.141592653589793,
+            "floor": 1
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 1500,
+          "shot": true,
+          "expect": "g.floor===2 ? true : 'floor '+g.floor"
+        },
+        {
+          "name": "tower-top-talk",
+          "close": false,
+          "wait": 1200,
+          "shot": true,
+          "expect": "g.state.tasks.includes('T_TOWER') ? true : 'T_TOWER not done'"
+        },
+        {
+          "name": "tower-top",
+          "eval": "await rv.closeAll();",
+          "at": {
+            "x": -33.8,
+            "z": -15,
+            "yaw": -1.5707963267948966,
+            "pitch": -0.1,
+            "floor": 2
+          },
+          "close": false,
+          "wait": 900,
+          "shot": true
+        },
+        {
+          "name": "tower-board",
+          "at": {
+            "x": -33.8,
+            "z": -15.2,
+            "yaw": -1.5207963267948965,
+            "pitch": -0.12,
+            "floor": 2
+          },
+          "wait": 800,
+          "shot": true
+        },
+        {
+          "name": "aim-start",
+          "at": {
+            "x": -33.9,
+            "z": -15,
+            "yaw": -1.5707963267948966,
+            "floor": 2
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "close": false,
+          "wait": 1100,
+          "shot": true,
+          "expect": "window.__js.reflector.aiming ? true : 'not aiming'"
+        },
+        {
+          "name": "aim-on",
+          "close": false,
+          "eval": "window.__aimT=setInterval(()=>{const c=g.camera.position,T={x:.8,y:1.6,z:-10.2};g.fp.yaw=Math.atan2(-(T.x-c.x),-(T.z-c.z));g.fp.pitch=Math.atan2(T.y-c.y,Math.hypot(T.x-c.x,T.z-c.z));},16);",
+          "wait": 2400,
+          "shot": true,
+          "expect": "window.__js.reflector.snapshot&&window.__js.reflector.snapshot.progress>0.1 ? true : JSON.stringify(window.__js.reflector.snapshot)"
+        },
+        {
+          "name": "aim-eyes-closed-resets",
+          "close": false,
+          "eval": "window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyQ'}));",
+          "wait": 700,
+          "shot": true,
+          "expect": "window.__js.reflector.snapshot.progress===0 ? true : JSON.stringify(window.__js.reflector.snapshot)"
+        },
+        {
+          "name": "aim-win",
+          "close": false,
+          "eval": "window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyQ'}));window.__js.gaze.state.sanity=90;",
+          "wait": 4300,
+          "shot": true,
+          "expect": "window.__js.reflector.snapshot&&window.__js.reflector.snapshot.phase==='win' ? true : JSON.stringify(window.__js.reflector.snapshot)"
+        },
+        {
+          "name": "aim-after",
+          "close": false,
+          "eval": "clearInterval(window.__aimT);",
+          "wait": 3200,
+          "shot": true,
+          "expect": "g.state.tasks.includes('T_REFLECT') && g.camera.fov>40 ? true : 'fov '+g.camera.fov"
+        },
+        {
+          "name": "reflect-talk-3",
+          "close": false,
+          "eval": "await rv.next(1);await rv.next(1);",
+          "wait": 700,
+          "shot": true
+        },
+        {
+          "name": "board-cracked",
+          "eval": "await rv.closeAll();",
+          "at": {
+            "x": -33.8,
+            "z": -15.2,
+            "yaw": -1.5207963267948965,
+            "pitch": -0.12,
+            "floor": 2
+          },
+          "close": false,
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "bridge-free",
+          "at": {
+            "x": 0.8,
+            "z": -14,
+            "yaw": 3.141592653589793
+          },
+          "wait": 1000,
+          "shot": true
+        },
+        {
+          "name": "bridge-cross",
+          "at": {
+            "x": 0.8,
+            "z": -10.2,
+            "yaw": 3.141592653589793
+          },
+          "wait": 800,
+          "shot": true,
+          "expect": "g.camera.position.z>-11 ? true : 'z='+g.camera.position.z"
+        },
+        {
+          "name": "gate-unlock",
+          "eval": "await new Promise(r=>setTimeout(r,8000));",
+          "keys": [
+            "KeyE"
+          ],
+          "close": false,
+          "wait": 1800,
+          "shot": true,
+          "focus": {
+            "x": -14.6,
+            "y": 1,
+            "z": 13.6,
+            "floor": 0,
+            "dist": 1.5
+          }
+        }
+      ]
+    },
+    {
+      "name": "new-off",
+      "query": "?debug=1",
+      "steps": [
+        {
+          "name": "go",
+          "tasks": [
+            "T_TELESCOPE",
+            "T_SHUTTER",
+            "T_RADIO"
+          ],
+          "wait": 1200
+        },
+        {
+          "name": "post-door-too-early",
+          "at": {
+            "x": -24.6,
+            "z": -25,
+            "yaw": 1.5707963267948966
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 900,
+          "shot": true,
+          "expect": "scr.say.join('').includes('用がない')?true:'said: '+scr.say.join(' ')"
+        },
+        {
+          "name": "rope-too-early",
+          "at": {
+            "x": -24.6,
+            "z": -14,
+            "yaw": 1.5707963267948966
+          },
+          "keys": [
+            "KeyE"
+          ],
+          "wait": 900,
+          "shot": true,
+          "expect": "scr.say.join('').includes('用がない')?true:'said: '+scr.say.join(' ')"
+        },
+        {
+          "name": "bridge-still-open",
+          "at": {
+            "x": 0.8,
+            "z": -14,
+            "yaw": 3.141592653589793
+          },
+          "wait": 500,
+          "hold": {
+            "KeyW": 2200
+          },
+          "shot": true,
+          "expect": "g.camera.position.z>-10.5?true:'z='+g.camera.position.z"
+        },
+        {
+          "name": "to-l6",
+          "tasks": [
+            "T_BOTTLE",
+            "T_CRANK",
+            "T_MARK1",
+            "T_MARK2",
+            "T_MARK3"
+          ],
+          "wait": 1500
+        },
+        {
+          "name": "late-cross-before-keybox",
+          "at": {
+            "x": 12,
+            "z": -10,
+            "yaw": 3.141592653589793
+          },
+          "hold": {
+            "KeyW": 900
+          },
+          "wait": 300,
+          "expect": "g.camera.position.z>-9?true:'creek shut too soon z='+g.camera.position.z"
+        },
+        {
+          "name": "to-l7",
+          "tasks": [
+            "T_POST",
+            "T_DIARY",
+            "T_KEYBOX"
+          ],
+          "at": {
+            "x": 0,
+            "z": -18,
+            "yaw": 3.141592653589793
+          },
+          "wait": 600
+        },
+        {
+          "name": "settle-queued-talk",
+          "eval": "for(let k=0;k<45;k++){await rv.closeAll();await rv.sleep(800);}",
+          "wait": 300
+        },
+        {
+          "name": "east-flood-blocks",
+          "eval": "await new Promise(r=>setTimeout(r,800));",
+          "at": {
+            "x": 20,
+            "z": -12.4,
+            "yaw": 3.141592653589793
+          },
+          "hold": {
+            "KeyW": 1600
+          },
+          "wait": 200,
+          "shot": true,
+          "expect": "g.camera.position.z<-11?true:'walked through the flood z='+g.camera.position.z"
+        },
+        {
+          "name": "north-bank-wade",
+          "at": {
+            "x": 10,
+            "z": -6,
+            "yaw": 0
+          },
+          "hold": {
+            "KeyW": 3800
+          },
+          "wait": 200,
+          "shot": true,
+          "expect": "g.camera.position.z<-12.2?true:'shut in on the north bank z='+g.camera.position.z"
+        },
+        {
+          "name": "flood-closed-again",
+          "at": {
+            "x": 10,
+            "z": -14,
+            "yaw": 3.141592653589793
+          },
+          "eval": "await new Promise(r=>setTimeout(r,400));",
+          "hold": {
+            "KeyW": 1400
+          },
+          "wait": 200,
+          "expect": "g.camera.position.z<-11?true:'open again z='+g.camera.position.z"
+        },
+        {
+          "name": "death-at-l7",
+          "eval": "g.die('gaze');",
+          "wait": 3200,
+          "close": false,
+          "shot": true
+        },
+        {
+          "name": "after-death",
+          "close": false,
+          "eval": "await rv.closeAll();",
+          "wait": 1400,
+          "shot": true,
+          "expect": "g.state.started&&window.__js.gaze.state.dead===false?true:'still dead'"
         }
       ]
     },

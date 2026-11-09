@@ -5,7 +5,9 @@
 //   L2 窓の向こう   it stands below the balcony and looks up (it never comes in: the rule is taught, E-01); the amado slides shut
 //   L3 一階の机     the radio: static, a knock on the front door while you tune (H4), the uncle's voice; glasses, keys, the note
 //   L4-L5          the standard monster hunts the trails; records make chains (the ending), the bell lures it, the hut: hold your breath
-//   L6-L7          the crank on the gate, the car, the engine (the figure in the mirror while it cranks)
+//   L6 旧詰所の番号   葛西さん's new padlock on the gate; the diary in the old forestry post, the three eyes make the number of the key cabinet (5.7)
+//   L7 見返しの櫓    the figure stands on the only bridge and the creek floods; the fire tower's board throws the last sun back (5.7)
+//   L8-L9          the crank on the gate, the car, the engine (the figure in the mirror while it cranks); it hunts harder after the board
 // Conversations use the one standard window (ctx.talk / ctx.choose); thoughts use the thought band (ctx.monologue).
 import * as THREE from 'three';
 import { useMinigames } from '../kit/mg-library.js';
@@ -24,16 +26,20 @@ import { makeJashi } from './jashi.js';
 import { createGaze } from './gaze.js';
 import { createSound } from './sound.js';
 import { CHAINS, completedChains } from './rules.js';
+import { numberLock, createReflector } from './tower.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const REVEAL = { x: 4, z: -28 };              // where the telescope finds it
 export const WATCH = { x: 1.2, z: 10.2 };            // where it stands below the balcony (L2-L3: never nearer than the front yard)
-const STAGE_NAMES = ['一', '二', '三', '四', '五', '六', '七'];
+const STAGE_NAMES = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+const BRIDGE = { x: 0.8, z: -10.2 };                  // where it stands in L7 (5.7)
+const TOWER_SIDE = ['O_UPPER', 'TOWER_0', 'TOWER_1', 'TOWER_2'];
+const L6 = 5, L7 = 6, L8 = 7;                         // the stage indexes the new stages hang on
 
 export default function story(ext, shared) {
-  const st = { uncleGone: false, deaths: 0, played: 0, charges: 2, seenWatch: false, watchT: -1, knocked: false, firstRoom: {}, chainsTold: [], mirror: false };
-  let ctx = null, T = null, M = null, F = null, snd = null, fear = null, gaze = null, dying = false;
+  const st = { uncleGone: false, deaths: 0, played: 0, charges: 2, seenWatch: false, watchT: -1, knocked: false, firstRoom: {}, chainsTold: [], mirror: false, l6Told: false, hard: false, barT: -99, floodT: -99, huntT: 0, floodWade: false, blinkT: 0 };
+  let ctx = null, T = null, M = null, F = null, snd = null, fear = null, gaze = null, reflector = null, dying = false;
   const lvl = () => (ctx && ctx.prog ? ctx.prog.index : 0);
   const done = (id) => ctx.state.tasks.includes(id);
   const say = (text, sec) => ctx.monologue(text, sec ?? Math.min(9, 2.4 + String(text).length * 0.09));
@@ -47,6 +53,9 @@ export default function story(ext, shared) {
     crank: '次は東の避難小屋だ。床に置いた、赤い握りの鉄のハンドルを探してくれ。',
     gate: 'ハンドルと鍵が揃ったな。別荘の西の駐車場へ戻って、ゲートを開けてくれ。',
     car: 'ゲートの奥の車に乗るんだ。エンジンがかかるまで、その場を離れるな。',
+    post: '旧詰所は、林道の奥から西へ入る山道の先だ。地図の南西の端にある。',
+    bridge: '箱の鍵が手に入ったなら、山道を戻って、橋を北へ渡ってくれ。',
+    tower: '櫓へ行くぞ。橋の南から西の伐採跡へ。西の端の山道を上がって、梯子で一番上まで登るんだ。',
   };
   // one at a time, never over an open window (a talk, a mini game): the next waits for the window to close and the last clip to end
   let guideChain = Promise.resolve();
@@ -61,6 +70,8 @@ export default function story(ext, shared) {
     });
     return guideChain;
   };
+  // a talk in the same queue as the guide lines: after the window that is open now
+  const queueTalk = (key, o) => { guideChain = guideChain.then(async () => { while (ctx.wm && ctx.wm.isOpen && !ctx.qa) await new Promise((r) => setTimeout(r, 300)); await talk(key, o); }); return guideChain; };
   const wait = (sec) => new Promise((r) => setTimeout(r, (ctx.qa ? 0.05 : sec) * 1000));
 
   const MGX = useMinigames(ext, [
@@ -79,13 +90,23 @@ export default function story(ext, shared) {
   ext.registerUi('title', {
     kicker: 'JASHI ／ A FIRST-PERSON MOUNTAIN HORROR',
     tagline: '叔父の別荘の二階、ベランダの望遠鏡で見てしまった白い姿。目が合えば心を削られ、近づかれれば鎌が振り下ろされる。日が暮れる前に、山を下りる。',
-    meta: '七つの段階 ・ 約15分 ・ PC・スマホ ・ ヘッドホン推奨',
+    meta: '九つの段階 ・ 約25分 ・ PC・スマホ ・ ヘッドホン推奨',
     note: '怪異の姿、襲われて倒れる場面、驚かせる表現があります（設定の「おだやか」で弱められます）。ネット怪談「邪視」の骨組みを借りた創作です。修司の声：VOICEVOX:麒ヶ島宗麟、電話の声：VOICEVOX:白上虎太郎。',
   });
   ext.registerPersist('jashi', {
-    serialize: () => ({ uncleGone: st.uncleGone, deaths: st.deaths, played: st.played, charges: gaze ? gaze.charges : st.charges, seenWatch: st.seenWatch, knocked: st.knocked, chainsTold: st.chainsTold }),
-    restore: (j) => { Object.assign(st, { uncleGone: false, deaths: 0, played: 0, charges: 2, seenWatch: false, knocked: false, chainsTold: [] }, j || {}); if (gaze) gaze.charges = st.charges; },
+    serialize: () => ({ uncleGone: st.uncleGone, deaths: st.deaths, played: st.played, charges: gaze ? gaze.charges : st.charges, seenWatch: st.seenWatch, knocked: st.knocked, chainsTold: st.chainsTold, l6Told: st.l6Told }),
+    restore: (j, c, o = {}) => { Object.assign(st, { uncleGone: false, deaths: 0, played: 0, charges: 2, seenWatch: false, knocked: false, chainsTold: [], l6Told: false, hard: false }, j || {}); if (gaze) gaze.charges = st.charges; if (o.resume) migrateSave(c); },
   });
+  // 5.7: a save from before the two new stages. The eye photos become records; a player already past the gate (the old stage seven, the engine)
+  // keeps that progress: the new stages count as done and the game goes on at the engine. A player before the gate plays them as usual.
+  function migrateSave(c) {
+    const s = c.state;
+    for (const n of [1, 2, 3]) if (s.tasks.includes(`T_MARK${n}`) && !s.docsRead.includes(`N_MARK${n}`)) s.docsRead.push(`N_MARK${n}`);
+    if (!s.tasks.includes('T_GATE') || s.tasks.includes('T_REFLECT')) return;
+    for (const id of ['T_POST', 'T_DIARY', 'T_KEYBOX', 'T_BRIDGE', 'T_TOWER', 'T_REFLECT']) { if (!s.tasks.includes(id)) s.tasks.push(id); c.prog.s.flags[id] = true; }
+    if (!s.inv.includes('I_BOXKEY')) s.inv.push('I_BOXKEY');
+    st.l6Told = true; c.prog.check(true);
+  }
 
   // a picture at the top of the screen for a moment (U14: things above, thoughts below)
   function flashPhoto(src, caption, sec = 5) {   // long enough to read the caption (feedback: pictures changed too fast)
@@ -135,10 +156,12 @@ export default function story(ext, shared) {
     return true;
   }, onDone: () => talk('crank', { title: '避難小屋' }) });
   // 山道の記録 (5.2): three eyes carved into cedars; each shot says where the next one is, the third one is watched back
-  ext.registerTask('T_MARK1', { onDone: () => talk('mark1', { title: '伐採跡の杉' }) });
-  ext.registerTask('T_MARK2', { onDone: () => talk('mark2', { title: '林道の奥の杉' }) });
+  // 5.7: each shot is kept as a record with the direction written down: the number of the key cabinet comes from these
+  const keepMark = (n) => { const id = `N_MARK${n}`; if (!ctx.state.docsRead.includes(id)) ctx.state.docsRead.push(id); ctx.ui.toast('写真と目の向きを、手帳に残した'); };
+  ext.registerTask('T_MARK1', { onDone: () => { keepMark(1); return talk('mark1', { title: '伐採跡の杉' }); } });
+  ext.registerTask('T_MARK2', { onDone: () => { keepMark(2); return talk('mark2', { title: '林道の奥の杉' }); } });
   ext.registerTask('T_MARK3', { onDone: async () => {
-    snd.sting(); fear.kick(0.6); gaze.state.sanity = Math.max(25, gaze.state.sanity - 12);
+    keepMark(3); snd.sting(); fear.kick(0.6); gaze.state.sanity = Math.max(25, gaze.state.sanity - 12);
     await talk('mark3', { title: '沢の下手の杉' });
   } });
   ext.registerTask('T_PHONE', { run: async () => {
@@ -148,6 +171,26 @@ export default function story(ext, shared) {
     else await talk('phoneIgnore', { title: '着信' });
     return true;
   } });
+  // 5.7 ---------------------------------------------------------------- the old post, the key cabinet, the blocked bridge, the board
+  const showDoc = (id) => new Promise((res) => {
+    const d = ctx.data.docs.find((x) => x.id === id);
+    if (!ctx.state.docsRead.includes(id)) ctx.state.docsRead.push(id);
+    if (ctx.qa) return res();
+    ctx.wm.open('doc', { title: d.title, size: 's', onClose: res, render: (el) => { el.innerHTML = `${d.photo ? `<img class="gf-doc-img" src="${esc(d.photo)}" alt="">` : ''}${d.text.split('\n').map((p) => `<p>${esc(p)}</p>`).join('')}${d.feeling ? `<p class="iv-feel">${esc(d.feeling)}</p>` : ''}`; } });
+  });
+  ext.registerTask('T_POST', { onDone: () => talk('postArrive', { title: '旧詰所' }) });
+  ext.registerTask('T_DIARY', { run: (c, task) => playMG(task), onDone: async () => { await showDoc('N_DIARY'); await talk('diary', { title: '当直日誌' }); } });
+  ext.registerTask('T_KEYBOX', { run: () => numberLock(ctx, { sound: snd }), onDone: () => talk('keybox', { title: '鍵箱' }) });
+  ext.registerTask('T_BRIDGE', { onDone: async () => {
+    snd.sting(); fear.kick(0.9); lookAt = { x: BRIDGE.x, y: 2.3, z: BRIDGE.z, t: 1.4 };
+    await wait(1.5); await talk('bridgeBlocked', { title: '沢の橋' }); guide('tower');
+  } });
+  ext.registerTask('T_TOWER', { onDone: () => talk('towerTop', { title: '火の見櫓' }) });
+  ext.registerTask('T_REFLECT', {
+    canStart: () => (reflector && reflector.aiming ? '板から、いったん手を離してから。' : true),
+    run: () => reflector.run(),
+    onDone: async () => { M.parts.boardHit = true; await talk('reflect', { title: '見張り台' }); },
+  });
   ext.registerTask('T_GATE', { onDone: async () => {
     snd.chain(); const d = ctx.world.doors.get('D_GATE'); if (d) { d.isOpen = true; d.col && (d.col.off = true); }
     M.parts.crankArm.visible = true;
@@ -246,6 +289,15 @@ export default function story(ext, shared) {
     const i = lvl(), on = (i === 1 || i === 2) && !done('T_RADIO') && !st.mirror;
     if (!F) return;
     if (st.scope) { shared.scripted = null; return; }   // the telescope scene drives F itself
+    if (shared.aimDrive) return;                        // the reflector's last moment drives F itself
+    if (done('T_KEYBOX') && !done('T_REFLECT') && !st.mirror) {   // 5.7: it stands on the bridge and does not move; the head follows you, the scythe rises as the light holds
+      const cam = ctx.camera;
+      F.root.visible = true; F.root.position.set(BRIDGE.x, 0.37, BRIDGE.z); F.root.rotation.set(0, Math.atan2(cam.position.x - BRIDGE.x, cam.position.z - BRIDGE.z), 0);
+      const p = shared.aim ? shared.aimProgress || 0 : 0;
+      F.update(dt, { speed: 0, look: cam.position, pose: p > 0.35 ? { attack: 'windup', progress: Math.min(1, (p - 0.35) / 0.6) } : {} });
+      shared.scripted = { visible: true, x: BRIDGE.x, z: BRIDGE.z, floor: 0, yaw: F.root.rotation.y };
+      return;
+    }
     if (!on) { if (!st.mirror) F.root.visible = false; shared.scripted = null; return; }
     const cam = ctx.camera;
     if (st.watchT < 0) { F.root.visible = true; F.root.position.set(WATCH.x, 0, WATCH.z); }
@@ -263,7 +315,7 @@ export default function story(ext, shared) {
 
   // ---------------------------------------------------------------- death: what went wrong, try this stage again
   ext.registerDeath({ run: (c, reason) => {
-    if (dying) return; dying = true; st.deaths++;
+    if (dying) return; dying = true; st.deaths++; reflector && reflector.aiming && reflector.cancel();
     c.bus.emit('player:dead', { reason });
     snd.sting();
     const kq = c.isTouch ? '「目を閉じる」ボタン' : '目を閉じる（Q）', kr = c.isTouch ? '「ボトル」ボタン' : 'ボトル（R）';   // the advice names the control the player has
@@ -282,10 +334,10 @@ export default function story(ext, shared) {
     if (el && !c.calm) { el.hidden = false; setTimeout(() => { el.hidden = true; show(); }, c.qa ? 50 : 2400); } else show();   // the face stays 2.4 s, then the same face heads the window
   } });
   ext.registerScreen('ending', { keepSave: false, open: (c, e) => {
-    const sec = Math.round(st.played), chains = completedChains(c.state.docsRead), recs = Object.values(CHAINS).flat().filter((d) => c.state.docsRead.includes(d)).length;
+    const sec = Math.round(st.played), chains = completedChains(c.state.docsRead), allRecs = Object.values(CHAINS).flat().length, allChains = Object.keys(CHAINS).length, recs = Object.values(CHAINS).flat().filter((d) => c.state.docsRead.includes(d)).length;
     fear && fear.reset(); snd && snd.radioStatic(false);
     showEndingScene(c, { photo: e.photo, kicker: e.kicker, title: e.title, text: e.text,
-      stats: `記録 ${recs} / 8 ・ そろった記録 ${chains} / 3 ・ やり直し ${st.deaths} 回 ・ ${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒`,
+      stats: `記録 ${recs} / ${allRecs} ・ そろった記録 ${chains} / ${allChains} ・ やり直し ${st.deaths} 回 ・ ${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒`,
       buttons: [{ label: 'タイトルに戻る', primary: true, fn: () => location.reload() }] });
   } });
 
@@ -299,6 +351,53 @@ export default function story(ext, shared) {
     const gate = ctx.world.doors.get('D_GATE'); if (gate && done('T_GATE')) { gate.isOpen = true; gate.col && (gate.col.off = true); }
     if (M.parts.crankArm) M.parts.crankArm.visible = done('T_GATE');
     if (gaze) gaze.updateBottles();
+    // 5.7: the flood and the blocked bridge come from the tasks, so a resumed game has them too
+    const flooded = done('T_KEYBOX'), wade = st.floodWade && i === L7;
+    if (M.setFlood) { M.setFlood(flooded, flooded && !wade); M.setBridgeShut(flooded && !done('T_REFLECT')); }
+    if (M.parts.sun) M.parts.sun.visible = i === L7;
+    if (M.parts.towerLamp) M.parts.towerLamp.intensity = i === L7 ? 5 : 0;
+    if (done('T_REFLECT')) harden();
+  }
+  // after the board: it has been hurt and it comes for you (the last two stages). The player's run (3.8) still beats its chase (3.7) on open ground
+  function harden() {
+    const m = ctx.monsters && ctx.monsters.list[0]; if (!m || st.hard) return;
+    st.hard = true; const p = m.ai.p;
+    Object.assign(p.speed, { wander: 1.5, seek: 2.2, chase: 3.7 }); p.sight = 30; p.notice = 0.7; p.near = 2.4; if (p.lose) { p.lose.cap = 40; p.lose.noLos = 5; }
+    m.wait = Math.min(m.wait, 5);
+  }
+  // L7: the bridge figure replaces the walking one; afterwards it hunts: every few seconds it is told where you are, unless you have hidden
+  function monsterTick(dt, run) {
+    const m = ctx.monsters && ctx.monsters.list[0]; if (!m) return;
+    if (lvl() === L7 && !done('T_REFLECT')) { if (m.spawned) { m.ai.despawn(); m.spawned = false; } m.wait = 1e6; return; }
+    if (m.wait > 1e5) m.wait = 5;
+    if (!st.hard || !run || !m.spawned || m.ai.state === 'chase' || m.ai.state === 'off' || ctx.hidden) return;
+    if ((st.huntT += dt) < 9) return; st.huntT = 0;
+    const p = ctx.camera.position, at = { x: p.x, z: p.z, floor: ctx.floor || 0 };
+    m.ai.lastSeen = at; if (m.ai.goTo(at)) { m.ai.lookT = 0; m.ai.set('seek'); }
+  }
+  // the water and the bridge on the way back (L7)
+  function bridgeTick(c, t, run, dt) {
+    if (!done('T_KEYBOX') || !run) return;
+    const p = c.camera.position, ground = (c.floor || 0) === 0;
+    // looking at the bridge figure too long closes the eyes for you: it cannot kill from there (the aim has its own rule in tower.js)
+    if (lvl() === L7 && !done('T_REFLECT') && !reflector.aiming) {
+      const S = gaze.state;
+      if (st.blinkT > 0) { st.blinkT -= dt; S.sanity = Math.min(60, S.sanity + 20 * dt); if (st.blinkT <= 0) { st.blinkT = 0; shared.forceClose = false; } }
+      else if (S.sanity <= 8) { st.blinkT = 3; shared.forceClose = true; fear.kick(0.8); say('目が勝手に閉じた。橋の方を、見続けてはいけない。', 4); }
+    } else if (st.blinkT > 0) { st.blinkT = 0; shared.forceClose = false; }
+    if (lvl() === L7 && !done('T_REFLECT') && ground) {
+      // never shut out: a game resumed on the north bank (the save's own position) may wade back until it is south again
+      if (p.z > -8 && !st.floodWade) { st.floodWade = true; applyStage(); say('今なら、まだ足の届く浅い所がある。南の岸へ戻ろう。', 6); }
+      else if (st.floodWade && p.z < -12.2) { st.floodWade = false; applyStage(); }
+      if (Math.hypot(p.x - BRIDGE.x, p.z + 12.2) < 1.8 && t - st.barT > 6 && !gaze.closed) {
+        st.barT = t;
+        const S = gaze.state; S.health = Math.max(34, S.health - 34); S.sanity = Math.max(10, S.sanity - 15); S.hit = 1;
+        if (snd.scytheSwing) snd.scytheSwing(); if (snd.hit) snd.hit(); fear.kick(1); if (c.fx && c.fx.spook) c.fx.spook(0.8);
+        c.teleport({ x: p.x, z: -14.6, floor: 0, yaw: c.fp.yaw });
+        say('鎌の届く幅だ。ここは通れない。', 4);
+      }
+    }
+    if (ground && !st.floodWade && !done('T_ENGINE') && p.z > -12.6 && p.z < -8 && Math.abs(p.x - BRIDGE.x) > 2.2 && t - st.floodT > 12) { st.floodT = t; say('流れが速い。足を入れたら持っていかれる。橋を通るしかない。', 5); }
   }
 
   // ---------------------------------------------------------------- records: each one has the uncle's word; a whole chain is a thought
@@ -309,7 +408,7 @@ export default function story(ext, shared) {
     for (const [chain, ids] of Object.entries(CHAINS)) {
       if (!ids.includes(id) || st.chainsTold.includes(chain) || !ids.every((d) => ctx.state.docsRead.includes(d))) continue;
       st.chainsTold.push(chain);
-      setTimeout(() => { talk(`chain_${chain}`, { title: 'そろった記録' }); ctx.ui.toast(`記録がそろった（${completedChains(ctx.state.docsRead)} / 3）`); }, 1600);
+      setTimeout(() => { talk(`chain_${chain}`, { title: 'そろった記録' }); ctx.ui.toast(`記録がそろった（${completedChains(ctx.state.docsRead)} / ${Object.keys(CHAINS).length}）`); }, 1600);
     }
     if (completedChains(ctx.state.docsRead) >= 2) ctx.setFlag('records2', { silent: true });
   }
@@ -323,9 +422,11 @@ export default function story(ext, shared) {
     F = makeJashi({ detail: 1 }); F.root.visible = false; c.scene.add(F.root);
     gaze = createGaze(c, { shared, mountain: M, sound: snd, fear, onDeath: (r) => c.die(r) });
     gaze.charges = st.charges;
+    reflector = createReflector(c, { shared, gaze, fear, sound: snd, mountain: M, say, figure: () => F, bridge: BRIDGE });
+    if (!c.qa) for (const id of ['N_MARK1', 'N_MARK2', 'N_MARK3', 'N_DIARY']) c.removePickup('doc', id);   // kept by the task that makes them (they lie nowhere on the map)
     // 5.6.2: the things you can walk up to too early say what is missing and where, not the kit's plain "not yet"
-    { const early = { T_GATE: '巻上げの箱だ。差し込むハンドルが要る。東の避難小屋の床にあるはずだ。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_CRANK: '先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
-      const base = c.canStart; c.canStart = (t) => { const r = base(t); return r !== true && early[t.id] && !c.state.tasks.includes(t.id) ? early[t.id] : r; }; }
+    { const early = { T_GATE: '', T_KEYBOX: '鍵箱だ。番号が分からない。先に、奥の机の引き出しで日誌を探そう。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_CRANK: '先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
+      const base = c.canStart; c.canStart = (t) => { const r = base(t); if (r !== true && t.id === 'T_GATE' && !c.state.tasks.includes('T_GATE')) return c.state.tasks.includes('T_CRANK') ? '巻上げの箱に、新しい錠がかかっている。葛西さんの札に「盗難よけ。鍵は旧詰所」とある。' : '巻上げの箱だ。差し込むハンドルが要る。東の避難小屋の床にあるはずだ。'; return r !== true && early[t.id] && !c.state.tasks.includes(t.id) ? early[t.id] : r; }; }
     // the bell is something to use once its muffle is back (T_BELL): an invisible handle on the frame
     const bm = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.8), new THREE.MeshBasicMaterial({ visible: false })); bm.position.set(-12.7, 1.4, -6.6); bm.name = 'js-bell'; bm.userData.interact = { kind: 'js-bell', id: 'bell' }; c.world.group.add(bm);
     // the station is the first use; afterwards the frame stays usable
@@ -335,30 +436,36 @@ export default function story(ext, shared) {
     const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') && c.state.room !== 'CAB_BALC' ? true : base()); /* locked from the room side only: outside, it always opens (a player shut out on the balcony, 2026-11-02) */ balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
     document.body.insertAdjacentHTML('beforeend', `<div id="js-photo" class="js-photo" hidden></div><div id="js-jump" class="js-jump" hidden><img src="assets/textures/monster-face-v4-2.webp" alt=""></div>`);
     c.warmImages = [...(c.warmImages || []), 'assets/textures/monster-face-v4-2.webp', 'assets/photos/mountain-v4-1.webp'];
-    if (window.__gf || c.qa || c.debug) window.__js = { st, gaze, M, F: () => F, applyStage, chains: () => completedChains(c.state.docsRead), shared };
+    if (window.__gf || c.qa || c.debug) window.__js = { st, gaze, M, F: () => F, applyStage, chains: () => completedChains(c.state.docsRead), shared, reflector };
   });
   ext.registerBoot('js-walls', async (c, report) => { if (!M) return; report(0, '山を準備中…'); await Promise.race([M.ready, new Promise((r) => setTimeout(r, 12000))]); report(1, '山を準備中…'); });
 
   ext.on('game:start', async ({ resume }) => {
     dying = false; st.watchT = -1; gaze.reset(); applyStage();
     if (!resume) { await talk('opening', { title: '山の別荘', last: '片付けを始める' }); guide('telescope'); }
-    else say(`第${STAGE_NAMES[lvl()]}段階から再開した。${ctx.isTouch ? "右上のメニューから手帳と地図を開ける" : "Tab で手帳、M で地図を開ける"}。`, 5);
+    else {
+      say(`第${STAGE_NAMES[lvl()]}段階から再開した。${ctx.isTouch ? "右上のメニューから手帳と地図を開ける" : "Tab で手帳、M で地図を開ける"}。`, 5);
+      const p = ctx.camera.position; ctx.checkpoint = { x: p.x, z: p.z, yaw: ctx.fp.yaw, floor: ctx.floor || 0 };   // 5.7: a death after a resume comes back here, not to the villa on the far bank
+      if (lvl() === L6 && !done('T_POST') && !st.l6Told) { st.l6Told = true; queueTalk('gateLocked', { title: '無線' }); guide('post'); }   // a save from the old gate stage: the padlock has to be told
+    }
   });
   ext.on('stage:up', () => {
     applyStage();
     const i = lvl();
-    const G = [null, null, 'radio', 'bottle', 'crank', 'gate', 'car'][i];
-    if (G && i !== 3 && i !== 5) setTimeout(() => guide(G), 900);
+    const G = [null, null, 'radio', 'bottle', 'crank', null, 'bridge', 'gate', 'car'][i];
+    if (G && i !== 3 && i !== L8) setTimeout(() => guide(G), 900);
+    if (i === L6) { st.l6Told = true; setTimeout(() => { queueTalk('gateLocked', { title: '無線' }); guide('post'); }, 1000); }
     if (i === 1) setTimeout(() => say(`窓の外に、まだいる。目を合わせると胸が苦しい。${ctx.isTouch ? '「目を閉じる」ボタン' : 'Q'}で目を閉じられる。`, 7), 1200);
     if (i === 3) setTimeout(() => guide('bottle').then(() => say('外では、白い姿が林道を歩いている。目を合わせず、木の陰を選んで。', 6)), 1500);
-    if (i === 5) setTimeout(() => guide('gate').then(() => say('橋を渡って、北へ戻る。', 4)), 1200);
-    if (i === 6) setTimeout(() => say('ゲートが上がった。駐車場の車まで。', 4), 800);
+    if (i === L8) setTimeout(() => guide('gate').then(() => say('橋を渡って、北へ戻る。足音が、さっきより速い。見つかったら、走るだけでは振り切りにくい。', 7)), 1200);
+    if (i === 8) setTimeout(() => say('ゲートが上がった。駐車場の車まで。', 4), 800);
   });
   ext.on('player:room', ({ to }) => {
+    if (TOWER_SIDE.includes(to) && lvl() === L7 && !done('T_BRIDGE')) ctx.completeTask('T_BRIDGE');   // came round without passing the bridge (a resumed game on the far bank): do not send them back
     if (st.firstRoom[to]) return; st.firstRoom[to] = true;
     if (to === 'CAB_HALL' && lvl() === 2 && !done('T_RADIO')) setTimeout(() => talk('downstairs', { title: '一階' }), 500);
     if (to === 'CAB_UP' && lvl() >= 3 && !done('T_ENGINE')) setTimeout(() => talk('nearCabin', { title: '二階' }), 500);   // 5.6.2: the player who walks back up to wait
-    if (to === 'O_BRIDGE' && lvl() >= 4) setTimeout(() => talk('bridge', { title: '沢と橋' }), 600);
+    if (to === 'O_BRIDGE' && lvl() >= 4 && lvl() < L6) setTimeout(() => talk('bridge', { title: '沢と橋' }), 600);
     if (to === 'SHELTER') snd.rustle({ gain: 0.5 });
   });
   ext.on('item:pickup', ({ id }) => { if (id === 'I_GLASSES') setTimeout(() => talk(done('T_RADIO') ? 'glasses' : 'earlyGlasses', { title: 'サングラス' }), 300); });
@@ -397,6 +504,9 @@ export default function story(ext, shared) {
     if (lookAt) { turnTo(lookAt.x, lookAt.y, lookAt.z, Math.min(1, dt * 4)); if ((lookAt.t -= dt) <= 0) lookAt = null; }
     // L3: a knock on the front door while you are downstairs and the radio is not yet tuned (H4)
     if (run && lvl() === 2 && !done('T_RADIO') && !st.knocked && c.state.room === 'CAB_HALL' && (st.hallT = (st.hallT || 0) + dt) > 14) { st.knocked = true; c.audio && c.audio.noise && c.audio.noise('knock', { n: 3, gain: 0.9 }); fear.kick(0.6); say('玄関の戸を、外から三度。……開けない。叔父なら、無線で呼ぶはずだ。', 6); }
+    reflector.update(dt, run);
+    monsterTick(dt, run);
+    bridgeTick(c, t, run, dt);
     gaze.update(dt, run);
     const g = gaze.level(), danger = (c.fxState && c.fxState.danger) || 0;
     fear.update(dt, run ? Math.max(g, danger) : 0, { heart: !(c.fxState && c.fxState.chasing) });
