@@ -188,7 +188,7 @@ export function dressMountain(ctx) {
     const w = P.desk({}, 1.4, 0.7, 0.76); w.position.set(3.6, FY(1), 24.9); G.add(w); solid(w); }
   // the shed shelf (bottles) and the hut's floorboards (the crank)
   { const s = P.shelf({}, 1.4, 1.7, 0.4, 3, 'boxes'); s.position.set(-20.4, 0, -5.2); G.add(s); solid(s);
-    const bs = named('bottles_shelf'); bs.position.set(-20.4, 0.92, -5.15);
+    const bs = named('bottles_shelf'); bs.position.set(-20.4, 0.92, -4.96);   // 5.7.2: in front of the boxes (they hid all but the caps)
     for (const x of [-0.12, 0.12]) { cyl(0.06, 0.07, 0.26, M.bottle, x, 0.13, 0, 12, bs); cyl(0.035, 0.035, 0.05, M.red, x, 0.285, 0, 10, bs); }
     const cr = named('crank_floor'); cr.position.set(15.4, 0.04, -17.2);
     const shaft = cyl(0.02, 0.02, 0.62, M.iron, 0, 0, 0, 8, cr); shaft.rotation.z = Math.PI / 2;

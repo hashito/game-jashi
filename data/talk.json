@@ -8,13 +8,15 @@
     {
       "img": "assets/photos/cabin-memory-v4-2.webp",
       "who": "私",
-      "text": "携帯は圏外なので、修司から無線を借りた。修司は同じ二階の部屋で、備品の番号を確認している。ベランダには、子供の頃に使った望遠鏡が出してあった。"
+      "text": "携帯は圏外なので、修司から無線を借りた。修司は一階で荷物をまとめていて、用があるときは無線で話す。ベランダには、子供の頃に使った望遠鏡が出してあった。"
     },
     {
       "img": "assets/photos/cabin-memory-v4-2.webp",
       "who": "修司",
       "text": "望遠鏡の台まで撮っておいて。先に林道の軽トラへ荷物を運ぶ。済んだら下の机も頼む。",
-      "voice": "assets/audio/uncle-opening-2.wav"
+      "voice": "assets/audio/uncle-opening-2.wav",
+      "where": "無線",
+      "vfx": "radio"
     },
     {
       "img": "assets/photos/cabin-memory-v4-2.webp",
@@ -31,14 +33,17 @@
       "who": "修司",
       "where": "無線",
       "text": "どうした、息が荒いぞ。……何か見たのか。白いやつなら、目を合わせるな。山の見回りをしている葛西さんから聞いた話で、俺は見たことがない。部屋へ入って、作業室の雨戸を引いてくれ。話はそれからだ。",
-      "voice": "assets/audio/uncle-telescope-1.wav"
+      "voice": "assets/audio/uncle-telescope-1.wav",
+      "vfx": "radio"
     }
   ],
   "uncleLeave": [
     {
       "who": "修司",
       "text": "じゃあ、先に林道の軽トラへ荷物を積んでくる。何かあったら無線で呼べ。すぐそこだ。",
-      "voice": "assets/audio/uncle-uncleLeave-0.wav"
+      "voice": "assets/audio/uncle-uncleLeave-0.wav",
+      "where": "無線",
+      "vfx": "radio"
     },
     {
       "who": "私",

@@ -63,7 +63,7 @@ export default function story(ext, shared) {
     if (!GUIDE[key]) return guideChain;
     guideChain = guideChain.then(async () => {
       while (ctx.wm && ctx.wm.isOpen && !ctx.qa) await new Promise((r) => setTimeout(r, 300));
-      const here = !st.uncleGone && lvl() === 0;   // before he leaves he is in the room: his own voice, not the radio
+      const here = false;   // 5.7.2: he is downstairs from the start, every word comes through the radio
       if (ctx.voiceLine) ctx.voiceLine(`assets/audio/guide-${key}.wav`, here ? null : 'radio');
       say(`修司${here ? '' : '（無線）'}「${GUIDE[key]}」`, 7);
       await wait(6.5);
@@ -125,9 +125,9 @@ export default function story(ext, shared) {
   // ---------------------------------------------------------------- tasks
   ext.registerTask('T_TELESCOPE', { run: async (c, task) => {
     if (!st.uncleGone) {
-      await talk('uncleLeave', { title: '二階の作業室' });
+      await talk('uncleLeave', { title: '無線' });
       st.uncleGone = true; applyStage(); snd.steps({ gain: 0.4 });
-      say('叔父の足音が梯子を下りて、玄関の戸が閉まった。', 4);
+      say('下で、玄関の戸が閉まる音がした。叔父が林道へ出ていった。', 4);
       await wait(0.6);
     }
     await scopeScene();   // the 4.x scene: no mini game, the lens zooms in by itself (feedback 2026-11-02)
@@ -325,7 +325,7 @@ export default function story(ext, shared) {
       el.innerHTML = `<div class="js-death">${c.calm ? '' : '<img class="js-death-img" src="assets/textures/monster-face-v4-2.webp" alt="">'}<p class="js-death-kicker">${scy ? 'THE BLADE CAME DOWN' : 'THE EYE WAS STILL OPEN'}</p>${lines}<p class="js-death-text">${esc(text)}</p><div class="js-choices"><button type="button" class="btn primary" data-retry>この段階からやり直す</button></div></div>`;
       const b = el.querySelector('[data-retry]'); b.onclick = () => { c.wm.close(); }; setTimeout(() => b.focus(), 30);
     }, onClose: () => {
-      dying = false; gaze.reset({ grace: 5 }); fear.reset(); applyStage();
+      dying = false; gaze.reset({ grace: 5 }); if (ctx.state.inv.includes('I_BOTTLE')) gaze.charges = 2; fear.reset(); applyStage();   // 5.7.2: a retry starts with both bottles
       c.setFloor(c.checkpoint.floor || 0, c.checkpoint); c.fp.yaw = c.checkpoint.yaw || 0;
       c.bus.emit('player:respawn', { room: c.world.roomAt(c.checkpoint.x, c.checkpoint.z, c.camera.position.y) });
       c.ui.toast(`第${STAGE_NAMES[lvl()]}段階の区切りから、やり直します。`);
@@ -342,15 +342,20 @@ export default function story(ext, shared) {
   } });
 
   // ---------------------------------------------------------------- what is where at each stage (the kit's stage-look does the "show" names)
+  function touchButtons() {
+    const show = { KeyR: ctx.state.inv.includes('I_BOTTLE'), KeyC: ctx.controlOpen('crouch'), KeyF: ctx.controlOpen('light') };
+    for (const [k, on] of Object.entries(show)) { const b = document.querySelector(`#t-buttons [data-k="${k}"]`); if (b) b.style.display = on ? '' : 'none'; }
+  }
   function applyStage() {
     if (!ctx || !M) return;
     const i = lvl();
-    const U = M.people.uncle; if (U) U.root.visible = i === 0 && !st.uncleGone;
+    const U = M.people.uncle; if (U) U.root.visible = false;   // 5.7.2: he is downstairs, heard on the radio only
     if (M.parts.shutter) M.parts.shutter.target = done('T_SHUTTER') ? 1 : 0;
     const balc = ctx.world.doors.get('D_BALC'); if (balc && done('T_SHUTTER') && ctx.state.room !== 'CAB_BALC') balc.close();
     const gate = ctx.world.doors.get('D_GATE'); if (gate && done('T_GATE')) { gate.isOpen = true; gate.col && (gate.col.off = true); }
     if (M.parts.crankArm) M.parts.crankArm.visible = done('T_GATE');
     if (gaze) gaze.updateBottles();
+    touchButtons();
     // 5.7: the flood and the blocked bridge come from the tasks, so a resumed game has them too
     const flooded = done('T_KEYBOX'), wade = st.floodWade && i === L7;
     if (M.setFlood) { M.setFlood(flooded, flooded && !wade); M.setBridgeShut(flooded && !done('T_REFLECT')); }
@@ -358,11 +363,12 @@ export default function story(ext, shared) {
     if (M.parts.towerLamp) M.parts.towerLamp.intensity = i === L7 ? 5 : 0;
     if (done('T_REFLECT')) harden();
   }
-  // after the board: it has been hurt and it comes for you (the last two stages). The player's run (3.8) still beats its chase (3.7) on open ground
+  // after the board: it has been hurt and it comes for you (the last two stages). 5.7.2: it was too fast to get away from (3.7 against a walk
+  // of 2.65 once the breath runs out): its chase is 3.1 now, it loses you sooner, and it is told where you are every 14 s, not 9
   function harden() {
     const m = ctx.monsters && ctx.monsters.list[0]; if (!m || st.hard) return;
     st.hard = true; const p = m.ai.p;
-    Object.assign(p.speed, { wander: 1.5, seek: 2.2, chase: 3.7 }); p.sight = 30; p.notice = 0.7; p.near = 2.4; if (p.lose) { p.lose.cap = 40; p.lose.noLos = 5; }
+    Object.assign(p.speed, { wander: 1.3, seek: 1.8, chase: 3.1 }); p.sight = 22; p.notice = 0.9; p.near = 2.2; if (p.lose) { p.lose.cap = 28; p.lose.noLos = 3.5; }
     m.wait = Math.min(m.wait, 5);
   }
   // L7: the bridge figure replaces the walking one; afterwards it hunts: every few seconds it is told where you are, unless you have hidden
@@ -371,7 +377,7 @@ export default function story(ext, shared) {
     if (lvl() === L7 && !done('T_REFLECT')) { if (m.spawned) { m.ai.despawn(); m.spawned = false; } m.wait = 1e6; return; }
     if (m.wait > 1e5) m.wait = 5;
     if (!st.hard || !run || !m.spawned || m.ai.state === 'chase' || m.ai.state === 'off' || ctx.hidden) return;
-    if ((st.huntT += dt) < 9) return; st.huntT = 0;
+    if ((st.huntT += dt) < 14) return; st.huntT = 0;
     const p = ctx.camera.position, at = { x: p.x, z: p.z, floor: ctx.floor || 0 };
     m.ai.lastSeen = at; if (m.ai.goTo(at)) { m.ai.lookT = 0; m.ai.set('seek'); }
   }
@@ -403,12 +409,13 @@ export default function story(ext, shared) {
   // ---------------------------------------------------------------- records: each one has the uncle's word; a whole chain is a thought
   function onDoc(id) {
     const key = `after_${id.replace(/^N_/, '').toLowerCase()}`;
-    if (T[key]) setTimeout(() => talk(key, { title: '無線' }), 400);
-    if (id === 'N_NOTE') setTimeout(() => talk('note', { title: '書き置き' }), 400);
+    // 5.7.2: never over the record itself (it flashed and was replaced): these wait until the player closes it
+    if (T[key]) queueTalk(key, { title: '無線' });
+    if (id === 'N_NOTE') queueTalk('note', { title: '書き置き' });
     for (const [chain, ids] of Object.entries(CHAINS)) {
       if (!ids.includes(id) || st.chainsTold.includes(chain) || !ids.every((d) => ctx.state.docsRead.includes(d))) continue;
       st.chainsTold.push(chain);
-      setTimeout(() => { talk(`chain_${chain}`, { title: 'そろった記録' }); ctx.ui.toast(`記録がそろった（${completedChains(ctx.state.docsRead)} / ${Object.keys(CHAINS).length}）`); }, 1600);
+      ctx.ui.toast(`記録がそろった（${completedChains(ctx.state.docsRead)} / ${Object.keys(CHAINS).length}）`); queueTalk(`chain_${chain}`, { title: 'そろった記録' });
     }
     if (completedChains(ctx.state.docsRead) >= 2) ctx.setFlag('records2', { silent: true });
   }
@@ -470,6 +477,7 @@ export default function story(ext, shared) {
   });
   ext.on('item:pickup', ({ id }) => { if (id === 'I_GLASSES') setTimeout(() => talk(done('T_RADIO') ? 'glasses' : 'earlyGlasses', { title: 'サングラス' }), 300); });
   ext.on('doc:read', ({ id }) => onDoc(id));
+  for (const ev of ['item:pickup', 'task:done', 'stage:up']) ext.on(ev, () => ctx && setTimeout(touchButtons, 0));   // after the task's items are given
   // the hut's sliding door shuts again from inside (plan: closable, the room shutHide): with it drawn, the figure outside cannot see you
   ext.on('door:open', ({ id }) => { if (id === 'D_SHELTER' && !st.hutTold) { st.hutTold = true; setTimeout(() => say('この引戸は、中から閉められる。', 4), 900); } });
   ext.on('door:close', ({ id }) => { if (id === 'D_SHELTER' && ctx.state.room === 'SHELTER') ctx.monologue('戸を閉めた。ここなら、外から見えない。', 4, { urgent: true }); });
