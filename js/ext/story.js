@@ -220,11 +220,14 @@ export default function story(ext, shared) {
   // 山道の記録 (5.2): three eyes carved into cedars; each shot says where the next one is, the third one is watched back
   // 5.7: each shot is kept as a record with the direction written down: the number of the key cabinet comes from these
   const keepMark = (n) => { const id = `N_MARK${n}`; if (!ctx.state.docsRead.includes(id)) ctx.state.docsRead.push(id); ctx.ui.toast('写真と目の向きを、手帳に残した'); };
-  ext.registerTask('T_MARK1', { onDone: () => { keepMark(1); return talk('mark1', { title: '伐採跡の杉' }); } });
-  ext.registerTask('T_MARK2', { onDone: () => { keepMark(2); return talk('mark2', { title: '林道の奥の杉' }); } });
+  // 5.8.3: the three marks in any order; the uncle sums them up once the third is in (whichever it is)
+  const marksDone = () => done('T_MARK1') && done('T_MARK2') && done('T_MARK3');
+  const marksTalk = () => (marksDone() ? talk(done('T_CRANK') ? 'marksAfterCrank' : 'marks', { title: '三本の杉' }) : null);
+  ext.registerTask('T_MARK1', { onDone: async () => { keepMark(1); await talk('mark1', { title: '伐採跡の杉' }); await marksTalk(); } });
+  ext.registerTask('T_MARK2', { onDone: async () => { keepMark(2); await talk('mark2', { title: '林道の奥の杉' }); await marksTalk(); } });
   ext.registerTask('T_MARK3', { onDone: async () => {
     keepMark(3); snd.sting(); fear.kick(0.6); gaze.state.sanity = Math.max(25, gaze.state.sanity - 12);
-    await talk('mark3', { title: '沢の下手の杉' });
+    await talk('mark3', { title: '沢の下手の杉' }); await marksTalk();
   } });
   ext.registerTask('T_PHONE', { run: async () => {
     snd.ring(0.3); await wait(1.4);
@@ -276,7 +279,8 @@ export default function story(ext, shared) {
   // 5.8: the old bell down the creek (T_LURE): it stands guard at the hut once the three marks have shown where it went; the bell draws
   // it off for LURE_SEC, then it goes back to the hut. Ringing again draws it off again
   const BELL2 = { x: 24.4, z: -28.9 }, HUT_GUARD = { x: 20.2, z: -12.4 }, LURE_SEC = 75;
-  const guarding = () => lvl() === 4 && done('T_MARK3') && !done('T_CRANK');
+  const guarding = () => lvl() === 4 && marksDone() && !done('T_CRANK');
+  const GUARD_STAY = 28, ROUND_SEC = 32;   // 5.8.3: without the bell it still leaves now and then: a round down the creek, then back
   function lure() { ringBell({ x: BELL2.x, z: BELL2.z + 1.2 }, M.parts.bell2); st.lureT = LURE_SEC; }
   ext.registerTask('T_LURE', { run: async () => { lure(); await wait(0.8); return true; }, onDone: () => talk('lure', { title: '下手の呼び鐘' }) });
   ext.registerInteract('js-bell2', { prompt: () => (done('T_LURE') ? '[E] 鐘を鳴らす（小屋から引き離す）' : ''), run: () => { if (done('T_LURE')) { lure(); say('鐘が鳴った。来る道から外れて、小屋へ。', 4); } } });
@@ -464,7 +468,8 @@ export default function story(ext, shared) {
     if (m.wait > 1e5) m.wait = 5;
     // 5.8: it waits at the hut until the bell draws it off
     if (run && guarding()) {
-      if (st.lureT > 0) st.lureT -= dt;
+      if (st.lureT > 0) { st.lureT -= dt; st.stayT = 0; if (m.spawned && m.ai.state !== 'chase' && m.ai.state !== 'off' && (st.guardT = (st.guardT || 0) + dt) >= 3) { st.guardT = 0; if (Math.hypot(m.ai.pos.x - BELL2.x, m.ai.pos.z - BELL2.z - 1.5) > 2.5 && m.ai.goTo({ x: BELL2.x, z: BELL2.z + 1.5 })) { m.ai.lookT = 0; m.ai.set('seek'); } } }
+      else if (m.spawned && Math.hypot(m.ai.pos.x - HUT_GUARD.x, m.ai.pos.z - HUT_GUARD.z) < 3 && (st.stayT = (st.stayT || 0) + dt) >= GUARD_STAY) { st.stayT = 0; st.lureT = ROUND_SEC; }
       else if (m.spawned && m.ai.state !== 'chase' && m.ai.state !== 'off' && (st.guardT = (st.guardT || 0) + dt) >= 3) {
         st.guardT = 0; const d = Math.hypot(m.ai.pos.x - HUT_GUARD.x, m.ai.pos.z - HUT_GUARD.z);
         if (d > 2.5 && m.ai.goTo(HUT_GUARD)) { m.ai.lookT = 0; m.ai.set('seek'); }
@@ -544,8 +549,8 @@ export default function story(ext, shared) {
     reflector = createReflector(c, { shared, gaze, fear, sound: snd, mountain: M, say, figure: () => F, bridge: BRIDGE });
     if (!c.qa) for (const id of ['N_MARK1', 'N_MARK2', 'N_MARK3', 'N_DIARY']) c.removePickup('doc', id);   // kept by the task that makes them (they lie nowhere on the map)
     // 5.6.2: the things you can walk up to too early say what is missing and where, not the kit's plain "not yet"
-    { const early = { T_GATE: '', T_KEYBOX: '鍵箱だ。番号が分からない。先に、奥の机の引き出しで日誌を探そう。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_LURE: '古い呼び鐘だ。先に杉の刻み目をたどって、白い姿がどこにいるか確かめよう。', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
-      const crankEarly = () => (!c.state.tasks.includes('T_BOTTLE') ? '先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。' : !c.state.tasks.includes('T_MARK3') ? '小屋へ行く前に、杉の刻み目をたどって、白い姿がどこにいるか確かめよう。' : '小屋の前に、白い姿がいる。先に沢の下手の呼び鐘を鳴らして、引き離そう。');
+    { const early = { T_GATE: '', T_KEYBOX: '鍵箱だ。番号が分からない。先に、奥の机の引き出しで日誌を探そう。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_LURE: '古い呼び鐘だ。今は、鳴らす用がない', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
+      const crankEarly = () => ('先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。');
       const base = c.canStart; c.canStart = (t) => { const r = base(t); if (r !== true && t.id === 'T_CRANK' && !c.state.tasks.includes('T_CRANK')) return crankEarly(); if (r !== true && t.id === 'T_GATE' && !c.state.tasks.includes('T_GATE')) return c.state.tasks.includes('T_CRANK') ? '巻上げの箱に、新しい錠がかかっている。葛西さんの札に「盗難よけ。鍵は旧詰所」とある。' : '巻上げの箱だ。差し込むハンドルが要る。東の避難小屋の床にあるはずだ。'; return r !== true && early[t.id] && !c.state.tasks.includes(t.id) ? early[t.id] : r; }; }
     // the bell is something to use once its muffle is back (T_BELL): an invisible handle on the frame
     const bm = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.8), new THREE.MeshBasicMaterial({ visible: false })); bm.position.set(-12.7, 1.4, -6.6); bm.name = 'js-bell'; bm.userData.interact = { kind: 'js-bell', id: 'bell' }; c.world.group.add(bm);
