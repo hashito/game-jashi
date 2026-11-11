@@ -124,3 +124,14 @@ body.js-scoping #say, body.js-scoping #prompt { visibility: hidden; }
 .js-next-bar b { color: #f0b4a6; font-weight: 800; }
 .js-next-arrow { display: inline-block; color: #e8634a; font-size: 1.3em; line-height: 1; }
 .js-next-d { margin-left: auto; opacity: .85; }
+
+/* 5.8.2: the controls sheet (menu tab 操作 / pause menu 操作のしかた) */
+.js-controls { font-size: 15px; line-height: 1.6; }
+.js-controls-lead { margin: 0 0 .8em; padding: .5em .8em; border-radius: 8px; background: rgba(217, 71, 43, .14); color: var(--gf-text, #e8e2d6); }
+.js-controls table { width: 100%; border-collapse: collapse; }
+.js-controls th, .js-controls td { text-align: left; vertical-align: top; padding: .5em .4em; border-bottom: 1px solid rgba(255, 255, 255, .1); }
+.js-controls th { width: 38%; font-weight: 600; }
+.js-controls th small { display: block; font-weight: 400; opacity: .7; }
+.js-controls td b { color: #f0d9a6; }
+.js-controls td span { display: block; font-size: .9em; opacity: .8; }
+@media (max-width: 520px) { .js-controls th, .js-controls td { display: block; width: auto; border: 0; padding: .1em .2em; } .js-controls tr { display: block; padding: .4em 0; border-bottom: 1px solid rgba(255, 255, 255, .1); } }

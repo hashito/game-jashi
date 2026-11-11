@@ -105,7 +105,7 @@ export function createGaze(ctx, { shared, mountain, sound, fear, onDeath }) {
     sound && sound.shatter && sound.shatter(); fear && fear.kick(0.3);
     ctx.bus.emit('jashi:stunned', {});
   }
-  const updateBottles = () => { const b = $('js-bottles'); const has = ctx.state.inv.includes('I_BOTTLE'); b.hidden = !has; if (has) b.textContent = `ボトル ${st.charges} 本（R で投げる）`; };
+  const updateBottles = () => { const b = $('js-bottles'); const has = ctx.state.inv.includes('I_BOTTLE'); b.hidden = !has; if (has) b.textContent = `ボトル ${st.charges}/2本（R で投げる）`; };
 
   // ---------------------------------------------------------------- per frame
   let threatSide = null, edgeT = 0;

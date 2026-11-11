@@ -92,6 +92,29 @@ export default function story(ext, shared) {
   }
   // 5.8.1 (feedback: show where to go next): the map shows one pin, 「次」, where the step card points now (its emphasis, its room,
   // else the task's station); the other startable tasks keep their plain pins
+  // 5.8.2 (feedback: the controls from the menu): one sheet of the keys, as a tab of the menu and an entry of the pause menu (Esc).
+  // Rows the stage has not opened yet say from when (game.json controls.gate)
+  const controlsHtml = (c) => {
+    const touch = c.isTouch, gate = (c.manifest && c.manifest.controls && c.manifest.controls.gate) || {};
+    const lv = (k) => (gate[k] ? `<small>（Lv.${esc(String(gate[k]).replace(/^L/, ''))}から）</small>` : '');
+    const rows = touch ? [
+      ['歩く', '左下の丸を指でずらす'], ['見回す', '画面の右側をドラッグ'], ['調べる・使う・扉', '［操作］ボタン（または、その物をタップ）'],
+      ['目を閉じる', '［目を閉じる］を押している間', '白い姿と目が合うと苦しくなる。閉じると苦しさが引くが、歩くのは遅くなる。'],
+      ['ボトルを投げる', '［ボトル］', '近づかれたときに。白い姿の方を向いて投げると怯む。'],
+      [`走る${lv('run')}`, '［走る］を押している間'], [`しゃがむ${lv('crouch')}`, '［しゃがむ］'], [`灯り${lv('light')}`, '［灯り］'],
+      [`隠れる${lv('hide')}`, 'ロッカーや物入れの前で［操作］。もう一度で出る'],
+      ['メニュー（地図・タスク・所持品）', '右上の［メニュー］'],
+    ] : [
+      ['歩く', 'W A S D（矢印キーでも）'], ['見回す', 'マウス（画面をクリックすると視点を動かせる）'], ['調べる・使う・扉を開ける', 'E'],
+      ['目を閉じる', 'Q を押している間', '白い姿と目が合うと苦しくなる。閉じると苦しさが引くが、歩くのは遅くなる。'],
+      ['ボトルを投げる', 'R', '近づかれたときに。白い姿の方を向いて投げると怯む。'],
+      [`走る${lv('run')}`, 'Shift を押している間'], [`しゃがむ${lv('crouch')}`, 'C'], [`灯り${lv('light')}`, 'F'],
+      [`隠れる${lv('hide')}`, 'ロッカーや物入れの前で E。もう一度 E で出る'],
+      ['地図', 'M'], ['目標とタスク', 'G'], ['所持品', 'I'], ['言葉の記録（聞きのがした台詞）', 'L'], ['メニュー', 'Tab（一時停止は Esc）'],
+    ];
+    return `<div class="js-controls"><p class="js-controls-lead">迷ったら、地図の<b>「次」</b>を見る。白い姿とは目を合わせない。</p><table>${rows.map(([what, how, note]) =>
+      `<tr><th>${what}</th><td><b>${esc(how)}</b>${note ? `<span>${esc(note)}</span>` : ''}</td></tr>`).join('')}</table></div>`;
+  };
   const nextPins = (c, base = {}) => {
       const L = c.data.tasks.tasks || c.data.tasks, ok = (x) => x.steps && x.steps.length && c.canStart(x) === true;
       const t = L.find((x) => ok(x) && !x.optional) || L.find(ok); if (!t) return {};
@@ -257,14 +280,21 @@ export default function story(ext, shared) {
   function lure() { ringBell({ x: BELL2.x, z: BELL2.z + 1.2 }, M.parts.bell2); st.lureT = LURE_SEC; }
   ext.registerTask('T_LURE', { run: async () => { lure(); await wait(0.8); return true; }, onDone: () => talk('lure', { title: '下手の呼び鐘' }) });
   ext.registerInteract('js-bell2', { prompt: () => (done('T_LURE') ? '[E] 鐘を鳴らす（小屋から引き離す）' : ''), run: () => { if (done('T_LURE')) { lure(); say('鐘が鳴った。来る道から外れて、小屋へ。', 4); } } });
+  // 5.8.2: a crate holds two bottles and gives them one at a time; the player carries two at most (and is told so)
+  const BOTTLE_MAX = 2;
+  const cacheLeft = (id) => (ctx.state.flags.includes(`cache_${id}`) ? 0 : ctx.state.flags.includes(`cache_${id}_1`) ? 1 : 2);
+  const cacheLook = (k) => { const left = cacheLeft(k.id); k.bottles.children.forEach((m, i) => { m.visible = Math.floor(i / 2) < left; }); };
   ext.registerInteract('js-cache', {
-    prompt: (o) => (ctx.state.inv.includes('I_BOTTLE') && !ctx.state.flags.includes(`cache_${o.id}`) ? '[E] 箱のボトルを持つ' : ''),
+    prompt: (o) => {
+      if (!ctx.state.inv.includes('I_BOTTLE')) return ''; const left = cacheLeft(o.id); if (!left) return '空の箱';
+      return gaze.charges >= BOTTLE_MAX ? `[E] 箱のボトル（残り${left}本）　もう持てない：${BOTTLE_MAX}本まで` : `[E] ボトルを1本取る（箱に残り${left}本）`;
+    },
     run: (o) => {
-      const id = o.id; if (!ctx.state.inv.includes('I_BOTTLE') || ctx.state.flags.includes(`cache_${id}`)) return;
-      if (gaze.charges >= 2) { say('ボトルは、まだ二本ある。足りなくなったら、ここへ戻ろう。', 4); return; }
-      ctx.setFlag(`cache_${id}`, { silent: true }); gaze.charges = 2; snd.pickup ? snd.pickup() : ctx.sound && ctx.sound('pickup');
-      const k = (M.caches || []).find((x) => x.id === id); if (k) k.bottles.visible = false;
-      ctx.ui.toast('ボトルを補充した（2本）'); say('箱に、同じボトルが残っていた。二本に戻った。', 4); ctx.save();
+      const id = o.id, left = cacheLeft(id); if (!ctx.state.inv.includes('I_BOTTLE') || !left) return;
+      if (gaze.charges >= BOTTLE_MAX) { ctx.ui.toast(`ボトルは${BOTTLE_MAX}本までしか持てない`); say('もう両手がふさがる。投げて減ったら、ここへ戻ろう。', 4); return; }
+      ctx.setFlag(left === 2 ? `cache_${id}_1` : `cache_${id}`, { silent: true }); gaze.charges = gaze.charges + 1; snd.pickup ? snd.pickup() : ctx.sound && ctx.sound('pickup');
+      const k = (M.caches || []).find((x) => x.id === id); if (k) cacheLook(k);
+      ctx.ui.toast(`ボトルを1本取った（${gaze.charges}/${BOTTLE_MAX}本）`); say(left === 2 ? '箱に、同じボトルが二本あった。一本、持った。' : '箱の最後の一本を持った。', 4); ctx.save();
     },
   });
   ext.registerInteract('js-bell', { prompt: () => (done('T_BELL') ? '[E] 鐘を鳴らす（音の方へ誘う）' : ''), run: () => { if (done('T_BELL')) { ringBell(); say('鐘が鳴った。今のうちに、木の陰へ。', 4); } } });
@@ -490,6 +520,8 @@ export default function story(ext, shared) {
     M = dressMountain(c);
     c.seatPickups && c.seatPickups();   // the desks, tables and shelves of mountain.js are in: put the pickups on them
     if (M.fitWallDocs) M.fitWallDocs();   // 5.8: the wall notices are read at their frames
+    if (c.tm && c.tm.registerTab) c.tm.registerTab({ id: 'controls', label: '操作', icon: 'info', render: (el) => { el.innerHTML = controlsHtml(c); } });
+    if (c.pm && c.pm.registerItem) c.pm.registerItem({ id: 'controls', label: '操作のしかた', icon: 'info', after: 'map', render: (el) => { el.innerHTML = controlsHtml(c); } });
     { // 5.8.1: a ladder is climbed, not jumped: its sound, the screen goes dark, the player comes out on the other floor
       const veil = document.createElement('div'); veil.id = 'js-ladder-veil';
       veil.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:40';
@@ -507,6 +539,7 @@ export default function story(ext, shared) {
     fear = createFear(c);
     F = makeJashi({ detail: 1 }); F.root.visible = false; c.scene.add(F.root);
     gaze = createGaze(c, { shared, mountain: M, sound: snd, fear, onDeath: (r) => c.die(r) });
+    if (c.debug) c.jsGaze = gaze;   // ?debug=1: the probes set the bottles
     gaze.charges = st.charges;
     reflector = createReflector(c, { shared, gaze, fear, sound: snd, mountain: M, say, figure: () => F, bridge: BRIDGE });
     if (!c.qa) for (const id of ['N_MARK1', 'N_MARK2', 'N_MARK3', 'N_DIARY']) c.removePickup('doc', id);   // kept by the task that makes them (they lie nowhere on the map)
@@ -524,7 +557,7 @@ export default function story(ext, shared) {
     c.bus.on('task:done', ({ id }) => { if (id === 'T_LURE') c.world.interactables.push(bm2); });
     if (c.state.tasks.includes('T_LURE')) c.world.interactables.push(bm2);
     // 5.8: bottles to be found on the way (they ran out while exploring): each crate fills them up to two, once
-    for (const k of M.caches || []) { k.handle.userData.interact = { kind: 'js-cache', id: k.id }; c.world.interactables.push(k.handle); k.bottles.visible = !c.state.flags.includes(`cache_${k.id}`); }
+    for (const k of M.caches || []) { k.handle.userData.interact = { kind: 'js-cache', id: k.id }; c.world.interactables.push(k.handle); cacheLook(k); }
     // the balcony door stays shut once the amado is drawn
     const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') && c.state.room !== 'CAB_BALC' ? true : base()); /* locked from the room side only: outside, it always opens (a player shut out on the balcony, 2026-11-02) */ balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
     document.body.insertAdjacentHTML('beforeend', `<div id="js-photo" class="js-photo" hidden></div><div id="js-jump" class="js-jump" hidden><img src="assets/textures/monster-face-v4-2.webp" alt=""></div>`);

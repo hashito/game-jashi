@@ -139,10 +139,12 @@ export function dressMountain(ctx) {
     }
     // undergrowth along the hidden boundary walls: the edge of the walkable ground reads as bushes and moss, not as an invisible wall
     const bush = new THREE.IcosahedronGeometry(0.7, 0), spots = [];
+    // 5.8.2 (「建物の中の端に草木が飛び出しています」): a bush never reaches into a building (its walls are outdoor walls too)
+    const indoor = plan.rooms.filter((r) => r.kind !== 'outdoor'), inDist = (x, z) => Math.min(...indoor.map((r) => Math.hypot(Math.max(r.x - x, 0, x - r.x - r.w), Math.max(r.z - z, 0, z - r.z - r.d))));
     world.group.traverse((o) => {
       if (!o.isMesh || !/^wall:O_/.test(o.name)) return;
       const b = new THREE.Box3().setFromObject(o), len = Math.max(b.max.x - b.min.x, b.max.z - b.min.z), alongX = b.max.x - b.min.x > b.max.z - b.min.z;
-      for (let t = 0.6; t < len; t += 1.3 + rnd()) spots.push([alongX ? b.min.x + t : (b.min.x + b.max.x) / 2, alongX ? (b.min.z + b.max.z) / 2 : b.min.z + t, 0.6 + rnd() * 0.7]);
+      for (let t = 0.6; t < len; t += 1.3 + rnd()) { const sp = [alongX ? b.min.x + t : (b.min.x + b.max.x) / 2, alongX ? (b.min.z + b.max.z) / 2 : b.min.z + t, 0.6 + rnd() * 0.7]; if (inDist(sp[0], sp[1]) > sp[2] * 0.85 + 0.15) spots.push(sp); }
     });
     const im = new THREE.InstancedMesh(bush, M.shrub, spots.length);
     spots.forEach(([x, z, s], i) => im.setMatrixAt(i, new THREE.Matrix4().compose(V3(x, s * 0.35, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), V3(s * 1.2, s * 0.8, s * 1.2))));
