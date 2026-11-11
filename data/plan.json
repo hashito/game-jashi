@@ -452,7 +452,8 @@
    "label": "物置の引戸",
    "closable": true,
    "unlock": "shed",
-   "hint": "物置の鍵は、書き置きと一緒に机にあるはずだ。"
+   "hint": "物置の鍵は、書き置きと一緒に机にあるはずだ。",
+   "blocksMonster": 100000
   },
   {
    "id": "D_SHELTER",
@@ -465,7 +466,8 @@
    "label": "避難小屋の引戸",
    "closable": true,
    "unlock": "shelter",
-   "hint": "小屋の戸は閉まっている。先に物置の支度を。"
+   "hint": "小屋の戸は閉まっている。先に物置の支度を。",
+   "blocksMonster": 100000
   },
   {
    "id": "D_GATE",
@@ -671,7 +673,8 @@
    "label": "旧詰所の引戸",
    "closable": true,
    "unlock": "post",
-   "hint": "古い詰所だ。今は用がない。先に、いまの目標を進めよう。"
+   "hint": "古い詰所だ。今は用がない。先に、いまの目標を進めよう。",
+   "blocksMonster": 100000
   },
   {
    "id": "D_BUNK",
@@ -873,7 +876,7 @@
   {
    "id": "S_REFLECT",
    "room": "TOWER_2",
-   "x": -33.0,
+   "x": -33,
    "z": -15,
    "label": "手すりの反射板"
   }
@@ -896,23 +899,26 @@
   {
    "id": "H_SHELF",
    "room": "SHED",
-   "x": -18.0,
+   "x": -18,
    "z": -5.17,
-   "label": "物置の物入れ", "look": "cabinet"
+   "label": "物置の物入れ",
+   "look": "cabinet"
   },
   {
    "id": "H_HUT",
    "room": "SHELTER",
    "x": 18.2,
    "z": -17.67,
-   "label": "小屋の物入れ", "look": "cabinet"
+   "label": "小屋の物入れ",
+   "look": "cabinet"
   },
   {
    "id": "H_CLOSET",
    "room": "CAB_BED",
    "x": 5.55,
    "z": 27.45,
-   "label": "寝室の押入れ", "look": "oshiire"
+   "label": "寝室の押入れ",
+   "look": "oshiire"
   },
   {
    "id": "H_CAR",

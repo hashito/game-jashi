@@ -44,9 +44,14 @@ export function createGaze(ctx, { shared, mountain, sound, fear, onDeath }) {
     walls.push(new THREE.Box3().setFromObject(o));
   });
   const doorBoxes = () => { const out = []; for (const d of ctx.world.doors.values()) if (d.mesh && d.mesh.visible && !d.isOpen && d.def.id !== 'D_GATE') out.push(new THREE.Box3().setFromObject(d.mesh)); return out; };
+  const coverBox = new THREE.Box3(), COVER_UP = new THREE.Vector3(0, 0.25, 0), COVER_SHIFT = new THREE.Vector3(0, 0.25, 0);
   function blocked(from, to) {
     const d = from.distanceTo(to); ray.origin.copy(from); ray.direction.copy(to).sub(from).normalize();
-    for (const list of [walls, mountain.occluders, doorBoxes()]) for (const b of list) { if (b.containsPoint(from)) continue; if (ray.intersectBox(b, hit) && hit.distanceTo(from) < d - 0.3) return true; }
+    for (const list of [walls, mountain.occluders, doorBoxes()]) for (const b0 of list) {
+      // 5.7.4: low cover counts half a metre higher: its eyes (2.35 m) stood over the plank screen (2.15) and the stacks, so hiding did nothing
+      const b = list === mountain.occluders && b0.max.y < 3 ? coverBox.copy(b0).expandByVector(COVER_UP).translate(COVER_SHIFT) : b0;
+      if (b.containsPoint(from)) continue; if (ray.intersectBox(b, hit) && hit.distanceTo(from) < d - 0.3) return true;
+    }
     const sh = mountain.parts.shutter; if (sh && sh.t > 0.6 && (from.z - 19.1) * (to.z - 19.1) < 0 && Math.abs(from.y - to.y) < 6) return true;
     return false;
   }
@@ -116,7 +121,8 @@ export function createGaze(ctx, { shared, mountain, sound, fear, onDeath }) {
       const head = tmp.set(s.x, floorY(s.floor) + HEAD_Y, s.z), eye = cam.position;
       const dist = Math.hypot(s.x - eye.x, s.z - eye.z);
       const dir = new THREE.Vector3(); cam.getWorldDirection(dir); const to = head.clone().sub(eye); const dl = to.length(); to.divideScalar(dl || 1);
-      const inView = dir.dot(to) > 0.8 && dl < 38;
+      const ndc = head.clone().project(cam), onScreen = ndc.z < 1 && Math.abs(ndc.x) < 0.98 && Math.abs(ndc.y) < 0.98;   // 5.7.4: off the screen is not seen
+      const inView = dir.dot(to) > 0.8 && dl < 38 && onScreen;
       const isBlocked = !shared.aim && (!!ctx.hidden || blocked(eye.clone(), head.clone()));   // 5.7: through the reflector's hole nothing stands between
       const th = threatDirection({ player: { x: eye.x, z: eye.z }, yaw: fp ? fp.yaw : 0, monster: { x: s.x, z: s.z } });
       // it faces you (within 70 degrees) to swing; it never starts from behind you

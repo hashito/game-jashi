@@ -148,7 +148,8 @@ export default function story(ext, shared) {
   ext.registerTask('T_BOTTLE', { onDone: async () => { gaze.charges = 2; await talk('bottle', { title: '物置' }); say('近づかれたら、R でボトルを投げる。怯んだら、すぐ離れる。', 6); } });
   ext.registerTask('T_BELL', { onDone: () => { ringBell(); talk('bell', { title: '呼び鐘' }); } });
   ext.registerTask('T_CRANK', { run: async (c, task) => {
-    if (!(await playMG(task))) return false;
+    // 5.7.4: it lies on the floor in plain sight: [E] picks it up (the search in the dark was one mini game too many)
+    snd.pickup ? snd.pickup() : ctx.sound && ctx.sound('pickup'); say('床の赤い握りの鉄のハンドルを、拾い上げた。', 3); await wait(1.2);
     // something walks round the hut while you hold the handle (H4: the wait has its event)
     snd.steps({ gain: 0.9 }); say('外を、何かが回っている。息を止めて。', 4);
     const ok = await playMG(task, { type: 'hold-breath', cfg: { title: '避難小屋：息を殺す', help: '足音が近い間は、ボタンを押し続けて息を止める。', sec: 8, ok: '足音は、沢の方へ遠ざかっていった。' } });

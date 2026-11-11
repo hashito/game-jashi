@@ -47,7 +47,8 @@
     "lose": {
      "dist": 24
     }
-   }
+   },
+   "opensDoors": 0.9
   }
  ]
 }
