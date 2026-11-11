@@ -27,6 +27,7 @@ import { createGaze } from './gaze.js';
 import { createSound } from './sound.js';
 import { CHAINS, completedChains } from './rules.js';
 import { numberLock, createReflector } from './tower.js';
+import { createCull } from './cull.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -38,6 +39,7 @@ const TOWER_SIDE = ['O_UPPER', 'TOWER_0', 'TOWER_1', 'TOWER_2'];
 const L6 = 5, L7 = 6, L8 = 7;                         // the stage indexes the new stages hang on
 
 export default function story(ext, shared) {
+  let cull = null;
   const st = { uncleGone: false, deaths: 0, played: 0, charges: 2, seenWatch: false, watchT: -1, knocked: false, firstRoom: {}, chainsTold: [], mirror: false, l6Told: false, hard: false, barT: -99, floodT: -99, huntT: 0, floodWade: false, blinkT: 0 };
   let ctx = null, T = null, M = null, F = null, snd = null, fear = null, gaze = null, reflector = null, dying = false;
   const lvl = () => (ctx && ctx.prog ? ctx.prog.index : 0);
@@ -444,9 +446,13 @@ export default function story(ext, shared) {
     const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') && c.state.room !== 'CAB_BALC' ? true : base()); /* locked from the room side only: outside, it always opens (a player shut out on the balcony, 2026-11-02) */ balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
     document.body.insertAdjacentHTML('beforeend', `<div id="js-photo" class="js-photo" hidden></div><div id="js-jump" class="js-jump" hidden><img src="assets/textures/monster-face-v4-2.webp" alt=""></div>`);
     c.warmImages = [...(c.warmImages || []), 'assets/textures/monster-face-v4-2.webp', 'assets/photos/mountain-v4-1.webp'];
-    if (window.__gf || c.qa || c.debug) window.__js = { st, gaze, M, F: () => F, applyStage, chains: () => completedChains(c.state.docsRead), shared, reflector };
+    if (window.__gf || c.qa || c.debug) window.__js = { cull: () => cull, st, gaze, M, F: () => F, applyStage, chains: () => completedChains(c.state.docsRead), shared, reflector };
   });
-  ext.registerBoot('js-walls', async (c, report) => { if (!M) return; report(0, '山を準備中…'); await Promise.race([M.ready, new Promise((r) => setTimeout(r, 12000))]); report(1, '山を準備中…'); });
+  ext.registerBoot('js-walls', async (c, report) => { if (!M) return; report(0, '山を準備中…'); await Promise.race([M.ready, new Promise((r) => setTimeout(r, 12000))]);
+    // 5.7.5: once the mountain and its outer walls are done, before the kit compiles the shaders: only the room you are in and the ones
+    // next to it are drawn, small things outdoors not far off in the fog, the still meshes merged, three pooled lights for the pendants
+    if (!cull && !/[?&]nocull(&|$)/.test(location.search)) cull = createCull(c);   // ?nocull: the old way, to compare
+    report(1, '山を準備中…'); });
 
   ext.on('game:start', async ({ resume }) => {
     dying = false; st.watchT = -1; gaze.reset(); applyStage();
@@ -506,6 +512,7 @@ export default function story(ext, shared) {
 
   // ---------------------------------------------------------------- per frame
   ext.registerSystem('jashi-story', { update: (dt, c, active) => {
+    if (cull) cull.update(dt);
     // never shut out on the balcony: once the amado is drawn, standing outside opens it and the door again; back inside, both close
     if (M && M.parts.shutter && done('T_SHUTTER')) {
       const balc = c.world.doors.get('D_BALC'), out = c.state.room === 'CAB_BALC';
