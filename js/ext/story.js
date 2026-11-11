@@ -343,7 +343,7 @@ export default function story(ext, shared) {
 
   // ---------------------------------------------------------------- what is where at each stage (the kit's stage-look does the "show" names)
   function touchButtons() {
-    const show = { KeyR: ctx.state.inv.includes('I_BOTTLE'), KeyC: ctx.controlOpen('crouch'), KeyF: ctx.controlOpen('light') };
+    const show = { KeyR: ctx.state.inv.includes('I_BOTTLE'), KeyC: ctx.controlOpen('crouch'), KeyF: ctx.controlOpen('light'), ShiftLeft: ctx.controlOpen('run') };
     for (const [k, on] of Object.entries(show)) { const b = document.querySelector(`#t-buttons [data-k="${k}"]`); if (b) b.style.display = on ? '' : 'none'; }
   }
   function applyStage() {
@@ -477,6 +477,22 @@ export default function story(ext, shared) {
   });
   ext.on('item:pickup', ({ id }) => { if (id === 'I_GLASSES') setTimeout(() => talk(done('T_RADIO') ? 'glasses' : 'earlyGlasses', { title: 'サングラス' }), 300); });
   ext.on('doc:read', ({ id }) => onDoc(id));
+  // 5.7.3: [E] (or the touch button) while standing in the doorway of an open door that closes: step back to the side you are on, then the
+  // kit shuts it (it refuses while you stand in the frame, which read as "the door will not close")
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyE' || !ctx || !ctx.world || (ctx.wm && ctx.wm.isOpen)) return;
+    const p = ctx.camera.position;
+    for (const d of ctx.world.doors.values()) {
+      if (!d.isOpen || !d.def.closable || !d.mesh) continue;
+      const b = new THREE.Box3().setFromObject(d.mesh), thinX = b.max.x - b.min.x < b.max.z - b.min.z;
+      const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2, half = (thinX ? b.max.z - b.min.z : b.max.x - b.min.x) / 2;
+      const along = thinX ? p.z - cz : p.x - cx, off = thinX ? p.x - cx : p.z - cz;
+      if (Math.abs(along) > half + 0.3 || Math.abs(off) >= 0.44) continue;
+      const room = ctx.data.plan.rooms.find((r) => r.id === d.def.a), inside = room ? Math.sign(thinX ? room.x + room.w / 2 - cx : room.z + room.d / 2 - cz) || 1 : 1;
+      const side = Math.abs(off) > 0.05 ? Math.sign(off) : inside;
+      if (thinX) p.x = cx + side * 0.46; else p.z = cz + side * 0.46;
+    }
+  }, true);
   for (const ev of ['item:pickup', 'task:done', 'stage:up']) ext.on(ev, () => ctx && setTimeout(touchButtons, 0));   // after the task's items are given
   // the hut's sliding door shuts again from inside (plan: closable, the room shutHide): with it drawn, the figure outside cannot see you
   ext.on('door:open', ({ id }) => { if (id === 'D_SHELTER' && !st.hutTold) { st.hutTold = true; setTimeout(() => say('この引戸は、中から閉められる。', 4), 900); } });

@@ -1,6 +1,6 @@
 {
   "name": "jashi-mountain",
-  "version": "5.7.2",
+  "version": "5.7.3",
   "private": true,
   "description": "投稿怪談『邪視』をもとにした一人称ホラー探索ゲーム（game-kit 3D 標準 1.9 版）",
   "scripts": {

@@ -450,6 +450,7 @@
    "width": 1.6,
    "look": "slide",
    "label": "物置の引戸",
+   "closable": true,
    "unlock": "shed",
    "hint": "物置の鍵は、書き置きと一緒に机にあるはずだ。"
   },

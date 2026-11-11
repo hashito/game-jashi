@@ -188,8 +188,10 @@ export function dressMountain(ctx) {
     const w = P.desk({}, 1.4, 0.7, 0.76); w.position.set(3.6, FY(1), 24.9); G.add(w); solid(w); }
   // the shed shelf (bottles) and the hut's floorboards (the crank)
   { const s = P.shelf({}, 1.4, 1.7, 0.4, 3, 'boxes'); s.position.set(-20.4, 0, -5.2); G.add(s); solid(s);
-    const bs = named('bottles_shelf'); bs.position.set(-20.4, 0.92, -4.96);   // 5.7.2: in front of the boxes (they hid all but the caps)
+    const bs = named('bottles_shelf'); bs.position.set(-20.92, 1.693, -5.2);   // 5.7.3: standing on the top board, left of the photo (y 1.68, nothing else on it): the lower boards are full of boxes, and in front of them the bottles floated
     for (const x of [-0.12, 0.12]) { cyl(0.06, 0.07, 0.26, M.bottle, x, 0.13, 0, 12, bs); cyl(0.035, 0.035, 0.05, M.red, x, 0.285, 0, 10, bs); }
+    // looking at the bottles up there is looking at the shelf: an unseen [E] handle around them (the kit's station box stops at 1.1 m)
+    { const h = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.4), new THREE.MeshBasicMaterial({ visible: false })); h.position.set(-20.92, 1.85, -5.15); h.name = 'shelf-bottles-handle'; h.userData.interact = { kind: 'station', id: 'S_SHELF' }; world.group.add(h); world.interactables.push(h); }
     const cr = named('crank_floor'); cr.position.set(15.4, 0.04, -17.2);
     const shaft = cyl(0.02, 0.02, 0.62, M.iron, 0, 0, 0, 8, cr); shaft.rotation.z = Math.PI / 2;
     const grip = cyl(0.035, 0.035, 0.16, M.red, 0.32, 0.08, 0, 10, cr); void grip; cyl(0.02, 0.02, 0.16, M.iron, -0.3, 0.06, 0, 8, cr);

@@ -15,11 +15,23 @@ export function createGaze(ctx, { shared, mountain, sound, fear, onDeath }) {
   const st = { closed: false, keyClosed: false, charges: 2, frozen: 0, throwFx: null, lastEvent: '', firstHit: false, firstWindup: false };
   const cam = ctx.camera, tmp = new THREE.Vector3(), ray = new THREE.Ray(), hit = new THREE.Vector3();
   const mon = () => (ctx.monsters && ctx.monsters.list && ctx.monsters.list[0]) || null;
+  // 5.7.3: it stands at arm's length (KEEP_OFF): the body overlapped the player's before. It is moved back along the line between the two,
+  // only where nothing stands in the way (the nav's line of sight), so it is never pushed into a wall
+  const KEEP_OFF = 1.3;
+  function keepOff(ai, P) {
+    if (!ai.pos || (P.floor || 0) !== (ai.pos.floor || 0)) return;
+    const dx = ai.pos.x - P.x, dz = ai.pos.z - P.z, d = Math.hypot(dx, dz);
+    if (d >= KEEP_OFF) return;
+    const ux = d > 1e-3 ? dx / d : -Math.sin(ctx.fp ? ctx.fp.yaw : 0), uz = d > 1e-3 ? dz / d : -Math.cos(ctx.fp ? ctx.fp.yaw : 0);
+    const to = { x: P.x + ux * KEEP_OFF, z: P.z + uz * KEEP_OFF, floor: ai.pos.floor || 0 };
+    if (!ai.nav || !ai.nav.los || ai.nav.los(ai.pos, to)) { ai.pos.x = to.x; ai.pos.z = to.z; }
+    ai.moving = false;
+  }
   // the AI stands still while the scythe is up or it is stunned (and while a window is open the standard pack already waits)
   const m0 = mon();
   if (m0 && !m0.ai.__jashi) {
     const ai = m0.ai, orig = ai.update.bind(ai);
-    ai.update = (dt, P) => { if (st.frozen > 0 || (S.phase !== 'idle' && S.phase !== 'death')) { ai.events.length = 0; ai.moving = false; ai.speed = 0; return ai.events; } return orig(dt, P); };
+    ai.update = (dt, P) => { if (st.frozen > 0 || (S.phase !== 'idle' && S.phase !== 'death')) { ai.events.length = 0; ai.moving = false; ai.speed = 0; keepOff(ai, P); return ai.events; } const ev = orig(dt, P); keepOff(ai, P); return ev; };
     ai.__jashi = true;
   }
 
