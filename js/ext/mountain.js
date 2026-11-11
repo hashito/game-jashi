@@ -112,6 +112,31 @@ export function dressMountain(ctx) {
       for (const [x, z, s] of spots) if (dist(x, z) < 9) trunks.push(new THREE.Box3(V3(x - 0.3, 0, z - 0.3), V3(x + 0.3, C.h * s, z + 0.3)));
     }
     api.occluders.push(...trunks);
+    // 5.8: the edge was open ground with bushes, trees far behind it: it looked walkable. A close row of young cedars stands outside every
+    // boundary wall now, their crowns clear of the walkable ground (W3), never inside another walkable area, on a road or in the creek
+    {
+      const OFF = treeReach({ h: 6, kind: 'cedar' }) + 0.25, edge = [];
+      world.group.traverse((o) => {
+        if (!o.isMesh || !/^wall:O_/.test(o.name)) return;
+        const rid = o.name.split(':')[1], r = (ctx.data.plan.rooms || []).find((x) => x.id === rid); if (!r) return;
+        const b = new THREE.Box3().setFromObject(o), alongX = b.max.x - b.min.x > b.max.z - b.min.z, len = alongX ? b.max.x - b.min.x : b.max.z - b.min.z;
+        const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2, out = alongX ? Math.sign(cz - (r.z + r.d / 2)) || 1 : Math.sign(cx - (r.x + r.w / 2)) || 1;
+        for (let t = 0.5 + rnd() * 0.6; t < len; t += 1.5 + rnd() * 0.9) {
+          const x = alongX ? b.min.x + t : cx + out * (OFF + rnd() * 0.5), z = alongX ? cz + out * (OFF + rnd() * 0.5) : b.min.z + t;
+          if (dist(x, z) < OFF - 0.2 || world.roomAt(x, z, 1) || Math.abs(z + 10.2) < 1.8 || edge.some((e) => Math.abs(e[0] - x) < 1.3 && Math.abs(e[1] - z) < 1.3)) continue;
+          edge.push([x, z, 0.9 + rnd() * 0.35, rnd() * 6.3]);
+        }
+      });
+      const ep = tree({ kind: 'cedar', h: 6, seed: 23, mats: { bark: M.bark } });
+      for (const { geometry, material } of mergedParts(ep)) {
+        const im = new THREE.InstancedMesh(geometry, material, edge.length);
+        edge.forEach(([x, z, s, ry], i) => im.setMatrixAt(i, new THREE.Matrix4().compose(V3(x, -0.05, z), new THREE.Quaternion().setFromAxisAngle(V3(0, 1, 0), ry), V3(1, s, 1))));
+        im.instanceMatrix.needsUpdate = true; im.castShadow = true; im.computeBoundingSphere(); im.name = 'forest:edge'; G.add(im);
+      }
+      for (const [x, z, s] of edge) trunks.push(new THREE.Box3(V3(x - 0.25, 0, z - 0.25), V3(x + 0.25, 6 * s, z + 0.25)));
+      api.occluders.push(...trunks.slice(-edge.length));
+      api.edgeTrees = edge.length;
+    }
     // undergrowth along the hidden boundary walls: the edge of the walkable ground reads as bushes and moss, not as an invisible wall
     const bush = new THREE.IcosahedronGeometry(0.7, 0), spots = [];
     world.group.traverse((o) => {
@@ -212,6 +237,14 @@ export function dressMountain(ctx) {
     for (let i = 0; i < 18; i++) { const x = -6 + rnd() * 12, z = -11.2 + (rnd() - 0.5) * 2.4; if (Math.abs(x - 0.8) > 2.2) stone(x, z, 0.18 + rnd() * 0.3, [1, 0.6, 1]); }
   }
   // ---------------------------------------------------------------- the creek and the bridge (the red string on its rail)
+  // 5.8: a footbridge of two logs and boards over the creek, a rope rail on posts on one side
+  function footbridge(x) {
+    const F = named(`footbridge:${x}`); F.position.set(x, 0, -10.2);
+    for (const dx of [-0.42, 0.42]) { const l = cyl(0.17, 0.2, 4.6, M.bark, dx, 0.16, 0, 9, F); l.rotation.x = Math.PI / 2; }
+    for (let i = 0; i < 11; i++) box(1.5, 0.06, 0.36, M.plank, (i % 2 ? 0.03 : -0.03), 0.36, -2 + i * 0.4, F);
+    for (const z of [-2.1, 0, 2.1]) box(0.09, 1.0, 0.09, M.bark, 0.78, 0.68, z, F);
+    const rope = cyl(0.015, 0.015, 4.3, M.weathered, 0.78, 1.12, 0, 5, F); rope.rotation.x = Math.PI / 2;
+  }
   { const w = new THREE.Mesh(new THREE.PlaneGeometry(90, 2.6), M.water); w.rotation.x = -Math.PI / 2; w.position.set(0, 0.012, -10.2); w.name = 'creek'; G.add(w); api.parts.water = w;
     const B = named('bridge'); B.position.set(0.8, 0, -10.2);
     box(3.4, 0.14, 4.2, M.plank, 0, 0.3, 0, B); for (const x of [-1.65, 1.65]) { box(0.1, 0.9, 4.2, M.weathered, x, 0.75, 0, B); for (const z of [-2, 0, 2]) box(0.12, 1.1, 0.12, M.bark, x, 0.55, z, B); }
@@ -221,9 +254,15 @@ export function dressMountain(ctx) {
     const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(14, 1); tex.colorSpace = THREE.SRGBColorSpace;
     const foam = new THREE.Mesh(new THREE.PlaneGeometry(90, 3.4), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false })); foam.rotation.x = -Math.PI / 2; foam.position.set(0, 0.03, -10.2); foam.name = 'flood-foam'; G.add(foam);
     const solid2 = (x0, z0, x1, z1) => { const c = { box: new THREE.Box3(V3(x0, -1, z0), V3(x1, 2.4, z1)), off: true }; colliders.push(c); return c; };
-    const banks = [solid2(-30, -11.6, -0.9, -8.8), solid2(2.5, -11.6, 30, -8.8)], gate = solid2(-1, -12, 2.6, -11.6);
-    api.parts.flood = { foam, tex, t: 0, target: 0, banks, gate, dry: new THREE.Color(0x2b3a3b), wet: new THREE.Color(0x3b3425) };
-    api.setFlood = (on, solid = on) => { const f = api.parts.flood; f.target = on ? 1 : 0; for (const c of f.banks) c.off = !solid; };
+    // 5.8: the banks are always solid (the creek was waded anywhere; the hut door was reached through the water): the bridge and two
+    // footbridges (FOOT) cross it. In the flood (L7) the footbridges are under the water too; wading back is the flood's own rule
+    const FOOT = [-19.5, 16], half = 0.8, cuts = [-30, ...FOOT.flatMap((x) => [x - half, x + half]).sort((a, b) => a - b), 30];
+    const spans = [[cuts[0], cuts[1]], [cuts[2], -0.9], [2.5, cuts[3]], [cuts[4], cuts[5]]];
+    const banks = spans.map(([a, b]) => { const c = solid2(a, -11.6, b, -8.8); c.off = false; return c; }), gate = solid2(-1, -12, 2.6, -11.6);
+    const fgaps = FOOT.map((x) => solid2(x - half, -11.6, x + half, -8.8));
+    for (const x of FOOT) footbridge(x);
+    api.parts.flood = { foam, tex, t: 0, target: 0, banks, fgaps, gate, dry: new THREE.Color(0x2b3a3b), wet: new THREE.Color(0x3b3425) };
+    api.setFlood = (on, solid = on) => { const f = api.parts.flood; f.target = on ? 1 : 0; for (const c of f.banks) c.off = on && !solid; for (const c of f.fgaps) c.off = !(on && solid); };
     api.setBridgeShut = (on) => { api.parts.flood.gate.off = !on; }; }
   // the work tag's wire (N_TAG hangs from it at x -10, z -13): two stakes and a wire, so the tag is not in mid-air
   { const w = named('tag-wire'); w.position.set(-10, 0, -13);
@@ -235,6 +274,22 @@ export function dressMountain(ctx) {
     for (const x of [-0.7, 0.7]) box(0.14, 2.6, 0.14, M.bark, x, 1.3, 0, b);
     box(1.7, 0.14, 0.18, M.bark, 0, 2.6, 0, b); const bell = cyl(0.12, 0.26, 0.4, M.brass, 0, 2.25, 0, 16, b); bell.name = 'bell'; api.parts.bell = bell;
     const s = cyl(0.008, 0.008, 1.2, M.iron, 0.2, 1.65, 0.02, 4, b); void s; }
+  // 5.8: the old bell down the creek (T_LURE), a frame like the other one
+  { const b = named('bell-frame2'); b.position.set(24.4, 0, -28.9);
+    for (const x of [-0.7, 0.7]) box(0.14, 2.6, 0.14, M.bark, x, 1.3, 0, b);
+    box(1.7, 0.14, 0.18, M.bark, 0, 2.6, 0, b); const bell = cyl(0.12, 0.26, 0.4, M.brass, 0, 2.25, 0, 16, b); bell.name = 'bell2'; api.parts.bell2 = bell;
+    addCol(23.6, -29.15, 25.2, -28.65, 0, 2.6); }
+  // 5.8: crates with two bottles in them, on the way (the two from the shed ran out while exploring): the story fills them up, once each
+  api.caches = [];
+  for (const [id, x, z, ry] of [['bridge', 4.1, -14.2, 0.2], ['south', -0.4, -26.6, -0.3], ['hut', 13.75, -15.3, 1.57], ['post', -26.9, -23.1, 0], ['tower', -26.9, -16.9, 0.4]]) {
+    const k = named(`bottle-crate:${id}`); k.position.set(x, 0, z); k.rotation.y = ry;
+    box(0.5, 0.28, 0.36, M.plank, 0, 0.14, 0, k);
+    const bt = new THREE.Group(); bt.name = `bottle-crate-bottles:${id}`; k.add(bt);
+    for (const bx of [-0.1, 0.1]) { cyl(0.06, 0.07, 0.26, M.bottle, bx, 0.41, 0, 12, bt); cyl(0.035, 0.035, 0.05, M.red, bx, 0.565, 0, 10, bt); }
+    const h = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.6), new THREE.MeshBasicMaterial({ visible: false })); h.position.set(x, 0.4, z); h.name = `bottle-crate-handle:${id}`; world.group.add(h);
+    k.updateMatrixWorld(true); colliders.push({ box: new THREE.Box3().setFromObject(k.children[0]), off: false });
+    api.caches.push({ id, handle: h, bottles: bt });
+  }
   // ---------------------------------------------------------------- the gate (a chain bar over the forest road) and its crank box (G1)
   { const gx = -16, gz0 = 14.1, gz1 = 17.9;
     for (const z of [gz0, gz1]) { cyl(0.11, 0.13, 1.3, M.yellow, gx, 0.65, z, 10); }
@@ -268,8 +323,13 @@ export function dressMountain(ctx) {
     const tex = d.photo ? loader.load(d.photo) : null; if (tex) tex.colorSpace = THREE.SRGBColorSpace;
     box(d.wall.w + 0.06, d.wall.h + 0.06, 0.03, d.wall.type === 'photo' ? M.black : M.plank, 0, 0, -0.012, f);
     const face = new THREE.Mesh(new THREE.PlaneGeometry(d.wall.w, d.wall.h), new THREE.MeshStandardMaterial({ color: tex ? 0xffffff : 0xe8e2d0, map: tex, roughness: 0.9 })); face.position.z = 0.006; f.add(face);
+    { const pk = world.interactables.find((m) => m.name === `doc:${d.id}`); if (pk) { if (pk.userData.model) { pk.remove(pk.userData.model); pk.userData.model = null; } pk.userData.wallFrame = f; } }   // 5.8: the kit's flat paper stuck out of the frame
     if (d.wall.type === 'notice' && !(world.roomAt(d.x, d.z, 1.6) || '').startsWith('CAB')) { box(0.08, (d.y ?? 1.6) + d.wall.h / 2, 0.08, M.bark, 0, -((d.y ?? 1.6) - d.wall.h / 2) / 2 - d.wall.h / 2 + 0.02, -0.06, f); }
   }
+
+  // 5.8: a wall doc is read by looking at its frame: after the kit has seated the pickups, each one's box becomes the frame
+  api.fitWallDocs = () => { for (const pk of world.interactables) { const f = pk.userData && pk.userData.wallFrame; if (!f) continue; const d = pk.userData.def.wall;
+    pk.geometry.dispose(); pk.geometry = new THREE.BoxGeometry(d.w + 0.06, d.h + 0.06, 0.04).translate(0, 0, -0.004); f.updateMatrixWorld(true); f.getWorldPosition(pk.position); pk.parent.worldToLocal(pk.position); pk.rotation.set(0, d.rot || 0, 0); pk.updateMatrixWorld(true); } };
 
   // ---------------------------------------------------------------- the uncle (L1 only: he leaves for the car once the telescope is done)
   { const c = makeCharacter({ detail: 1, build: 0.2, skin: '#c89f86', hair: '#2a2622', top: '#4d5a4a', bottom: '#33302c', shoes: '#2a2420' });
@@ -351,8 +411,8 @@ export function dressMountain(ctx) {
     }
   }
   // 5.7: the cabinet on the wall and the board on the rail are at eye height: their station boxes go up with them
-  for (const id of ['S_KEYBOX', 'S_REFLECT']) { const sm = world.group.getObjectByName(`station:${id}`); if (!sm) continue; const was = new THREE.Box3().setFromObject(sm), c0 = was.getCenter(V3(0, 0, 0)); sm.position.y += 0.85; sm.updateMatrixWorld(true); for (const c of world.colliders) if (c.box && c.box.containsPoint(c0) && Math.abs(c.box.max.y - was.max.y) < 0.01) c.box.setFromObject(sm); }
-  for (const id of ['S_TELESCOPE', 'S_SHUTTER', 'S_RADIO', 'S_SHELF', 'S_BELL', 'S_CRANK', 'S_PHONE', 'S_GATE', 'S_CAR', 'S_MARK1', 'S_MARK2', 'S_MARK3', 'S_DIARY', 'S_KEYBOX', 'S_REFLECT']) {
+  for (const id of ['S_KEYBOX', 'S_REFLECT', 'S_BELL2']) { const sm = world.group.getObjectByName(`station:${id}`); if (!sm) continue; const was = new THREE.Box3().setFromObject(sm), c0 = was.getCenter(V3(0, 0, 0)); sm.position.y += 0.85; sm.updateMatrixWorld(true); for (const c of world.colliders) if (c.box && c.box.containsPoint(c0) && Math.abs(c.box.max.y - was.max.y) < 0.01) c.box.setFromObject(sm); }
+  for (const id of ['S_TELESCOPE', 'S_SHUTTER', 'S_RADIO', 'S_SHELF', 'S_BELL', 'S_BELL2', 'S_CRANK', 'S_PHONE', 'S_GATE', 'S_CAR', 'S_MARK1', 'S_MARK2', 'S_MARK3', 'S_DIARY', 'S_KEYBOX', 'S_REFLECT']) {
     const m = world.group.getObjectByName(`station:${id}`); if (!m) continue;
     m.traverse((o) => { if (o.isMesh) o.material = unseen; });
   }

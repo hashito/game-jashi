@@ -4,7 +4,8 @@
 //   L1 二階の備品   the uncle tells where he is going and leaves; the telescope shows the white figure far down the valley
 //   L2 窓の向こう   it stands below the balcony and looks up (it never comes in: the rule is taught, E-01); the amado slides shut
 //   L3 一階の机     the radio: static, a knock on the front door while you tune (H4), the uncle's voice; glasses, keys, the note
-//   L4-L5          the standard monster hunts the trails; records make chains (the ending), the bell lures it, the hut: hold your breath
+//   L4-L5          the standard monster hunts the trails; records make chains (the ending), the bell lures it; the three marks show it went
+//                  to the hut, it waits there, the old bell down the creek draws it off, then the handle (5.8)
 //   L6 旧詰所の番号   葛西さん's new padlock on the gate; the diary in the old forestry post, the three eyes make the number of the key cabinet (5.7)
 //   L7 見返しの櫓    the figure stands on the only bridge and the creek floods; the fire tower's board throws the last sun back (5.7)
 //   L8-L9          the crank on the gate, the car, the engine (the figure in the mirror while it cranks); it hunts harder after the board
@@ -152,10 +153,8 @@ export default function story(ext, shared) {
   ext.registerTask('T_CRANK', { run: async (c, task) => {
     // 5.7.4: it lies on the floor in plain sight: [E] picks it up (the search in the dark was one mini game too many)
     snd.pickup ? snd.pickup() : ctx.sound && ctx.sound('pickup'); say('床の赤い握りの鉄のハンドルを、拾い上げた。', 3); await wait(1.2);
-    // something walks round the hut while you hold the handle (H4: the wait has its event)
-    snd.steps({ gain: 0.9 }); say('外を、何かが回っている。息を止めて。', 4);
-    const ok = await playMG(task, { type: 'hold-breath', cfg: { title: '避難小屋：息を殺す', help: '足音が近い間は、ボタンを押し続けて息を止める。', sec: 8, ok: '足音は、沢の方へ遠ざかっていった。' } });
-    if (!ok) { gaze.state.sanity = Math.max(20, gaze.state.sanity - 30); fear.kick(1); snd.sting(); say('息が漏れた。戸の隙間に、白い指が見えた。……今は、離れていく。', 5); }
+    // 5.8: no held breath any more (one mini game too many): the bell has drawn it off, the danger is that it comes back
+    snd.steps({ gain: 0.45 });
     return true;
   }, onDone: () => talk('crank', { title: '避難小屋' }) });
   // 山道の記録 (5.2): three eyes carved into cedars; each shot says where the next one is, the third one is watched back
@@ -209,11 +208,28 @@ export default function story(ext, shared) {
   } });
 
   // ---------------------------------------------------------------- the bell lures it (it goes to the sound when it has lost you)
-  function ringBell() {
-    snd.bell(); if (M.parts.bell) M.parts.bell.userData.swing = 1.2;
+  function ringBell(at = { x: -12.7, z: -6.8 }, part = M.parts.bell) {
+    snd.bell(); if (part) part.userData.swing = 1.2;
     const m = ctx.monsters && ctx.monsters.list[0];
-    if (m && m.spawned && m.ai.state !== 'chase' && m.ai.state !== 'off') { m.ai.lastSeen = { x: -12.7, z: -6, floor: 0 }; if (m.ai.goTo({ x: -12.7, z: -6.8 })) { m.ai.lookT = 0; m.ai.set('seek'); } }
+    if (m && m.spawned && m.ai.state !== 'chase' && m.ai.state !== 'off') { m.ai.lastSeen = { x: at.x, z: at.z, floor: 0 }; if (m.ai.goTo({ x: at.x, z: at.z })) { m.ai.lookT = 0; m.ai.set('seek'); } }
   }
+  // 5.8: the old bell down the creek (T_LURE): it stands guard at the hut once the three marks have shown where it went; the bell draws
+  // it off for LURE_SEC, then it goes back to the hut. Ringing again draws it off again
+  const BELL2 = { x: 24.4, z: -28.9 }, HUT_GUARD = { x: 20.2, z: -12.4 }, LURE_SEC = 75;
+  const guarding = () => lvl() === 4 && done('T_MARK3') && !done('T_CRANK');
+  function lure() { ringBell({ x: BELL2.x, z: BELL2.z + 1.2 }, M.parts.bell2); st.lureT = LURE_SEC; }
+  ext.registerTask('T_LURE', { run: async () => { lure(); await wait(0.8); return true; }, onDone: () => talk('lure', { title: '下手の呼び鐘' }) });
+  ext.registerInteract('js-bell2', { prompt: () => (done('T_LURE') ? '[E] 鐘を鳴らす（小屋から引き離す）' : ''), run: () => { if (done('T_LURE')) { lure(); say('鐘が鳴った。来る道から外れて、小屋へ。', 4); } } });
+  ext.registerInteract('js-cache', {
+    prompt: (o) => (ctx.state.inv.includes('I_BOTTLE') && !ctx.state.flags.includes(`cache_${o.id}`) ? '[E] 箱のボトルを持つ' : ''),
+    run: (o) => {
+      const id = o.id; if (!ctx.state.inv.includes('I_BOTTLE') || ctx.state.flags.includes(`cache_${id}`)) return;
+      if (gaze.charges >= 2) { say('ボトルは、まだ二本ある。足りなくなったら、ここへ戻ろう。', 4); return; }
+      ctx.setFlag(`cache_${id}`, { silent: true }); gaze.charges = 2; snd.pickup ? snd.pickup() : ctx.sound && ctx.sound('pickup');
+      const k = (M.caches || []).find((x) => x.id === id); if (k) k.bottles.visible = false;
+      ctx.ui.toast('ボトルを補充した（2本）'); say('箱に、同じボトルが残っていた。二本に戻った。', 4); ctx.save();
+    },
+  });
   ext.registerInteract('js-bell', { prompt: () => (done('T_BELL') ? '[E] 鐘を鳴らす（音の方へ誘う）' : ''), run: () => { if (done('T_BELL')) { ringBell(); say('鐘が鳴った。今のうちに、木の陰へ。', 4); } } });
 
   // ---------------------------------------------------------------- the telescope (4.x TELESCOPE_SCENES): three beats, the lens zooms in
@@ -379,6 +395,14 @@ export default function story(ext, shared) {
     const m = ctx.monsters && ctx.monsters.list[0]; if (!m) return;
     if (lvl() === L7 && !done('T_REFLECT')) { if (m.spawned) { m.ai.despawn(); m.spawned = false; } m.wait = 1e6; return; }
     if (m.wait > 1e5) m.wait = 5;
+    // 5.8: it waits at the hut until the bell draws it off
+    if (run && guarding()) {
+      if (st.lureT > 0) st.lureT -= dt;
+      else if (m.spawned && m.ai.state !== 'chase' && m.ai.state !== 'off' && (st.guardT = (st.guardT || 0) + dt) >= 3) {
+        st.guardT = 0; const d = Math.hypot(m.ai.pos.x - HUT_GUARD.x, m.ai.pos.z - HUT_GUARD.z);
+        if (d > 2.5 && m.ai.goTo(HUT_GUARD)) { m.ai.lookT = 0; m.ai.set('seek'); }
+      } else if (!m.spawned && m.wait > 2) m.wait = 2;   // it comes out soon (the kit counts the wait down)
+    }
     if (!st.hard || !run || !m.spawned || m.ai.state === 'chase' || m.ai.state === 'off' || ctx.hidden) return;
     if ((st.huntT += dt) < 14) return; st.huntT = 0;
     const p = ctx.camera.position, at = { x: p.x, z: p.z, floor: ctx.floor || 0 };
@@ -428,6 +452,7 @@ export default function story(ext, shared) {
     ctx = c; T = c.data.talk; snd = createSound(c);
     M = dressMountain(c);
     c.seatPickups && c.seatPickups();   // the desks, tables and shelves of mountain.js are in: put the pickups on them
+    if (M.fitWallDocs) M.fitWallDocs();   // 5.8: the wall notices are read at their frames
     fear = createFear(c);
     F = makeJashi({ detail: 1 }); F.root.visible = false; c.scene.add(F.root);
     gaze = createGaze(c, { shared, mountain: M, sound: snd, fear, onDeath: (r) => c.die(r) });
@@ -435,13 +460,20 @@ export default function story(ext, shared) {
     reflector = createReflector(c, { shared, gaze, fear, sound: snd, mountain: M, say, figure: () => F, bridge: BRIDGE });
     if (!c.qa) for (const id of ['N_MARK1', 'N_MARK2', 'N_MARK3', 'N_DIARY']) c.removePickup('doc', id);   // kept by the task that makes them (they lie nowhere on the map)
     // 5.6.2: the things you can walk up to too early say what is missing and where, not the kit's plain "not yet"
-    { const early = { T_GATE: '', T_KEYBOX: '鍵箱だ。番号が分からない。先に、奥の机の引き出しで日誌を探そう。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_CRANK: '先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
-      const base = c.canStart; c.canStart = (t) => { const r = base(t); if (r !== true && t.id === 'T_GATE' && !c.state.tasks.includes('T_GATE')) return c.state.tasks.includes('T_CRANK') ? '巻上げの箱に、新しい錠がかかっている。葛西さんの札に「盗難よけ。鍵は旧詰所」とある。' : '巻上げの箱だ。差し込むハンドルが要る。東の避難小屋の床にあるはずだ。'; return r !== true && early[t.id] && !c.state.tasks.includes(t.id) ? early[t.id] : r; }; }
+    { const early = { T_GATE: '', T_KEYBOX: '鍵箱だ。番号が分からない。先に、奥の机の引き出しで日誌を探そう。', T_ENGINE: 'ゲートの鎖が下りたままでは車を出せない。先に、ゲートの箱にハンドルを差す。', T_LURE: '古い呼び鐘だ。先に杉の刻み目をたどって、白い姿がどこにいるか確かめよう。', T_PHONE: '泥の中で何かが光っている。今は先に、やることがある。' };
+      const crankEarly = () => (!c.state.tasks.includes('T_BOTTLE') ? '先に西の物置へ。小屋へ行くのは、ボトルを持ってからだ。' : !c.state.tasks.includes('T_MARK3') ? '小屋へ行く前に、杉の刻み目をたどって、白い姿がどこにいるか確かめよう。' : '小屋の前に、白い姿がいる。先に沢の下手の呼び鐘を鳴らして、引き離そう。');
+      const base = c.canStart; c.canStart = (t) => { const r = base(t); if (r !== true && t.id === 'T_CRANK' && !c.state.tasks.includes('T_CRANK')) return crankEarly(); if (r !== true && t.id === 'T_GATE' && !c.state.tasks.includes('T_GATE')) return c.state.tasks.includes('T_CRANK') ? '巻上げの箱に、新しい錠がかかっている。葛西さんの札に「盗難よけ。鍵は旧詰所」とある。' : '巻上げの箱だ。差し込むハンドルが要る。東の避難小屋の床にあるはずだ。'; return r !== true && early[t.id] && !c.state.tasks.includes(t.id) ? early[t.id] : r; }; }
     // the bell is something to use once its muffle is back (T_BELL): an invisible handle on the frame
     const bm = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.8), new THREE.MeshBasicMaterial({ visible: false })); bm.position.set(-12.7, 1.4, -6.6); bm.name = 'js-bell'; bm.userData.interact = { kind: 'js-bell', id: 'bell' }; c.world.group.add(bm);
     // the station is the first use; afterwards the frame stays usable
     c.bus.on('task:done', ({ id }) => { if (id === 'T_BELL') c.world.interactables.push(bm); });
     if (c.state.tasks.includes('T_BELL')) c.world.interactables.push(bm);
+    // 5.8: the bell down the creek: the same, an unseen handle once T_LURE is done
+    const bm2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.2, 0.9), new THREE.MeshBasicMaterial({ visible: false })); bm2.position.set(BELL2.x, 1.4, BELL2.z); bm2.name = 'js-bell2'; bm2.userData.interact = { kind: 'js-bell2', id: 'bell2' }; c.world.group.add(bm2);
+    c.bus.on('task:done', ({ id }) => { if (id === 'T_LURE') c.world.interactables.push(bm2); });
+    if (c.state.tasks.includes('T_LURE')) c.world.interactables.push(bm2);
+    // 5.8: bottles to be found on the way (they ran out while exploring): each crate fills them up to two, once
+    for (const k of M.caches || []) { k.handle.userData.interact = { kind: 'js-cache', id: k.id }; c.world.interactables.push(k.handle); k.bottles.visible = !c.state.flags.includes(`cache_${k.id}`); }
     // the balcony door stays shut once the amado is drawn
     const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') && c.state.room !== 'CAB_BALC' ? true : base()); /* locked from the room side only: outside, it always opens (a player shut out on the balcony, 2026-11-02) */ balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
     document.body.insertAdjacentHTML('beforeend', `<div id="js-photo" class="js-photo" hidden></div><div id="js-jump" class="js-jump" hidden><img src="assets/textures/monster-face-v4-2.webp" alt=""></div>`);

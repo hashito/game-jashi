@@ -811,6 +811,13 @@
    "label": "林業用の呼び鐘"
   },
   {
+   "id": "S_BELL2",
+   "room": "O_EAST_S",
+   "x": 24.4,
+   "z": -28.1,
+   "label": "沢の下手の古い呼び鐘"
+  },
+  {
    "id": "S_CRANK",
    "room": "SHELTER",
    "x": 15.4,

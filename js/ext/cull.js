@@ -199,7 +199,7 @@ export function createCull(ctx) {
   function applyRooms(id) {
     const want = rooms_(id);
     for (const [rid, list] of inRoom) {
-      const on = want.has(rid);
+      const on = want.has(rid) || !roofed.has(rid);   // 5.8: an open-air room (the balcony) is seen from outside: it was culled to its frame
       if (shownRooms && shownRooms.has(rid) === on) continue;
       for (const m of list) setShown(m, on);
     }
