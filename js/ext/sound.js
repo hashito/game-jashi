@@ -59,6 +59,7 @@ export function createSound(ctx) {
   const rustle = (o = {}) => noise('rustle', { gain: o.gain ?? 0.6 });
   const shutter = () => noise('slide', { gain: 0.9 });
   const breath = () => noise('breath', { gain: 0.5 });
+  const ladder = () => { noise('scrape', { gain: 0.25 }); for (let i = 0; i < 4; i++) setTimeout(() => noise(i % 2 ? 'clack' : 'knock', { gain: 0.55 }), 120 + i * 260); };   // 5.8.1: hands and feet on the rungs
   const chain = () => { noise('rattle', { gain: 0.8 }); filtered({ f0: 700, f1: 400, dur: 1.2, q: 3, vol: 0.12 }); };
 
   // ---------------------------------------------------------------- the beds: wind, the creek and insects, heard through the buildings
@@ -91,5 +92,5 @@ export function createSound(ctx) {
     a.setVolume && a.setVolume(ctx.settings ? ctx.settings.volume ?? 0.8 : 0.8);
     void o;
   }
-  return { scytheRaise, scytheSwing, hit, miss, sting, throwBottle, shatter, radioStatic, radioBurst, ring, engine, bell, steps, rustle, shutter, breath, chain, update };
+  return { scytheRaise, scytheSwing, hit, miss, sting, throwBottle, shatter, radioStatic, radioBurst, ring, engine, bell, steps, rustle, shutter, breath, chain, ladder, update };
 }

@@ -185,7 +185,7 @@ export function dressMountain(ctx) {
       box(0.1, H + 0.1, 0.06, frameM, -W / 2 - 0.05, (H + 0.1) / 2, 0, casing); box(0.1, H + 0.1, 0.06, frameM, W / 2 + 0.05, (H + 0.1) / 2, 0, casing);
       box(W + 0.2, 0.1, 0.06, frameM, 0, H + 0.05, 0, casing); box(W + 0.2, 0.03, 0.2, M.weathered, 0, 0.015, -0.1, casing);   // head and threshold
       for (const sx of [-1, 1]) box(0.08, H + 0.06, 0.04, frameM, sx * (W / 2 + 0.04), (H + 0.06) / 2, -0.23, casing);   // jambs on the balcony face (behind the amado's track)
-      const leaf = named('balcony-door'); leaf.position.set(0, balcY, z);
+      const leaf = named('balcony-door'); leaf.position.set(0, balcY, z); leaf.userData.keep = true;   // it slides: out of cull.js's merge (its "balcony-" name reads as still)
       const st = 0.07, kick = 0.5, rail = 0.07;
       box(st, H, 0.05, frameM, -W / 2 + st / 2, H / 2, 0, leaf); box(st, H, 0.05, frameM, W / 2 - st / 2, H / 2, 0, leaf);   // stiles
       box(W, rail, 0.05, frameM, 0, H - rail / 2, 0, leaf); box(W, kick, 0.045, frameM, 0, kick / 2, 0, leaf); box(W - 0.3, kick - 0.16, 0.05, M.plank, 0, kick / 2, 0, leaf);   // kick panel with a raised board              // top rail, wooden kick panel
@@ -220,7 +220,7 @@ export function dressMountain(ctx) {
     const cr = named('crank_floor'); cr.position.set(15.4, 0.04, -17.2);
     const shaft = cyl(0.02, 0.02, 0.62, M.iron, 0, 0, 0, 8, cr); shaft.rotation.z = Math.PI / 2;
     const grip = cyl(0.035, 0.035, 0.16, M.red, 0.32, 0.08, 0, 10, cr); void grip; cyl(0.02, 0.02, 0.16, M.iron, -0.3, 0.06, 0, 8, cr);
-    const cot = P.bed({}, {}); cot.position.set(17.9, 0, -16.6); G.add(cot);
+    const cot = P.bed({}, {}); cot.position.set(18.45, 0, -15.0); G.add(cot); solid(cot);   // 5.8.1: against the east wall north of the locker, and solid (it stood on the locker and was the way behind the desk)
     const rec = P.table({}, 3.0, 0.7, 0.8, 0x5a4a3a); rec.position.set(15.8, 0, -15.95); G.add(rec); solid(rec); }   // the record desk (ledger, photo)
 
   // ---------------------------------------------------------------- cover: timber stacks, the plank screen, the boulders (W2)
@@ -281,7 +281,7 @@ export function dressMountain(ctx) {
     addCol(23.6, -29.15, 25.2, -28.65, 0, 2.6); }
   // 5.8: crates with two bottles in them, on the way (the two from the shed ran out while exploring): the story fills them up, once each
   api.caches = [];
-  for (const [id, x, z, ry] of [['bridge', 4.1, -14.2, 0.2], ['south', -0.4, -26.6, -0.3], ['hut', 13.75, -15.3, 1.57], ['post', -26.9, -23.1, 0], ['tower', -26.9, -16.9, 0.4]]) {
+  for (const [id, x, z, ry] of [['bridge', 4.1, -14.2, 0.2], ['south', -0.4, -26.6, -0.3], ['hut', 13.6, -13.75, 0], ['post', -26.9, -23.1, 0], ['tower', -26.9, -16.9, 0.4]]) {
     const k = named(`bottle-crate:${id}`); k.position.set(x, 0, z); k.rotation.y = ry;
     box(0.5, 0.28, 0.36, M.plank, 0, 0.14, 0, k);
     const bt = new THREE.Group(); bt.name = `bottle-crate-bottles:${id}`; k.add(bt);

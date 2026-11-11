@@ -115,3 +115,12 @@ body.js-aiming #prompt { visibility: hidden; }
 
 .js-jump[hidden], .js-photo[hidden], .js-threat[hidden], .js-edge[hidden], .js-lids[hidden], .js-hit[hidden], .js-meters[hidden], .js-bottles[hidden] { display: none !important; }
 body.js-scoping #say, body.js-scoping #prompt { visibility: hidden; }
+
+/* 5.8.1: the map's 「次」 pin, where the step card points now */
+.ms-pinG[data-pin^="next"] .ms-pin { fill: #d9472b; r: calc(7.5px * var(--ms-mk, 1)); animation: js-next-pin 1.4s ease-in-out infinite; }
+.ms-pinG[data-pin^="next"] .ms-pin-t { fill: #b8321a; font-weight: 800; }
+@keyframes js-next-pin { 50% { stroke-width: 4; stroke: #ffd9cf; } }
+.js-next-bar { display: flex; align-items: center; gap: .6em; margin: 0 0 .5em; padding: .45em .8em; border-radius: 8px; background: rgba(217, 71, 43, .16); color: var(--gf-text, #e8e2d6); border: 1px solid rgba(217, 71, 43, .55); font-size: 15px; }
+.js-next-bar b { color: #f0b4a6; font-weight: 800; }
+.js-next-arrow { display: inline-block; color: #e8634a; font-size: 1.3em; line-height: 1; }
+.js-next-d { margin-left: auto; opacity: .85; }

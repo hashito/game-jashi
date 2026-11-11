@@ -90,6 +90,43 @@ export default function story(ext, shared) {
     if (!MGX[mg.type]) return true;
     return ctx.runMinigame(task, mg);   /* the kit's runner: the game is blocked while it is open (no look hint over it) */
   }
+  // 5.8.1 (feedback: show where to go next): the map shows one pin, 「次」, where the step card points now (its emphasis, its room,
+  // else the task's station); the other startable tasks keep their plain pins
+  const nextPins = (c, base = {}) => {
+      const L = c.data.tasks.tasks || c.data.tasks, ok = (x) => x.steps && x.steps.length && c.canStart(x) === true;
+      const t = L.find((x) => ok(x) && !x.optional) || L.find(ok); if (!t) return {};
+      const card = (document.getElementById('guide') || {}).textContent || '';
+      let i = t.steps.findIndex((s) => card.includes(s.text)); if (i < 0) i = 0;
+      const s = t.steps[i], where = (key) => { const m = key && c.world.interactables.find((o) => o.userData.interact && `${o.userData.interact.kind}:${o.userData.interact.id}` === key); if (!m) return null; m.updateMatrixWorld(); const e = m.matrixWorld.elements; return { x: e[12], z: e[14] }; };
+      const p = where(s.emphasis) || (s.done === 'room' && (s.room || t.room) ? {} : null) || where(t.station && `station:${t.station}`) || {};
+      const room = s.done === 'room' ? s.room || t.room : t.room;
+      const next = { id: 'next', room, ...p, label: `次：${s.text}`, kind: 'task' };
+      const pins = [next];
+      const R = c.world.rooms.get(room), nf = R && R.room ? R.room.floor || 0 : 0, cf = c.floor || 0;
+      if (nf !== cf) {   // the place is on another floor: the way there on this one (the nearest ladder that goes toward it)
+        const cam = c.camera.position; let best = null;
+        for (const m of c.world.stairs.values()) {
+          const it = m.userData.interact, to = it && it.to; if (!to || (to.floor || 0) === cf || Math.sign((to.floor || 0) - cf) !== Math.sign(nf - cf)) continue;
+          m.updateMatrixWorld(); const e = m.matrixWorld.elements, d = Math.hypot(e[12] - cam.x, e[14] - cam.z);
+          if (!best || d < best.d) best = { d, x: e[12], z: e[14] };
+        }
+        if (best) pins.push({ id: 'next-floor', floor: cf, x: best.x, z: best.z, label: nf < cf ? '次：下の階へ' : '次：上の階へ', kind: 'task' });
+      }
+      return { pins: [...pins, ...(base.pins || []).filter((x) => x.id !== t.id)] };
+  };
+  ext.registerUi('map', { state: (c, base) => nextPins(c, base) });
+  // the map is drawn round the player: a line over it says where 「次」 is (arrow and metres) even when the pin is off the panel
+  ext.on('map:open', () => setTimeout(() => {
+    if (!ctx) return; const wrap = document.querySelector('.ms-wrap'); if (!wrap || !wrap.parentNode) return;
+    let bar = wrap.parentNode.querySelector('.js-next-bar');
+    const ps = (nextPins(ctx).pins || []).filter((p) => /^next/.test(p.id)), p = ps.find((x) => x.id === 'next-floor') || ps[0];
+    if (!p) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'js-next-bar'; wrap.parentNode.insertBefore(bar, wrap); }
+    let x = p.x, z = p.z; if (x == null) { const R = ctx.world.rooms.get(p.room); if (R) { x = R.cx; z = R.cz; } }
+    const cam = ctx.camera.position, dx = x - cam.x, dz = z - cam.z, d = Math.hypot(dx, dz);
+    const arrow = d < 3 ? '' : `<span class="js-next-arrow" style="transform:rotate(${(Math.atan2(dz, dx) * 180 / Math.PI).toFixed(0)}deg)"><svg viewBox="0 0 20 20" width="1em" height="1em" aria-hidden="true"><path d="M2 10h12M10 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+    bar.innerHTML = `${arrow}<b>${esc(p.label)}</b><span class="js-next-d">${d < 3 ? 'ここ' : `約${Math.round(d)}m`}</span>`;
+  }, 60));
   ext.registerUi('title', {
     kicker: 'JASHI ／ A FIRST-PERSON MOUNTAIN HORROR',
     tagline: '叔父の別荘の二階、ベランダの望遠鏡で見てしまった白い姿。目が合えば心を削られ、近づかれれば鎌が振り下ろされる。日が暮れる前に、山を下りる。',
@@ -453,6 +490,20 @@ export default function story(ext, shared) {
     M = dressMountain(c);
     c.seatPickups && c.seatPickups();   // the desks, tables and shelves of mountain.js are in: put the pickups on them
     if (M.fitWallDocs) M.fitWallDocs();   // 5.8: the wall notices are read at their frames
+    { // 5.8.1: a ladder is climbed, not jumped: its sound, the screen goes dark, the player comes out on the other floor
+      const veil = document.createElement('div'); veil.id = 'js-ladder-veil';
+      veil.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:40';
+      document.body.appendChild(veil);
+      let climbing = false; c.blockers.push(() => climbing);
+      const use = c.useStairs;
+      c.useStairs = (o) => {
+        if (climbing) return false; if (!(o.to || (o.def && o.def.to))) return false;
+        if (c.qa || c.calm) return use(o);   // the quick checks move at once
+        climbing = true; if (snd.ladder) snd.ladder(); veil.style.opacity = '1';
+        setTimeout(() => { use(o); setTimeout(() => { veil.style.opacity = '0'; climbing = false; }, 650); }, 400);
+        return true;
+      };
+    }
     fear = createFear(c);
     F = makeJashi({ detail: 1 }); F.root.visible = false; c.scene.add(F.root);
     gaze = createGaze(c, { shared, mountain: M, sound: snd, fear, onDeath: (r) => c.die(r) });
