@@ -6,6 +6,7 @@
 //   story.js     the nine stages: conversations, the figure below the balcony, records, death and the ending
 //   tower.js     5.7: the number lock of the old post and the reflector on the fire tower
 //   sound.js     the beds (kit sound library) and the synthesized scythe, radio, phone and engine
+//   papers.js    5.9: the documents on old paper (and as forms: letter, log book, notice, record card), the stories of the items
 import * as THREE from 'three';
 import { jashiLook } from './jashi.js';
 import story from './story.js';

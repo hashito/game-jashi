@@ -135,3 +135,99 @@ body.js-scoping #say, body.js-scoping #prompt { visibility: hidden; }
 .js-controls td b { color: #f0d9a6; }
 .js-controls td span { display: block; font-size: .9em; opacity: .8; }
 @media (max-width: 520px) { .js-controls th, .js-controls td { display: block; width: auto; border: 0; padding: .1em .2em; } .js-controls tr { display: block; padding: .4em 0; border-bottom: 1px solid rgba(255, 255, 255, .1); } }
+
+/* 5.9: a call from 修司 (top left, under the meters): T or a tap plays it; nothing waits for it */
+.js-call { pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; min-height: 44px; box-sizing: border-box; padding: 6px 12px; border-radius: var(--gf-radius, 4px);
+  background: var(--gf-warn-bg); color: var(--gf-warn-text); border: 1px solid var(--gf-warn-line); font: 600 15px/1.3 var(--js-serif); cursor: pointer; animation: js-call 1.6s ease-in-out infinite; }
+.js-call kbd { display: inline-block; min-width: 1.5em; padding: 1px 6px; border-radius: 4px; background: var(--gf-surface-2); color: var(--gf-text); border: 1px solid var(--gf-border); font: 700 15px/1.3 ui-monospace, monospace; text-align: center; }
+.js-call small { font-size: 14px; opacity: .85; }
+.js-call-ic { flex: none; color: var(--gf-warn-label); }
+body.touch .js-call { font-size: 16px; min-height: 48px; }
+#hud.hud-compact .js-call { font-size: 15px; }
+.js-call[hidden], body.js-scoping .js-call, body.js-aiming .js-call, body.js-mg .js-call { display: none !important; }
+@keyframes js-call { 50% { box-shadow: 0 0 0 4px rgba(217, 140, 60, .35); } }
+@media (prefers-reduced-motion: reduce) { .js-call { animation: none; } }
+
+/* 5.9: a mini game is open: the thought band and the picture at the top wait (they lay over the last one) */
+body.js-mg #say, body.js-mg .js-photo { visibility: hidden !important; }
+
+/* 5.9: through the hole of the board there is no centre dot to aim with: the white light is the aim */
+body.js-aiming #crosshair, body.js-aiming .kit-look-note { display: none !important; }
+
+/* 5.9: the camera mini game: the dashed frame is how big the subject is now; on the white frame it is the right size */
+.js-mg-subject { /* pair-ok */ position: absolute; box-sizing: border-box; border: 2px dashed rgba(255, 214, 120, .95); box-shadow: 0 0 0 1px rgba(0, 0, 0, .55); pointer-events: none; transition: transform .15s ease-out; }
+.js-mg-subject span { position: absolute; left: -2px; top: -22px; padding: 0 6px; border-radius: 3px; background: rgba(20, 16, 10, .78); color: #ffe2a0; font-size: 14px; line-height: 20px; white-space: nowrap; }
+.js-mg-subject.js-fit { border-style: solid; border-color: #9be38f; }
+.js-mg-subject.js-fit span { background: rgba(14, 40, 18, .85); color: #c8f7c0; }
+
+/* 5.9: old paper (the documents), and the forms some of them are: letter, log book, notice, record card */
+.js-docwrap { display: flex; flex-direction: column; gap: 12px; }
+.js-paper { --pp-ink: #2a2118; position: relative; box-sizing: border-box; margin: 2px; padding: 22px 22px 18px; color: var(--pp-ink); font: 17px/1.9 var(--js-serif);
+  background-color: #d9cba8;
+  background-image: radial-gradient(ellipse 30% 22% at 82% 14%, rgba(120, 82, 34, .22), transparent 70%), radial-gradient(ellipse 26% 30% at 12% 88%, rgba(96, 66, 28, .2), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255, 248, 224, .35), transparent 80%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .24 0 0 0 0 .14 0 0 0 .32 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .55), inset 0 0 46px rgba(92, 60, 22, .42); border-radius: 2px; }
+.js-paper p { margin: 0 0 .7em; color: var(--pp-ink); }
+.js-paper p:last-child { margin-bottom: 0; }
+.js-pp-photo { position: relative; display: block; width: fit-content; max-width: 88%; margin: 6px auto 16px; padding: 6px 6px 16px; background: #efe9da; color: var(--pp-ink); transform: rotate(-1.6deg); box-shadow: 1px 3px 8px rgba(0, 0, 0, .45); }
+.js-pp-photo img { display: block; max-width: 100%; max-height: 30vh; object-fit: cover; filter: sepia(.25) contrast(1.05); }
+.js-pp-photo::before { /* pair-ok */ content: ""; position: absolute; top: -10px; left: 50%; width: 88px; height: 22px; margin-left: -44px; background: rgba(222, 208, 160, .72); transform: rotate(2.5deg); box-shadow: 0 1px 2px rgba(0, 0, 0, .2); }
+.js-pp-clip { transform: rotate(1.2deg); }
+.js-pp-clip::before { /* pair-ok */ top: -14px; left: 18px; width: 16px; height: 44px; margin: 0; background: transparent; border: 3px solid #8a8d90; border-radius: 9px; transform: rotate(-8deg); box-shadow: none; }
+.js-pp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid rgba(60, 40, 20, .55); color: var(--pp-ink); }
+.js-pp-head b { font-size: 1.15em; letter-spacing: .2em; }
+.js-pp-head span { font-size: 14px; opacity: .8; }
+.js-pp-label { margin-bottom: .3em !important; font-size: 14px; letter-spacing: .1em; opacity: .8; }
+/* the letter: his pen on ruled paper; what I noticed under it */
+.js-paper--letter .js-pp-hand { --pp-ink: #1f2a3c; color: var(--pp-ink); letter-spacing: .03em; padding: 4px 4px 2px;
+  background: repeating-linear-gradient(transparent 0 calc(1.9em - 1px), rgba(70, 90, 120, .3) calc(1.9em - 1px) 1.9em); background-position: 0 .1em; }
+.js-paper--letter .js-pp-hand p { text-indent: 1em; transform: rotate(-.25deg); }
+.js-pp-sign { text-align: right; text-indent: 0 !important; margin-top: .4em !important; }
+.js-pp-aside { margin-top: 14px; padding: 10px 12px; border-top: 1px dashed rgba(60, 40, 20, .5); background: rgba(255, 250, 235, .35); color: var(--pp-ink); font-size: 16px; }
+/* the log book */
+.js-pp-log { width: 100%; margin: 6px 0 12px; border-collapse: collapse; font-size: 16px; line-height: 1.7; }
+.js-pp-log th, .js-pp-log td { border: 1px solid rgba(60, 40, 20, .45); padding: 6px 8px; vertical-align: top; text-align: left; color: var(--pp-ink); }
+.js-pp-log th { background: rgba(120, 88, 44, .16); color: var(--pp-ink); font-weight: 600; white-space: nowrap; font-size: 14px; }
+.js-pp-log td:first-child, .js-pp-log td:nth-child(2) { white-space: nowrap; }
+.js-pp-odd td { color: #3a1612; font-weight: 600; }
+/* the notice: the office's heading, a red seal, the pencil over it */
+.js-pp-notice { position: relative; padding: 6px 76px 8px 4px; }
+.js-pp-org { font-size: 14px; letter-spacing: .3em; }
+.js-pp-title { margin: 0 0 10px; font: 700 1.2em/1.5 var(--js-serif); color: var(--pp-ink); letter-spacing: .12em; }
+.js-pp-date { text-align: right; font-size: 14px; }
+.js-pp-stamp { position: absolute; right: 4px; top: 4px; display: flex; align-items: center; justify-content: center; width: 62px; height: 62px; box-sizing: border-box; border: 3px solid rgba(166, 30, 22, .78); border-radius: 50%;
+  color: rgba(150, 26, 18, .86); background: transparent; font: 700 15px/1.05 var(--js-serif); writing-mode: vertical-rl; letter-spacing: .05em; transform: rotate(-12deg); }
+.js-pp-pencil { margin: 10px 0 12px; padding: 8px 12px; border-left: 3px solid rgba(70, 66, 60, .5); color: #3e3a34; font-size: 16px; transform: rotate(-.4deg); }
+.js-pp-pencil p { color: #3e3a34; }
+.js-pp-cap { font-size: 16px; }
+/* the record card */
+.js-paper--card { background-color: #e6dcc4; color: var(--pp-ink); border-top: 6px solid rgba(166, 54, 40, .62); }
+.js-pp-cardhead b { font-size: 1.05em; }
+.js-pp-fields { margin: 0; }
+.js-pp-row { display: grid; grid-template-columns: 5.5em 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(70, 90, 120, .38); }
+.js-pp-row dt { font-size: 14px; letter-spacing: .08em; opacity: .85; color: var(--pp-ink); }
+.js-pp-row dd { margin: 0; color: #1f2a3c; }
+.js-pp-feel { margin: 0; }
+/* in the inventory detail: the same paper, a little tighter */
+.js-pp-name { margin: 0 0 8px; font: 600 1.05em/1.4 var(--js-serif); color: var(--gf-text); }
+.js-paper--inline { padding: 16px 14px 14px; }
+.js-paper--inline .js-pp-photo img { max-height: 22vh; }
+.js-paper--inline .js-pp-notice { padding-right: 70px; }
+@media (max-width: 560px) {
+  .js-paper { padding: 18px 14px 14px; }
+  .js-pp-log thead { display: none; }
+  .js-pp-log, .js-pp-log tbody, .js-pp-log tr, .js-pp-log td { display: block; width: auto; }
+  .js-pp-log tr { border: 1px solid rgba(60, 40, 20, .45); margin-bottom: 8px; padding: 4px 8px; }
+  .js-pp-log td { border: 0; padding: 2px 0; white-space: normal !important; }
+  .js-pp-log td:not(:last-child) { display: inline-block; margin-right: 1em; font-size: 14px; }
+  .js-pp-log td:not(:last-child)::before { content: attr(data-col) "　"; opacity: .7; }
+}
+
+/* 5.9: the story of an item (inventory detail) */
+.js-lore { margin-top: 10px; padding: 10px 12px; border-radius: var(--gf-radius, 4px); background: var(--gf-note-bg); color: var(--gf-note-text); border-left: 3px solid var(--gf-note-line, var(--gf-accent-2)); }
+.js-lore-l { display: block; margin-bottom: 4px; font-size: 14px; letter-spacing: .12em; color: var(--gf-note-text); opacity: .85; }
+.js-lore p { margin: 0; font: 16px/1.8 var(--js-serif); color: var(--gf-note-text); }
+
+/* 5.9: on a compact HUD the call chip sits under the menu button (right aligned) */
+#hud-right .js-call { align-self: flex-end; }

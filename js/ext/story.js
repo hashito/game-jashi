@@ -29,6 +29,7 @@ import { createSound } from './sound.js';
 import { CHAINS, completedChains } from './rules.js';
 import { numberLock, createReflector } from './tower.js';
 import { createCull } from './cull.js';
+import { installPapers } from './papers.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -61,11 +62,14 @@ export default function story(ext, shared) {
     tower: '櫓へ行くぞ。橋の南から西の伐採跡へ。西の端の山道を上がって、梯子で一番上まで登るんだ。',
   };
   // one at a time, never over an open window (a talk, a mini game): the next waits for the window to close and the last clip to end
+  // 5.9 (feedback: lines over the last mini game): the library mini games are not windows of the manager, so they are asked for too
+  const mgBusy = () => !!(ctx && (ctx.mgOpen || document.getElementById('mg-custom') || document.querySelector('.mgx')));
+  const busyWin = () => !!(ctx && ctx.wm && ctx.wm.isOpen) || mgBusy();
   let guideChain = Promise.resolve();
   const guide = (key) => {
     if (!GUIDE[key]) return guideChain;
     guideChain = guideChain.then(async () => {
-      while (ctx.wm && ctx.wm.isOpen && !ctx.qa) await new Promise((r) => setTimeout(r, 300));
+      while (busyWin() && !ctx.qa) await new Promise((r) => setTimeout(r, 300));
       const here = false;   // 5.7.2: he is downstairs from the start, every word comes through the radio
       if (ctx.voiceLine) ctx.voiceLine(`assets/audio/guide-${key}.wav`, here ? null : 'radio');
       say(`修司${here ? '' : '（無線）'}「${GUIDE[key]}」`, 7);
@@ -74,13 +78,84 @@ export default function story(ext, shared) {
     return guideChain;
   };
   // a talk in the same queue as the guide lines: after the window that is open now
-  const queueTalk = (key, o) => { guideChain = guideChain.then(async () => { while (ctx.wm && ctx.wm.isOpen && !ctx.qa) await new Promise((r) => setTimeout(r, 300)); await talk(key, o); }); return guideChain; };
+  const queueTalk = (key, o) => { guideChain = guideChain.then(async () => { while (busyWin() && !ctx.qa) await new Promise((r) => setTimeout(r, 300)); await talk(key, o); }); return guideChain; };
   const wait = (sec) => new Promise((r) => setTimeout(r, (ctx.qa ? 0.05 : sec) * 1000));
 
+  // 5.9 (feedback 2026-11-13 「会話が勝手に始まるのをできる限り避ける」): what happens round the player no longer opens a window.
+  // My own words ({ t } lines of talk.json) go to the thought band at once; 修司's come as a call: a chip under the meters
+  // (「無線が鳴っている　T で出る」, on a phone the chip is the button), a crackle. T or the tap plays the call in the talk window.
+  // Nothing waits for an answer: a call left alone stays until it is stale (what it says no longer fits), the next ones queue behind it.
+  const isThought = (l) => l && l.t != null && l.text == null;
+  const thinkAll = (key) => { for (const l of T[key] || []) if (isThought(l)) say(l.t); };
+  const calls = []; let callEl = null, callT = 0;
+  function paintCall() {
+    if (!callEl) return;
+    for (let i = calls.length - 1; i >= 0; i--) if (calls[i].stale && calls[i].stale()) calls.splice(i, 1);
+    const on = calls.length > 0 && ctx.state.started && !ctx.state.ended;
+    callEl.hidden = !on; if (!on) return;
+    { // a phone held sideways: the top-left column is short (it scrolls), so the chip goes under the menu button
+      const want = document.querySelector('#hud.hud-compact') ? 'tr' : 'tl';
+      if (callEl.dataset.hudSlot !== want && ctx.registerHudPart) ctx.registerHudPart('js-call', want === 'tr' ? { slot: 'tr', order: 90 } : { slot: 'tl', order: 45 });
+    }
+    const n = calls.length > 1 ? `<small>（${calls.length}件）</small>` : '';
+    const icon = '<svg class="js-call-ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8 2v5M7 7h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="11.5" cy="12" r="2.2" fill="currentColor"/><path d="M8.5 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    const html = ctx.isTouch ? `${icon}<span>無線に出る</span>${n}` : `${icon}<span>無線が鳴っている</span><kbd>T</kbd><span>で出る</span>${n}`;
+    if (callEl.dataset.html !== html) { callEl.dataset.html = html; callEl.innerHTML = html; callEl.setAttribute('aria-label', `修司から無線が入っている${calls.length > 1 ? `（${calls.length}件）` : ''}。押すと出る`); }
+  }
+  // key: a talk of talk.json. o: { title, after() (what comes after the answer, e.g. the guide line it leads to), stale() }
+  function radioCall(key, o = {}) {
+    thinkAll(key);
+    const lines = (T[key] || []).filter((l) => !isThought(l));
+    if (!lines.length) { if (o.after) o.after(); return; }
+    if (ctx.qa) { Promise.resolve(ctx.talk(lines, { title: o.title || '無線', pickup: false })).then(() => o.after && o.after()); return; }   // the quick checks answer at once
+    calls.push({ key, lines, title: o.title || '無線', after: o.after, stale: o.stale }); callT = 0;
+    if (snd && snd.radioBurst) snd.radioBurst(0.7);
+    paintCall();
+  }
+  let answering = false;
+  async function answerCall() {
+    paintCall();
+    if (answering || !calls.length || busyWin() || dying || st.scope || (reflector && reflector.aiming) || !ctx.state.started || ctx.state.ended) return;
+    answering = true; const c = calls.shift(); paintCall();
+    try { if (snd && snd.radioBurst) snd.radioBurst(0.3); await ctx.talk(c.lines, { title: c.title, pickup: false }); if (c.after && !(c.stale && c.stale())) c.after(); }
+    finally { answering = false; paintCall(); }
+  }
+  // the warnings in danger are not calls (an answer later would be stale): my thought, then his shout through the radio, as a subtitle
+  function radioShout(key) {
+    let at = 0;
+    for (const l of T[key] || []) {
+      const text = isThought(l) ? l.t : l.text, his = !isThought(l) && l.who === '修司';
+      setTimeout(() => {
+        if (dying) return;
+        if (his) { if (l.voice && ctx.voiceLine) ctx.voiceLine(l.voice, l.vfx || 'radio'); ctx.monologue(`修司（無線）「${text}」`, 6, { urgent: true }); }
+        else ctx.monologue(text, Math.min(6, 2.4 + text.length * 0.08), { urgent: true });
+      }, at * 1000);
+      at += ctx.qa ? 0 : Math.min(3.6, 1.4 + text.length * 0.06);
+    }
+  }
+
+  // 5.9 (feedback: 「拡大したいサイズ感を枠で示す」): the camera mini game shows, as a dashed frame, how big the subject is now; it
+  // grows with the zoom and lies on the white frame exactly at the zoom the shot wants (cfg.zoom). The kit module is wrapped, not edited
+  const photoFramed = { ...photoFocus, mount(host, cfg = {}, c = {}, hooks = {}) {
+    const help = `${cfg.help || 'ピント環を回して像をくっきりさせ、ズームで枠いっぱいに入れてから、シャッターを押してください。'}点線の枠は、いま写っている刻み目の大きさです。白い枠に重なるまで寄ってください。`;
+    const p = photoFocus.mount(host, { ...cfg, help }, c, hooks);
+    try {
+      const view = host.querySelector('.mgx-photo-view'), pic = host.querySelector('.mgx-photo-pic');
+      if (view && pic) {
+        const want = cfg.zoom ?? 0.7, tol = cfg.tol ?? 0.08, kw = 0.7 + want * 0.9, fw = 0.52 / kw, fh = 0.64 / kw;   // the white frame: inset 18% 24% (kit css)
+        const sub = document.createElement('div'); sub.className = 'js-mg-subject';
+        sub.style.cssText = `left:${((1 - fw) / 2 * 100).toFixed(2)}%;top:${((1 - fh) / 2 * 100).toFixed(2)}%;width:${(fw * 100).toFixed(2)}%;height:${(fh * 100).toFixed(2)}%`;
+        sub.innerHTML = '<span>撮りたい物</span>'; view.appendChild(sub);
+        const sync = () => { const m = /scale\(([\d.]+)\)/.exec(pic.style.transform || ''); const k = m ? +m[1] : 0.7 + 0.3 * 0.9; sub.style.transform = `scale(${k})`; sub.classList.toggle('js-fit', Math.abs((k - 0.7) / 0.9 - want) <= tol + 1e-6); };
+        new MutationObserver(sync).observe(pic, { attributes: true, attributeFilter: ['style'] }); sync();
+      }
+    } catch (e) { /* the plain mini game */ }
+    return p;
+  } };
   const MGX = useMinigames(ext, [
     [steadyHand, { type: 'steady-hand' }],
     [tuneRadio, { type: 'tune-radio', hooks: { sound: (k, c, v) => { if (snd) snd.radioStatic(k !== 'ok' && k !== 'done', typeof v === 'number' ? v : 0); if (k === 'turn' && v > 0.75 && !st.dialHeard && ctx.voiceLine) { st.dialHeard = true; ctx.voiceLine('assets/audio/uncle-dial.wav', 'radio'); } } } }],
-    [sortItems, { type: 'sort-items' }], [timing, { type: 'timing' }], [photoFocus, { type: 'photo-focus' }], [searchDark, { type: 'search-dark' }], [pumpGauge, { type: 'pump-gauge', hooks: { sound: () => snd && snd.chain() } }],
+    [sortItems, { type: 'sort-items' }], [timing, { type: 'timing' }], [photoFramed, { type: 'photo-focus' }], [searchDark, { type: 'search-dark' }], [pumpGauge, { type: 'pump-gauge', hooks: { sound: () => snd && snd.chain() } }],
     [holdBreath, { type: 'hold-breath', hooks: { sound: (k) => { if (!snd) return; if (k === 'near' || k === 'step') snd.steps({ gain: 0.8 }); if (k === 'fail') snd.breath(); } } }],
   ]);
   // a task's own mini game inside its run() (talk before / after it)
@@ -103,6 +178,7 @@ export default function story(ext, shared) {
       ['ボトルを投げる', '［ボトル］', '近づかれたときに。白い姿の方を向いて投げると怯む。'],
       [`走る${lv('run')}`, '［走る］を押している間'], [`しゃがむ${lv('crouch')}`, '［しゃがむ］'], [`灯り${lv('light')}`, '［灯り］'],
       [`隠れる${lv('hide')}`, 'ロッカーや物入れの前で［操作］。もう一度で出る'],
+      ['無線に出る', '右上の［無線に出る］', '修司から無線が入ると、右上のメニューの下に出る。出なくても先へ進める。'],
       ['メニュー（地図・タスク・所持品）', '右上の［メニュー］'],
     ] : [
       ['歩く', 'W A S D（矢印キーでも）'], ['見回す', 'マウス（画面をクリックすると視点を動かせる）'], ['調べる・使う・扉を開ける', 'E'],
@@ -110,6 +186,7 @@ export default function story(ext, shared) {
       ['ボトルを投げる', 'R', '近づかれたときに。白い姿の方を向いて投げると怯む。'],
       [`走る${lv('run')}`, 'Shift を押している間'], [`しゃがむ${lv('crouch')}`, 'C'], [`灯り${lv('light')}`, 'F'],
       [`隠れる${lv('hide')}`, 'ロッカーや物入れの前で E。もう一度 E で出る'],
+      ['無線に出る', 'T', '修司から無線が入ると、左上に「無線が鳴っている」と出る。出なくても先へ進める。'],
       ['地図', 'M'], ['目標とタスク', 'G'], ['所持品', 'I'], ['言葉の記録（聞きのがした台詞）', 'L'], ['メニュー', 'Tab（一時停止は Esc）'],
     ];
     return `<div class="js-controls"><p class="js-controls-lead">迷ったら、地図の<b>「次」</b>を見る。白い姿とは目を合わせない。</p><table>${rows.map(([what, how, note]) =>
@@ -177,6 +254,7 @@ export default function story(ext, shared) {
     el.innerHTML = `<img src="${esc(src)}" alt="">${caption ? `<p>${esc(caption)}</p>` : ''}`;
     el.hidden = false; clearTimeout(flashPhoto.t); flashPhoto.t = setTimeout(() => { el.hidden = true; }, sec * 1000);
   }
+  function hidePhoto() { const el = document.getElementById('js-photo'); clearTimeout(flashPhoto.t); if (el) el.hidden = true; }
   // turn my eyes towards a point (a staged glance: the figure below the balcony, the mirror)
   let lookAt = null, baseFov = 0;
   function turnTo(x, y, z, k) {
@@ -222,7 +300,7 @@ export default function story(ext, shared) {
   const keepMark = (n) => { const id = `N_MARK${n}`; if (!ctx.state.docsRead.includes(id)) ctx.state.docsRead.push(id); ctx.ui.toast('写真と目の向きを、手帳に残した'); };
   // 5.8.3: the three marks in any order; the uncle sums them up once the third is in (whichever it is)
   const marksDone = () => done('T_MARK1') && done('T_MARK2') && done('T_MARK3');
-  const marksTalk = () => (marksDone() ? talk(done('T_CRANK') ? 'marksAfterCrank' : 'marks', { title: '三本の杉' }) : null);
+  const marksTalk = () => { if (!marksDone()) return; if (done('T_CRANK')) radioCall('marksAfterCrank', { title: '三本の杉', stale: () => done('T_POST') }); else radioCall('marks', { title: '三本の杉', stale: () => done('T_CRANK') }); };   // 5.9: his call, never awaited
   ext.registerTask('T_MARK1', { onDone: async () => { keepMark(1); await talk('mark1', { title: '伐採跡の杉' }); await marksTalk(); } });
   ext.registerTask('T_MARK2', { onDone: async () => { keepMark(2); await talk('mark2', { title: '林道の奥の杉' }); await marksTalk(); } });
   ext.registerTask('T_MARK3', { onDone: async () => {
@@ -264,7 +342,8 @@ export default function story(ext, shared) {
   ext.registerTask('T_ENGINE', { run: async (c, task) => {
     await talk('engine', { title: '私の車' });
     // while the engine catches: the white figure in the mirror, behind the car (H4)
-    if (!ctx.qa) { snd.engine(false); await wait(0.9); mirrorFigure(); snd.engine(false); await wait(1.2); }
+    // 5.9 (feedback: the caption lay over the mini game): the picture stays its 4 s, the starter coughs once more, then the mini game
+    if (!ctx.qa) { snd.engine(false); await wait(0.9); mirrorFigure(); await wait(2.2); snd.engine(false); await wait(2.1); hidePhoto(); await wait(0.3); }
     const ok = await playMG(task);
     if (ok) snd.engine(true);
     return ok;
@@ -525,6 +604,7 @@ export default function story(ext, shared) {
     M = dressMountain(c);
     c.seatPickups && c.seatPickups();   // the desks, tables and shelves of mountain.js are in: put the pickups on them
     if (M.fitWallDocs) M.fitWallDocs();   // 5.8: the wall notices are read at their frames
+    installPapers(c);   // 5.9: every document on old paper, the item stories in the inventory
     if (c.tm && c.tm.registerTab) c.tm.registerTab({ id: 'controls', label: '操作', icon: 'info', render: (el) => { el.innerHTML = controlsHtml(c); } });
     if (c.pm && c.pm.registerItem) c.pm.registerItem({ id: 'controls', label: '操作のしかた', icon: 'info', after: 'map', render: (el) => { el.innerHTML = controlsHtml(c); } });
     { // 5.8.1: a ladder is climbed, not jumped: its sound, the screen goes dark, the player comes out on the other floor
@@ -565,6 +645,22 @@ export default function story(ext, shared) {
     for (const k of M.caches || []) { k.handle.userData.interact = { kind: 'js-cache', id: k.id }; c.world.interactables.push(k.handle); cacheLook(k); }
     // the balcony door stays shut once the amado is drawn
     const balc = c.world.doors.get('D_BALC'); if (balc) { const base = balc.locked; balc.locked = () => (done('T_SHUTTER') && c.state.room !== 'CAB_BALC' ? true : base()); /* locked from the room side only: outside, it always opens (a player shut out on the balcony, 2026-11-02) */ balc.def.hint = '雨戸を閉めた。もう窓には戻らない。'; }
+    { // 5.9: the radio call chip (top left, under the meters) and T
+      callEl = document.createElement('button'); callEl.type = 'button'; callEl.id = 'js-call'; callEl.className = 'js-call'; callEl.hidden = true;
+      callEl.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); answerCall(); });
+      document.body.appendChild(callEl); if (c.registerHudPart) c.registerHudPart('js-call', { slot: 'tl', order: 45 });
+      addEventListener('keydown', (e) => { if (e.code !== 'KeyT' || e.repeat || !calls.length) return; if (busyWin()) return; e.preventDefault(); answerCall(); });
+    }
+    { // 5.9 (feedback: lines over the last mini game): while a mini game is open, the thought band waits and the picture at the top goes
+      const mono = c.monologue, held = [];
+      c.monologue = (text, sec, o) => { if (mgBusy() && !c.qa) { held.push([text, sec, o]); return; } return mono(text, sec, o); };
+      c.sayBusy = c.sayBusy || []; c.sayBusy.push(() => mgBusy());
+      let was = false;
+      c.systems && c.systems.push({ id: 'js-mg-quiet', def: { update: () => {
+        const on = mgBusy(); if (on !== was) { was = on; document.body.classList.toggle('js-mg', on); if (on) hidePhoto(); }
+        if (!on && held.length) for (const a of held.splice(0)) mono(...a);
+      } }, inst: null });
+    }
     document.body.insertAdjacentHTML('beforeend', `<div id="js-photo" class="js-photo" hidden></div><div id="js-jump" class="js-jump" hidden><img src="assets/textures/monster-face-v4-2.webp" alt=""></div>`);
     c.warmImages = [...(c.warmImages || []), 'assets/textures/monster-face-v4-2.webp', 'assets/photos/mountain-v4-1.webp'];
     if (window.__gf || c.qa || c.debug) window.__js = { cull: () => cull, st, gaze, M, F: () => F, applyStage, chains: () => completedChains(c.state.docsRead), shared, reflector };
@@ -581,7 +677,7 @@ export default function story(ext, shared) {
     else {
       say(`第${STAGE_NAMES[lvl()]}段階から再開した。${ctx.isTouch ? "右上のメニューから手帳と地図を開ける" : "Tab で手帳、M で地図を開ける"}。`, 5);
       const p = ctx.camera.position; ctx.checkpoint = { x: p.x, z: p.z, yaw: ctx.fp.yaw, floor: ctx.floor || 0 };   // 5.7: a death after a resume comes back here, not to the villa on the far bank
-      if (lvl() === L6 && !done('T_POST') && !st.l6Told) { st.l6Told = true; queueTalk('gateLocked', { title: '無線' }); guide('post'); }   // a save from the old gate stage: the padlock has to be told
+      if (lvl() === L6 && !done('T_POST') && !st.l6Told) { st.l6Told = true; gateCall(); }   // a save from the old gate stage: the padlock has to be told
     }
   });
   ext.on('stage:up', () => {
@@ -589,21 +685,25 @@ export default function story(ext, shared) {
     const i = lvl();
     const G = [null, null, 'radio', 'bottle', 'crank', null, 'bridge', 'gate', 'car'][i];
     if (G && i !== 3 && i !== L8) setTimeout(() => guide(G), 900);
-    if (i === L6) { st.l6Told = true; setTimeout(() => { queueTalk('gateLocked', { title: '無線' }); guide('post'); }, 1000); }
+    if (i === L6) { st.l6Told = true; setTimeout(gateCall, 1000); }
     if (i === 1) setTimeout(() => say(`窓の外に、まだいる。目を合わせると胸が苦しい。${ctx.isTouch ? '「目を閉じる」ボタン' : 'Q'}で目を閉じられる。`, 7), 1200);
     if (i === 3) setTimeout(() => guide('bottle').then(() => say('外では、白い姿が林道を歩いている。目を合わせず、木の陰を選んで。', 6)), 1500);
     if (i === L8) setTimeout(() => guide('gate').then(() => say('橋を渡って、北へ戻る。足音が、さっきより速い。見つかったら、走るだけでは振り切りにくい。', 7)), 1200);
     if (i === 8) setTimeout(() => say('ゲートが上がった。駐車場の車まで。', 4), 800);
   });
+  // 5.9: the padlock news is his call; the way to the old post (guide) follows the answer
+  const gateCall = () => radioCall('gateLocked', { title: '無線', after: () => guide('post'), stale: () => done('T_POST') });
   ext.on('player:room', ({ to }) => {
     if (TOWER_SIDE.includes(to) && lvl() === L7 && !done('T_BRIDGE')) ctx.completeTask('T_BRIDGE');   // came round without passing the bridge (a resumed game on the far bank): do not send them back
     if (st.firstRoom[to]) return; st.firstRoom[to] = true;
-    if (to === 'CAB_HALL' && lvl() === 2 && !done('T_RADIO')) setTimeout(() => talk('downstairs', { title: '一階' }), 500);
-    if (to === 'CAB_UP' && lvl() >= 3 && !done('T_ENGINE')) setTimeout(() => talk('nearCabin', { title: '二階' }), 500);   // 5.6.2: the player who walks back up to wait
-    if (to === 'O_BRIDGE' && lvl() >= 4 && lvl() < L6) setTimeout(() => talk('bridge', { title: '沢と橋' }), 600);
+    // 5.9: thoughts and a call, no window
+    const upstairs = () => ['CAB_UP', 'CAB_STORE', 'CAB_ST1', 'CAB_BALC'].includes(ctx.state.room);
+    if (to === 'CAB_HALL' && lvl() === 2 && !done('T_RADIO')) setTimeout(() => radioCall('downstairs', { title: '一階', stale: () => done('T_RADIO') }), 500);
+    if (to === 'CAB_UP' && lvl() >= 3 && !done('T_ENGINE')) setTimeout(() => radioCall('nearCabin', { title: '二階', stale: () => !upstairs() }), 500);   // 5.6.2: the player who walks back up to wait
+    if (to === 'O_BRIDGE' && lvl() >= 4 && lvl() < L6) setTimeout(() => radioCall('bridge', { title: '沢と橋', stale: () => lvl() >= L6 }), 600);
     if (to === 'SHELTER') snd.rustle({ gain: 0.5 });
   });
-  ext.on('item:pickup', ({ id }) => { if (id === 'I_GLASSES') setTimeout(() => talk(done('T_RADIO') ? 'glasses' : 'earlyGlasses', { title: 'サングラス' }), 300); });
+  ext.on('item:pickup', ({ id }) => { if (id === 'I_GLASSES') setTimeout(() => (done('T_RADIO') ? radioCall('glasses', { title: 'サングラス', stale: () => ctx.state.docsRead.includes('N_NOTE') }) : thinkAll('earlyGlasses')), 300); });
   ext.on('doc:read', ({ id }) => onDoc(id));
   // 5.7.3: [E] (or the touch button) while standing in the doorway of an open door that closes: step back to the side you are on, then the
   // kit shuts it (it refuses while you stand in the frame, which read as "the door will not close")
@@ -627,8 +727,8 @@ export default function story(ext, shared) {
   ext.on('door:close', ({ id }) => { if (id === 'D_SHELTER' && ctx.state.room === 'SHELTER') ctx.monologue('戸を閉めた。ここなら、外から見えない。', 4, { urgent: true }); });
   ext.on('task:start', ({ id }) => { if (id === 'T_RADIO') snd.radioStatic(true, 0); });
   ext.on('task:abort', ({ id }) => { if (id === 'T_RADIO') snd.radioStatic(false); });
-  ext.on('jashi:first-hit', () => talk('firstAttack', { title: '鎌' }));
-  ext.on('jashi:stunned', () => { if (!st.repelTold) { st.repelTold = true; talk('repel', { title: 'ボトル' }); } });
+  ext.on('jashi:first-hit', () => radioShout('firstAttack'));
+  ext.on('jashi:stunned', () => { if (!st.repelTold) { st.repelTold = true; radioShout('repel'); } });
   ext.on('monster:seen', ({ first }) => { if (first) say('こっちを見た。目を合わせるな。', 3); });
 
   // ---------------------------------------------------------------- per frame
@@ -652,11 +752,13 @@ export default function story(ext, shared) {
     if (run && lvl() === 1 && shared.scripted && !st.seenWatch && document.body.classList.contains('js-gazing')) {
       st.seenWatch = true; st.watchT = 0; snd.sting(); fear.kick(0.9); c.fx && c.fx.glitch && c.fx.glitch(0.3, 0.3);
       lookAt = { x: F.root.position.x, y: 2.3, z: F.root.position.z, t: 1.4 };
-      setTimeout(() => talk('encounter', { title: '窓の向こう' }), 3200);   // after it has looked and stepped closer: the window must not cover the moment it notices you
+      setTimeout(() => radioShout('encounter'), 3200);   // after it has looked and stepped closer (5.9: a thought and his shout, no window over the moment)
     }
     if (lookAt) { turnTo(lookAt.x, lookAt.y, lookAt.z, Math.min(1, dt * 4)); if ((lookAt.t -= dt) <= 0) lookAt = null; }
     // L3: a knock on the front door while you are downstairs and the radio is not yet tuned (H4)
     if (run && lvl() === 2 && !done('T_RADIO') && !st.knocked && c.state.room === 'CAB_HALL' && (st.hallT = (st.hallT || 0) + dt) > 14) { st.knocked = true; c.audio && c.audio.noise && c.audio.noise('knock', { n: 3, gain: 0.9 }); fear.kick(0.6); say('玄関の戸を、外から三度。……開けない。叔父なら、無線で呼ぶはずだ。', 6); }
+    if (calls.length) { if (run && (callT += dt) > 30) { callT = 0; if (snd.radioBurst) snd.radioBurst(0.5); } if ((st.callPaint = (st.callPaint || 0) + dt) > 0.5) { st.callPaint = 0; paintCall(); } }
+    else if (callEl && !callEl.hidden) paintCall();
     reflector.update(dt, run);
     monsterTick(dt, run);
     bridgeTick(c, t, run, dt);

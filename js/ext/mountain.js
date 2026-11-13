@@ -73,6 +73,35 @@ export function dressMountain(ctx) {
     shrub: mat(0x34452e, { flatShading: true }), moss: mat(0x48573a, { flatShading: true }),
   };
   const texReady = TextureLibrary.load('assets/textures/', { renderer: ctx.renderer }).catch(() => null);
+  // 5.9 (feedback 2026-11-13 「全体的に寂れたテクスチャ」): nobody has looked after this mountain for years. The wood gets water stains,
+  // streaks running down and lichen over its photo; the iron rusts, the yellow and red paint flakes off. Each is one canvas, drawn once
+  // and put on the material that already exists (no new material, no new draw call)
+  const wr = (() => { let q = 977; return () => ((q = (q * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+  const canvasMap = (S, draw, rep = [1, 1]) => { const cv = document.createElement('canvas'); cv.width = cv.height = S; draw(cv.getContext('2d'), S); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...rep); t.anisotropy = 4; return t; };
+  const blot = (g, x, y, r, rgba) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, rgba); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, r, r * (0.6 + wr() * 0.6), wr() * 3, 0, Math.PI * 2); g.fill(); };
+  const speckle = (g, S, n, rgba, size = 2) => { g.fillStyle = rgba; for (let i = 0; i < n; i++) g.fillRect(wr() * S, wr() * S, size * (0.5 + wr()), size * (0.5 + wr())); };
+  const streaks = (g, S, n, rgba) => { for (let i = 0; i < n; i++) { const x = wr() * S, y = wr() * S * 0.6, h = S * (0.15 + wr() * 0.45), w = 1 + wr() * 3; const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, rgba); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x, y, w, h); } };
+  const wornWood = (g, S) => {
+    for (let i = 0; i < 9; i++) blot(g, wr() * S, wr() * S, S * (0.06 + wr() * 0.16), `rgba(28,24,16,${(0.18 + wr() * 0.2).toFixed(2)})`);   // water stains
+    streaks(g, S, 26, 'rgba(22,18,12,0.32)');                                                                                       // rain running down
+    for (let i = 0; i < 7; i++) { const x = wr() * S, y = wr() * S; for (let k = 0; k < 40; k++) { g.fillStyle = `rgba(${92 + wr() * 30 | 0},${110 + wr() * 30 | 0},${62 + wr() * 20 | 0},${(0.25 + wr() * 0.35).toFixed(2)})`; const a = wr() * 6.3, r = wr() * S * 0.05; g.fillRect(x + Math.cos(a) * r, y + Math.sin(a) * r, 2 + wr() * 3, 2 + wr() * 3); } }   // lichen
+    speckle(g, S, 500, 'rgba(15,12,8,0.25)', 1.6);
+  };
+  const metal = (base, rustAmt, flakes) => canvasMap(256, (g, S) => {
+    g.fillStyle = base; g.fillRect(0, 0, S, S); speckle(g, S, 900, 'rgba(0,0,0,0.12)', 1.4); speckle(g, S, 300, 'rgba(255,255,255,0.05)', 1.2);
+    for (let i = 0; i < rustAmt; i++) blot(g, wr() * S, wr() * S, S * (0.04 + wr() * 0.14), `rgba(${104 + wr() * 30 | 0},${54 + wr() * 18 | 0},${26 + wr() * 10 | 0},${(0.45 + wr() * 0.4).toFixed(2)})`);
+    for (let i = 0; i < flakes; i++) { g.fillStyle = wr() < 0.6 ? `rgba(${88 + wr() * 20 | 0},${70 + wr() * 14 | 0},${56 | 0},0.9)` : 'rgba(70,64,58,0.9)'; g.beginPath(); const x = wr() * S, y = wr() * S; g.moveTo(x, y); for (let k = 0; k < 6; k++) g.lineTo(x + (wr() - 0.5) * 22, y + (wr() - 0.5) * 22); g.fill(); }   // paint gone to the metal
+    streaks(g, S, 18, 'rgba(96,52,24,0.45)');
+  });
+  for (const [m, tex] of [[M.iron, metal('#4c4d4b', 10, 0)], [M.rust, metal('#6b4632', 16, 0)], [M.yellow, metal('#c9a43a', 7, 26)], [M.red, metal('#a3322a', 4, 18)]]) { m.color.setHex(0xffffff); m.map = tex; m.needsUpdate = true; }
+  // the wood: its photo first, the wear over it (before cull.js merges, the boot waits for api.ready)
+  const agedWood = loader.loadAsync('assets/textures/weathered-wood-v4-2.webp').then((t) => {
+    const img = t.image, S = 512, cv = document.createElement('canvas'); cv.width = cv.height = S; const g = cv.getContext('2d');
+    g.drawImage(img, 0, 0, S, S); wornWood(g, S);
+    const a = new THREE.CanvasTexture(cv); a.colorSpace = THREE.SRGBColorSpace; a.wrapS = a.wrapT = THREE.RepeatWrapping; a.anisotropy = 4;
+    for (const m of [M.weathered, M.plank]) { const t2 = a.clone(); t2.repeat.copy(m.map.repeat); m.map = t2; m.needsUpdate = true; }
+    t.dispose();
+  }).catch(() => 0);
 
   // ---------------------------------------------------------------- ground, mountains, the trails that go on into the fog (W4)
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(320, 320), M.ground); ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.06, 0); ground.receiveShadow = true; G.add(ground);
@@ -241,16 +270,17 @@ export function dressMountain(ctx) {
   // ---------------------------------------------------------------- the creek and the bridge (the red string on its rail)
   // 5.8: a footbridge of two logs and boards over the creek, a rope rail on posts on one side
   function footbridge(x) {
-    const F = named(`footbridge:${x}`); F.position.set(x, 0, -10.2);
+    const F = named(`footbridge:${x}`); F.position.set(x, 0, -10.2); F.userData.keep = true;
     for (const dx of [-0.42, 0.42]) { const l = cyl(0.17, 0.2, 4.6, M.bark, dx, 0.16, 0, 9, F); l.rotation.x = Math.PI / 2; }
     for (let i = 0; i < 11; i++) box(1.5, 0.06, 0.36, M.plank, (i % 2 ? 0.03 : -0.03), 0.36, -2 + i * 0.4, F);
-    for (const z of [-2.1, 0, 2.1]) box(0.09, 1.0, 0.09, M.bark, 0.78, 0.68, z, F);
+    for (const z of [-2.1, 0, 2.1]) box(0.09, 1.3, 0.09, M.bark, 0.78, 0.53, z, F);   // 5.9: the rope posts reach down into the bank (they stood 18 cm over the ground)
     const rope = cyl(0.015, 0.015, 4.3, M.weathered, 0.78, 1.12, 0, 5, F); rope.rotation.x = Math.PI / 2;
   }
   { const w = new THREE.Mesh(new THREE.PlaneGeometry(90, 2.6), M.water); w.rotation.x = -Math.PI / 2; w.position.set(0, 0.012, -10.2); w.name = 'creek'; G.add(w); api.parts.water = w;
     const B = named('bridge'); B.position.set(0.8, 0, -10.2);
     box(3.4, 0.14, 4.2, M.plank, 0, 0.3, 0, B); for (const x of [-1.65, 1.65]) { box(0.1, 0.9, 4.2, M.weathered, x, 0.75, 0, B); for (const z of [-2, 0, 2]) box(0.12, 1.1, 0.12, M.bark, x, 0.55, z, B); }
-    const knot = cyl(0.03, 0.03, 0.5, M.red, 2.4, 1.02, 1.2, 6); knot.rotation.z = 0.3;
+    // 5.9 (a floating-object scan): the red string was added to the mountain, not to the bridge, and hung in the air 11 m north of it; now it is tied to the east rail
+    const knot = cyl(0.03, 0.03, 0.5, M.red, 1.7, 1.05, 1.2, 6, B); knot.rotation.z = 0.3; knot.name = 'bridge-knot';
     // 5.7: the water that rises when the figure stands on the bridge. The colliders leave the deck as the only way over; no eye-blocking (they are water)
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; { const g = cv.getContext('2d'); for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(220,214,190,${0.08 + rnd() * 0.22})`; g.fillRect(rnd() * 256, rnd() * 64, 16 + rnd() * 70, 1 + rnd() * 2); } }
     const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(14, 1); tex.colorSpace = THREE.SRGBColorSpace;
@@ -263,8 +293,12 @@ export function dressMountain(ctx) {
     const banks = spans.map(([a, b]) => { const c = solid2(a, -11.6, b, -8.8); c.off = false; return c; }), gate = solid2(-1, -12, 2.6, -11.6);
     const fgaps = FOOT.map((x) => solid2(x - half, -11.6, x + half, -8.8));
     for (const x of FOOT) footbridge(x);
-    api.parts.flood = { foam, tex, t: 0, target: 0, banks, fgaps, gate, dry: new THREE.Color(0x2b3a3b), wet: new THREE.Color(0x3b3425) };
-    api.setFlood = (on, solid = on) => { const f = api.parts.flood; f.target = on ? 1 : 0; for (const c of f.banks) c.off = on && !solid; for (const c of f.fgaps) c.off = !(on && solid); };
+    // 5.9 (feedback: 「渡れなくなった橋は無くしてしまってよい」): in the flood the two footbridges go under and are carried off; their gaps stay
+    // water (fgaps). Only the main bridge is left to cross
+    const feet = FOOT.map((x) => G.getObjectByName(`footbridge:${x}`)).filter(Boolean);
+    api.parts.flood = { foam, tex, t: 0, target: 0, banks, fgaps, gate, feet, gone: false, dry: new THREE.Color(0x2b3a3b), wet: new THREE.Color(0x3b3425) };
+    api.setFlood = (on, solid = on) => { const f = api.parts.flood; f.target = on ? 1 : 0; for (const c of f.banks) c.off = on && !solid; for (const c of f.fgaps) c.off = !(on && solid);
+      if (!on && f.gone) { f.gone = false; for (const b of f.feet) { b.visible = true; b.position.y = 0; b.rotation.set(0, 0, 0); } } else if (on) f.gone = true; };
     api.setBridgeShut = (on) => { api.parts.flood.gate.off = !on; }; }
   // the work tag's wire (N_TAG hangs from it at x -10, z -13): two stakes and a wire, so the tag is not in mid-air
   { const w = named('tag-wire'); w.position.set(-10, 0, -13);
@@ -283,7 +317,7 @@ export function dressMountain(ctx) {
     addCol(23.6, -29.15, 25.2, -28.65, 0, 2.6); }
   // 5.8: crates with two bottles in them, on the way (the two from the shed ran out while exploring): the story fills them up, once each
   api.caches = [];
-  for (const [id, x, z, ry] of [['bridge', 4.1, -14.2, 0.2], ['south', -0.4, -26.6, -0.3], ['hut', 13.6, -13.75, 0], ['post', -26.9, -23.1, 0], ['tower', -26.9, -16.9, 0.4]]) {
+  for (const [id, x, z, ry] of [['bridge', 4.1, -14.2, 0.2], ['hut', 13.6, -13.75, 0], ['post', -26.9, -23.1, 0]]) {   // 5.9: three (the forest road and the tower ones went)
     const k = named(`bottle-crate:${id}`); k.position.set(x, 0, z); k.rotation.y = ry;
     box(0.5, 0.28, 0.36, M.plank, 0, 0.14, 0, k);
     const bt = new THREE.Group(); bt.name = `bottle-crate-bottles:${id}`; k.add(bt);
@@ -319,15 +353,54 @@ export function dressMountain(ctx) {
     const l = new THREE.PointLight(0x9fd2ff, 1.4, 2.4, 2); l.position.y = 0.2; p.add(l); api.parts.phoneLight = l; }
 
   // ---------------------------------------------------------------- the wall notices and photos (docs with "wall")
+  // 5.9: how each one hangs now: lean = the post tipped back (outdoors), roll = the board askew, nail = it hangs from one top corner
+  const HANG = { W_TRAIL_NOTICE: { lean: 0.12, roll: 0.07 }, W_FORESTRY_NOTICE: { nail: -0.42 }, W_BRIDGE_NOTICE: { lean: -0.1, roll: -0.12 }, W_POST_SIGN: { lean: 0.14, roll: 0.1 }, W_TOWER_SIGN: { nail: 0.33 },
+    W_SHELTER_NOTICE: { nail: -0.3 }, W_CABIN_MEMORY: { roll: 0.05 }, W_LOGGING_MEMORY: { roll: -0.07 }, W_CREEK_MEMORY: { roll: 0.06 }, W_PARKING_MEMORY: { roll: -0.04 } };
   for (const d of ctx.data.docs || []) {
     if (!d.wall) continue;
-    const f = named(`wall-doc:${d.id}`); f.position.set(d.x, d.y ?? 1.6, d.z); f.rotation.y = d.wall.rot || 0;
+    const f = named(`wall-doc:${d.id}`); f.position.set(d.x, d.y ?? 1.6, d.z); f.rotation.order = 'YXZ'; f.rotation.y = d.wall.rot || 0;
     const tex = d.photo ? loader.load(d.photo) : null; if (tex) tex.colorSpace = THREE.SRGBColorSpace;
-    box(d.wall.w + 0.06, d.wall.h + 0.06, 0.03, d.wall.type === 'photo' ? M.black : M.plank, 0, 0, -0.012, f);
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(d.wall.w, d.wall.h), new THREE.MeshStandardMaterial({ color: tex ? 0xffffff : 0xe8e2d0, map: tex, roughness: 0.9 })); face.position.z = 0.006; f.add(face);
+    const hg = HANG[d.id] || {}, W2 = d.wall.w / 2 + 0.03, H2 = d.wall.h / 2 + 0.03;
+    if (hg.lean) f.rotation.x = -hg.lean;
+    // the board itself in a pivot: at its centre (askew) or at the top corner of its last nail
+    const pv = named(`wall-doc-board:${d.id}`, f), side = Math.sign(hg.nail || 0) || 1;
+    if (hg.nail) { pv.position.set(-side * (W2 - 0.04), H2 - 0.04, 0); pv.rotation.z = hg.nail; } else if (hg.roll) pv.rotation.z = hg.roll;
+    const bd = named(`wall-doc-face:${d.id}`, pv); if (hg.nail) bd.position.set(side * (W2 - 0.04), -(H2 - 0.04), 0);
+    box(d.wall.w + 0.06, d.wall.h + 0.06, 0.03, d.wall.type === 'photo' ? M.black : M.plank, 0, 0, -0.012, bd);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(d.wall.w, d.wall.h), new THREE.MeshStandardMaterial({ color: tex ? 0xffffff : 0xe8e2d0, map: tex, roughness: 0.9 })); face.position.z = 0.006; bd.add(face);
+    if (hg.nail) cyl(0.012, 0.012, 0.07, M.iron, 0, 0, 0.02, 6, pv).rotation.x = Math.PI / 2;   // the nail it still hangs on
     { const pk = world.interactables.find((m) => m.name === `doc:${d.id}`); if (pk) { if (pk.userData.model) { pk.remove(pk.userData.model); pk.userData.model = null; } pk.userData.wallFrame = f; } }   // 5.8: the kit's flat paper stuck out of the frame
     if (d.wall.type === 'notice' && !(world.roomAt(d.x, d.z, 1.6) || '').startsWith('CAB')) { box(0.08, (d.y ?? 1.6) + d.wall.h / 2, 0.08, M.bark, 0, -((d.y ?? 1.6) - d.wall.h / 2) / 2 - d.wall.h / 2 + 0.02, -0.06, f); }
   }
+
+  // 5.9: signs nobody put back up. A board with letters on a canvas, lying, leaning or hanging from one nail
+  const signTex = (lines, o = {}) => canvasMap(256, (g, S) => {
+    g.fillStyle = o.bg || '#d8d2c0'; g.fillRect(0, 0, S, S); wornWood(g, S);
+    g.fillStyle = o.ink || 'rgba(150,34,26,0.82)'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `700 ${o.size || 64}px "Yu Mincho","Hiragino Mincho ProN",serif`;
+    lines.forEach((t, i) => g.fillText(t, S / 2, S / 2 + (i - (lines.length - 1) / 2) * (o.size || 64) * 1.15));
+    for (let i = 0; i < 160; i++) { g.fillStyle = 'rgba(216,210,192,0.9)'; g.fillRect(wr() * S, wr() * S, 3 + wr() * 9, 2 + wr() * 5); }   // the paint has come off in flakes
+    streaks(g, S, 14, 'rgba(60,40,20,0.35)');
+  });
+  { // the road closed sign by the fallen tree, knocked flat (its two legs, one snapped)
+    const tx = signTex(['通行止'], { size: 70 }), sm = mat(0xffffff, { map: tx });
+    const b = box(1.3, 0.04, 0.42, sm, 2.6, 0.02, -29.2); b.rotation.y = 0.35;
+    const l1 = box(0.06, 0.05, 0.9, M.weathered, 2.15, 0.025, -28.9); l1.rotation.y = 0.35 + 0.2; const l2 = box(0.06, 0.05, 0.5, M.weathered, 3.15, 0.025, -29.55); l2.rotation.y = -0.4; }
+  { // the car park sign: its post rotted at the foot, it lies against the edge of the gravel
+    const tx = signTex(['駐車場'], { size: 64, ink: 'rgba(40,52,88,0.85)' }), sm = mat(0xffffff, { map: tx });
+    const p = box(0.08, 0.08, 1.8, M.bark, -31.6, 0.04, 27.6); p.rotation.y = 0.5;
+    const b = box(0.7, 0.03, 0.5, sm, -31.2, 0.05, 28.35); b.rotation.y = 0.5; box(0.1, 0.12, 0.1, M.bark, -32.0, 0.06, 26.85); }
+  { // a tin notice on the shed's north wall, hanging from one nail
+    const tx = signTex(['火の用心'], { size: 52, bg: '#cfc8b4' }), sm = mat(0xffffff, { map: tx, metalness: 0.35, roughness: 0.6 });
+    const pv = new THREE.Group(); pv.position.set(-19.0, 1.85, -0.86); pv.rotation.z = -0.62; G.add(pv);
+    box(0.5, 0.36, 0.012, sm, 0.25, -0.18, 0, pv); cyl(0.01, 0.01, 0.05, M.iron, 0, 0, 0.01, 6, pv).rotation.x = Math.PI / 2; }
+  // moss where the walls and posts meet the ground (one instanced mesh): the buildings nobody keeps
+  { const spots = [];
+    for (const r of plan.rooms) { if (r.kind === 'outdoor' || (r.floor || 0) !== 0 || r.w == null) continue; const per = 2 * (r.w + r.d), n = Math.round(per * (/^CAB/.test(r.id) ? 0.6 : 1.4));
+      for (let i = 0; i < n; i++) { const t = wr() * per; let x, z; if (t < r.w) { x = r.x + t; z = r.z - 0.08; } else if (t < r.w + r.d) { x = r.x + r.w + 0.08; z = r.z + t - r.w; } else if (t < 2 * r.w + r.d) { x = r.x + t - r.w - r.d; z = r.z + r.d + 0.08; } else { x = r.x - 0.08; z = r.z + t - 2 * r.w - r.d; }
+        if (world.roomAt(x, z, 1) && !/^O_/.test(world.roomAt(x, z, 1))) continue; spots.push([x, z, 0.16 + wr() * 0.3]); } }
+    const mg = new THREE.IcosahedronGeometry(1, 0), im = new THREE.InstancedMesh(mg, M.moss, spots.length);
+    spots.forEach(([x, z, sc], i) => im.setMatrixAt(i, new THREE.Matrix4().compose(V3(x, 0, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, wr() * 6, 0)), V3(sc * 1.4, sc * 0.28, sc))));
+    im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); im.name = 'moss-bases'; im.receiveShadow = true; G.add(im); }
 
   // 5.8: a wall doc is read by looking at its frame: after the kit has seated the pickups, each one's box becomes the frame
   api.fitWallDocs = () => { for (const pk of world.interactables) { const f = pk.userData && pk.userData.wallFrame; if (!f) continue; const d = pk.userData.def.wall;
@@ -365,7 +438,8 @@ export function dressMountain(ctx) {
     for (let i = 0; i < 18; i++) { const pair = Math.floor(i / 2), side = i % 2 ? 0.075 : -0.075, x = -33.7 + 0.08, z = -21.7 + pair * 0.36 + side; leg.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x, 0.19, z)); foot.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x + 0.07, 0.035, z).multiply(new THREE.Matrix4().makeRotationY(Math.PI / 2))); }
     leg.instanceMatrix.needsUpdate = foot.instanceMatrix.needsUpdate = true; leg.computeBoundingSphere(); foot.computeBoundingSphere(); leg.name = 'boots'; foot.name = 'boots-feet'; G.add(leg, foot);
     // a finger post where the old trail leaves the road (no writing, W: the map and the talk name it)
-    { const f = named('trail-post'); f.position.set(-5.4, 0, -21.4); box(0.1, 1.9, 0.1, M.bark, 0, 0.95, 0, f); box(0.8, 0.14, 0.04, M.weathered, -0.4, 1.7, 0, f); }
+    { const f = named('trail-post'); f.position.set(-5.4, 0, -21.4); f.rotation.z = 0.13; box(0.1, 1.9, 0.1, M.bark, 0, 0.95, 0, f);
+      const arm = named('trail-post-arm', f); arm.position.set(-0.07, 1.74, 0.03); arm.rotation.z = 1.18; box(0.8, 0.14, 0.04, M.weathered, -0.38, 0, 0, arm); cyl(0.012, 0.012, 0.06, M.iron, -0.02, 0, 0.02, 6, arm).rotation.x = Math.PI / 2; }   // 5.9: the arm hangs from its last nail
   }
   // ---------------------------------------------------------------- 5.7: the fire tower: a boarded base, two open floors, a roof with the alarm bell
   { const y1 = FY(1), y2 = FY(2), top = y2 + 2.7, x0 = -35.2, x1 = -32, z0 = -16.6, z1 = -13.4;
@@ -420,7 +494,7 @@ export function dressMountain(ctx) {
   }
 
   // the outside of the walls (W1): weathered boards on every face that looks out (after the recipes painted the rooms)
-  api.ready = texReady.then(() => dressOuterWalls(ctx, M.weathered)).catch(() => 0);
+  api.ready = Promise.all([texReady.then(() => dressOuterWalls(ctx, M.weathered)).catch(() => 0), agedWood]);
   api.update = (dt, t) => {
     const bdp = api.parts.balconyDoor; if (bdp) { bdp.t += ((bdp.door.isOpen ? 1 : 0) - bdp.t) * Math.min(1, dt * 3); bdp.leaf.position.x = -(bdp.W - 0.12) * bdp.t; }   // slides west, away from the amado
     const s = api.parts.shutter; if (s) { s.t += (s.target - s.t) * Math.min(1, dt * 1.6); s.leaf.position.x = 1.8 * (1 - s.t); }
@@ -431,6 +505,7 @@ export function dressMountain(ctx) {
       fl.t += (fl.target - fl.t) * Math.min(1, dt * 0.5); fl.tex.offset.x -= dt * 0.55;
       const w = api.parts.water; w.position.y = 0.012 + fl.t * 0.24; w.scale.y = 1 + fl.t * 0.32; M.water.color.copy(fl.dry).lerp(fl.wet, fl.t);
       fl.foam.position.y = w.position.y + 0.015; fl.foam.material.opacity = fl.t * 0.8;
+      if (fl.gone) for (const b of fl.feet) if (b.visible) { b.position.y -= dt * 0.35; b.position.x += dt * 0.6; b.rotation.y += dt * 0.08; if (b.position.y < -0.75) b.visible = false; }   // sinking, pulled downstream
     }
     const uc = api.people.uncle; if (uc && uc.root.visible && uc.character.update) uc.character.update(dt);
   };
