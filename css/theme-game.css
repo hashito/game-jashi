@@ -181,9 +181,10 @@ body.js-aiming #crosshair, body.js-aiming .kit-look-note { display: none !import
 .js-pp-label { margin-bottom: .3em !important; font-size: 14px; letter-spacing: .1em; opacity: .8; }
 /* the letter: his pen on ruled paper; what I noticed under it */
 .js-paper--letter .js-pp-hand { --pp-ink: #1f2a3c; color: var(--pp-ink); letter-spacing: .03em; padding: 4px 4px 2px;
-  background: repeating-linear-gradient(transparent 0 calc(1.9em - 1px), rgba(70, 90, 120, .3) calc(1.9em - 1px) 1.9em); background-position: 0 .1em; }
-.js-paper--letter .js-pp-hand p { text-indent: 1em; transform: rotate(-.25deg); }
-.js-pp-sign { text-align: right; text-indent: 0 !important; margin-top: .4em !important; }
+  line-height: 1.9; background: repeating-linear-gradient(transparent 0 calc(1.9em - 1px), rgba(70, 90, 120, .3) calc(1.9em - 1px) 1.9em); background-origin: content-box; background-position: 0 -.12em; }
+/* 5.9.1: every line and every gap is a whole ruled line, so the rules stay under the writing instead of drifting through it */
+.js-paper--letter .js-pp-hand p { margin: 0; line-height: 1.9; text-indent: 1em; }
+.js-pp-sign { text-align: right; text-indent: 0 !important; margin-top: 0 !important; }
 .js-pp-aside { margin-top: 14px; padding: 10px 12px; border-top: 1px dashed rgba(60, 40, 20, .5); background: rgba(255, 250, 235, .35); color: var(--pp-ink); font-size: 16px; }
 /* the log book */
 .js-pp-log { width: 100%; margin: 6px 0 12px; border-collapse: collapse; font-size: 16px; line-height: 1.7; }

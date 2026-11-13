@@ -391,7 +391,7 @@ export function dressMountain(ctx) {
     const b = box(0.7, 0.03, 0.5, sm, -31.2, 0.05, 28.35); b.rotation.y = 0.5; box(0.1, 0.12, 0.1, M.bark, -32.0, 0.06, 26.85); }
   { // a tin notice on the shed's north wall, hanging from one nail
     const tx = signTex(['火の用心'], { size: 52, bg: '#cfc8b4' }), sm = mat(0xffffff, { map: tx, metalness: 0.35, roughness: 0.6 });
-    const pv = new THREE.Group(); pv.position.set(-19.0, 1.85, -0.86); pv.rotation.z = -0.62; G.add(pv);
+    const pv = new THREE.Group(); pv.position.set(-21.6, 1.85, -0.86); pv.rotation.z = -0.62; G.add(pv);   // 5.9.1: on the wall west of the sliding door, not over its opening
     box(0.5, 0.36, 0.012, sm, 0.25, -0.18, 0, pv); cyl(0.01, 0.01, 0.05, M.iron, 0, 0, 0.01, 6, pv).rotation.x = Math.PI / 2; }
   // moss where the walls and posts meet the ground (one instanced mesh): the buildings nobody keeps
   { const spots = [];
